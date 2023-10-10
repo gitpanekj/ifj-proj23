@@ -16,6 +16,14 @@ TEST_FLAGS=-L$(GTEST_LIB) -lgtest
 	$(CC) $(CFLAGS) -c $< -o $@
 
 
+# Add new test target in form of
+#
+# test_name: example: test_name.cpp $(OBJS)
+# 	$(CXX) $(TEST_FLAGS) $< -o $@
+#	./$@
+#
+# then run with make test_name
+
 example: test.cpp $(OBJS)
 	$(CXX) $(TEST_FLAGS) $< -o $@
 	./$@
