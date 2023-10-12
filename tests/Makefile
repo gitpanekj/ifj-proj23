@@ -29,6 +29,10 @@ example: test.cpp $(OBJS)
 	./$@
 
 
+literal_vector: literal_vector.cpp $(OBJS)
+	$(CXX) $(TEST_FLAGS) $< -o $@
+	./$@
+
 
 gtest_build:
 	git clone https://github.com/google/googletest.git gtest
