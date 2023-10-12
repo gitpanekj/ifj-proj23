@@ -40,7 +40,7 @@ void LV_free(LiteralVector *vec){
  * @brief Add character at the end of literal vector.
  * 
  * Double capacity of literal vector if forming_size reaches capacity.
- * Return pointer to literal vector array on succes.
+ * Return pointer to last added element of vector array on succes.
  * Return NULL if reallocation fails.
  * 
  * @param vec pointer to literal vector
@@ -61,6 +61,8 @@ void* LV_add(LiteralVector* vec, char c){
     // add character at the end
     vec->literal_array[vec->forming_size] = c;
     vec->forming_size++;
+
+    return &(vec->literal_array[vec->forming_size]);
 }
 
 
@@ -77,17 +79,19 @@ void LV_restore(LiteralVector *vec){
 /**
  * @brief Submit all newly added characters at the end of literal vector.
  * 
- * Returns pointer to the start of submited subarray of characters - string.
- * Stores number of submited characters of subarray to the lexeme_len - string length.
- * 
+ * Add '\0' at the end of forming literal, update confirmed_size and return
+ * pointer to the start of submited subarray of character - literal.
+ * Return NULL if no space is left to store literal.
  * 
  * @param vec pointer to literal vector
- * @param lexeme_len pointer to the variable where number of submited characters is stored
  * @return char* 
  */
-char* LV_submit(LiteralVector *vec, size_t* lexeme_len){
+char* LV_submit(LiteralVector *vec){
+    if (LV_add(vec, '\0') == NULL){
+        return NULL;
+    }
+
     char *lexeme_start = &(vec->literal_array[vec->confirmed_size]);
-    *lexeme_len = vec->forming_size - vec->confirmed_size;
 
     vec->confirmed_size = vec->forming_size;
     return lexeme_start;

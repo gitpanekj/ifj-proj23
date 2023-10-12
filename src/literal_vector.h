@@ -5,7 +5,7 @@
 #include <stdbool.h> // bool
 
 #define INIT_CAPACITY 1
-#define IS_FULL(vec) (vec->forming_size <= vec->capacity)
+#define IS_FULL(vec) (vec->forming_size >= vec->capacity)
 #define GROW_CAPACITY(cap) cap*2
 #define SHRINK_CAPACITY(cap) cap/2;
 
@@ -37,7 +37,7 @@ void LV_free(LiteralVector*);
 
 void* LV_add(LiteralVector*, char);
 
-char* LV_submit(LiteralVector*, size_t*);
+char* LV_submit(LiteralVector*);
 
 void LV_restore(LiteralVector*);
 
