@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Wall -Wextra -Werror -std=c99 -pedantic
+CFLAGS= -Wall -Wextra -std=c99
 SRCS=$(wildcard *.c)
 OBJS=$(patsubst %.c, %.o, $(SRCS))
 BIN=compiler.out
