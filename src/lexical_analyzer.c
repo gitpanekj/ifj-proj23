@@ -409,16 +409,14 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
 
         for (int i=3; i<max_len; i++) {
             if (is_hex_digit(sequence_start[i])){
-                if (n_digits >= 8){
-                    return -1;
-                }
-
                 n_digits++;
+
                 value = 16*value + hex_to_dec(sequence_start[i]);
                 (*new_pos)++; // consume digit
             }
             else if (sequence_start[i]=='}'){
                 (*new_pos)++; // consume }
+                if (n_digits > 8) return -1;
                 return value;
             }
             else { // unsuported escape sequence
@@ -426,6 +424,10 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
                 return -1;
             }
         }
+        
+        // unterminated \u{
+        return -1;
+
     }
 
     // decrementing escape sequence ASCII value as a result of increment in ESCAPE_SEQUENCE_TABLE
@@ -506,8 +508,9 @@ TokenType scan_single_line_string(Scanner *s){
                     // TODO: error handling
                     error(s, "Unsupporeted format of escape sequence\n");
                     result = TOKEN_LA_ERROR;
+                } else {
+                    LV_add(s->literals, encoded_escape);
                 }
-                LV_add(s->literals, encoded_escape);
                 break;
             default:
                 LV_add(s->literals, string[i]);
@@ -661,8 +664,9 @@ TokenType scan_multi_line_string(Scanner *s){
                         //TODO: error handling
                         error(s, "Unsupported format of escape sequence\n");
                         result =  TOKEN_LA_ERROR;
+                    } else {
+                        LV_add(s->literals, encoded_escape);
                     }
-                    LV_add(s->literals, encoded_escape);
                 } else {
                     LV_add(s->literals, '\\');
                     LV_add(s->literals, ' ');

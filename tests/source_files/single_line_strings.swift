@@ -7,7 +7,14 @@
 "abcdefghjkl
 "
 
+// Errorrs 
+
 "\a"
 "\a"
+"\u{111111111}"
+"\u{"
+"\u{x}"
+"\u{ }"
+"\u{ abc"
 
 "This is unterminated string
