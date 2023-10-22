@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Wall -Wextra -std=c99
+CFLAGS= -Wall -Wextra -std=c99 -g
 SRCS=$(wildcard *.c)
 OBJS=$(patsubst %.c, %.o, $(SRCS))
 BIN=compiler.out

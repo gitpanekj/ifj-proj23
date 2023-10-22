@@ -31,19 +31,60 @@ typedef struct {
 } LiteralVector;
 
 
+/**
+ * @brief Initialize literal vector
+ *  Set capacity t oINIT_CAPACITY, confirmed_size and forming_size to 0.
+ *  Returns pointer to the allocated array on succes, otherwise NULL.
+ * 
+ * @param vec pointer to literal vector structure
+ * @return void*
+ */
 void* LV_init(LiteralVector*);
 
+/**
+ * @brief Free memory resources of literal array.
+ * 
+ * @param vec 
+ */
 void LV_free(LiteralVector*);
 
+
+/**
+ * @brief Add character at the end of literal vector.
+ * 
+ * Double capacity of literal vector if forming_size reaches capacity.
+ * Return pointer to last added element of vector array on succes.
+ * Return NULL if reallocation fails.
+ * 
+ * @param vec pointer to literal vector
+ * @param c element to append
+ * @return void* 
+ */
 void* LV_add(LiteralVector*, char);
 
-char* LV_submit(LiteralVector*);
 
+/**
+ * @brief Discard all characters at the end of array which are not submited.
+ * 
+ * @param vec pointer to literal vector
+ */
+char* LV_submit(LiteralVector*, size_t*);
+
+
+/**
+ * @brief Submit all newly added characters at the end of literal vector.
+ * 
+ * Add '\0' at the end of forming literal, update confirmed_size and return
+ * pointer to the start of submited subarray of character - literal.
+ * Return NULL if no space is left to store literal.
+ * 
+ * @param vec pointer to literal vector
+ * @return char* 
+ */
 void LV_restore(LiteralVector*);
 
 
-
-
-
-
 #endif
+
+
+/*** End of file ***/

@@ -79,6 +79,7 @@ TEST_F(LiteralVectorTest, AddingElements){
 TEST_F(LiteralVectorTest, Submit){
     const char* literal1 = "12.25";
     const char* literal2 = "Hello World!";
+    size_t lexeme_len = 0;
 
 
     for (int i=0; i<5;i++){
@@ -86,14 +87,15 @@ TEST_F(LiteralVectorTest, Submit){
     }
 
 
-    char* literal_start = LV_submit(&literals);
+    char* literal_start = LV_submit(&literals, &lexeme_len);
 
-    EXPECT_EQ(literals.confirmed_size, 6);
-    EXPECT_EQ(literals.forming_size, 6);
+    EXPECT_EQ(literals.confirmed_size, 5);
+    EXPECT_EQ(literals.forming_size, 5);
     EXPECT_EQ(literals.capacity, 8);
+    EXPECT_EQ(lexeme_len, 5);
 
 
-    EXPECT_EQ(strcmp(literal1, literal_start), 0);
+    EXPECT_EQ(memcmp(literal1, literal_start, 5), 0);
 
 
 
@@ -101,18 +103,20 @@ TEST_F(LiteralVectorTest, Submit){
         LV_add(&literals, literal2[i]);
     }
 
-    EXPECT_EQ(literals.confirmed_size, 6);
-    EXPECT_EQ(literals.forming_size, 18);
-    EXPECT_EQ(literals.capacity, 32);
-
-    literal_start = LV_submit(&literals);
-
-    EXPECT_EQ(literals.confirmed_size, 19);
-    EXPECT_EQ(literals.forming_size, 19);
+    EXPECT_EQ(literals.confirmed_size, 5);
+    EXPECT_EQ(literals.forming_size, 17);
     EXPECT_EQ(literals.capacity, 32);
 
 
-    EXPECT_EQ(strcmp(literal2, literal_start), 0);
+    literal_start = LV_submit(&literals, &lexeme_len);
+
+    EXPECT_EQ(literals.confirmed_size, 17);
+    EXPECT_EQ(literals.forming_size, 17);
+    EXPECT_EQ(literals.capacity, 32);
+    EXPECT_EQ(lexeme_len, 12);
+
+
+    EXPECT_EQ(memcmp(literal2, literal_start, 12), 0);
 }
 
 
@@ -126,7 +130,7 @@ TEST_F(LiteralVectorTest, Restore){
         LV_add(&literals, literal1[i]);
     }
 
-    literal_start = LV_submit(&literals);
+    literal_start = LV_submit(&literals, &literal_len);
 
 
     for (int i=0; i<12;i++){
@@ -135,8 +139,8 @@ TEST_F(LiteralVectorTest, Restore){
 
 
     LV_restore(&literals);
-    EXPECT_EQ(literals.confirmed_size, 6);
-    EXPECT_EQ(literals.forming_size, 6);
+    EXPECT_EQ(literals.confirmed_size, 5);
+    EXPECT_EQ(literals.forming_size, 5);
     EXPECT_EQ(literals.capacity, 32);
 
 

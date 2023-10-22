@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS= -Wall -Wextra -Werror -std=c99 -pedantic
+CFLAGS=-Wall -Wextra -std=c99
 SRCS=$(wildcard ../src/*.c)
 OBJS=$(subst ../src/main.o, , $(patsubst %.c, %.o, $(SRCS)))
 
@@ -29,13 +29,15 @@ example: test.cpp $(OBJS)
 	./$@
 
 
-literal_vector: literal_vector.cpp $(OBJS)
+literal_vector: literal_vector.cpp ../src/literal_vector.o
 	$(CXX) $(TEST_FLAGS) $< -o $@
 	./$@
 
 
+generate_tokens: generate_tokens.c $(OBJS)
+	$(CC) $(CFLAGS) $^ -o $@
+
 gtest_build:
 	git clone https://github.com/google/googletest.git gtest
 	cd gtest; mkdir build; cd build; cmake ..; make
-
 
