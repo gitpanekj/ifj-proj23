@@ -712,7 +712,7 @@ TokenType scan_operator(Scanner* s, TokenType expected_token_type){
     switch (expected_token_type){
 
         // single character tokens
-        case TOKEN_PLUS...TOKEN_UNDERSCORE:
+        case TOKEN_PLUS...TOKEN_SEMICOLON:
             advance(s); // consume character
             return expected_token_type;
 
