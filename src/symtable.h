@@ -1,10 +1,15 @@
 #ifndef SYMTABLE_H
 #define SYMTABLE_H
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include <string.h>
+#include <stdlib.h> //malloc
+#include <stdbool.h> //bool
+#include <string.h> //strncpy, strcmp
 
+
+/**
+ * @brief Enum for storing the type of symbol
+ * 
+ */
 enum SYM_TYPE{
     NOT_FOUND,
     FUNCTION,
@@ -13,18 +18,36 @@ enum SYM_TYPE{
     STRING
 };
 
+/**
+ * @brief structure for storing data about a symbol
+ * 
+ * this struct is storing:
+ * pointer to string of characters that store name of symbol
+ * lenght of the string without the '\0
+ * type of symbol
+ * 
+ */
 typedef struct{
-    char* name;
-    size_t lenght; //lenght without '\0'
-    enum SYM_TYPE type;
+    char* name; //< name of the symbol
+    size_t lenght; //< lenght of the name
+    enum SYM_TYPE type;//< type of the symbol
 } symtData;
 
+/**
+ * @brief tree node for storing data about symbol
+ * this struck is storing:
+ * 
+ * data about the symbol
+ * pointers to left and right subtree
+ * height of the node in the tree
+ * 
+ */
 typedef struct symtTreeElement{
-    symtData data;
+    symtData data; //< data about thr symbol
 
     //struct symtTreeElement* parentElement; //null means element is root
-    struct symtTreeElement* leftElement;
-    struct symtTreeElement* rightElement;
+    struct symtTreeElement* leftElement; //< pointer to left subtree
+    struct symtTreeElement* rightElement; //< pointer to right subtree
 
     size_t height;
 
@@ -32,10 +55,19 @@ typedef struct symtTreeElement{
 
 //typedef struct symtTreeElementStruct* symtTreeElementPtr;
 
+/**
+ * @brief type for representing the tree as table of symbols and for storing the tables name
+ * 
+ * this type stores:
+ * pointer to a AVL tree of Elements containing data about symbols
+ * pointer to string of characters representing the name of table
+ * leght of the string without the '\0'  
+ * 
+ */
 typedef struct{
-    symtTreeElementPtr root;
-    char* name;
-    size_t nameLenght;
+    symtTreeElementPtr root;//< poiter to root of tree that stores data about the symbols
+    char* name; //< name of the table
+    size_t nameLenght; //<lenght of the name of table of sybols
 } symtable;
 
 
@@ -45,17 +77,13 @@ void symtableDispose(symtable* table);
 
 void* symtableInsert(symtable* table, char* name, size_t lenght,enum SYM_TYPE type, bool *isUnique);
 
-bool symtableDelete(symtable* table, char* symbol);
+bool symtableDelete(symtable* table, char* symbol, bool* allocErrFlag);
 
 char* symtableName(symtable* table);
 
-symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, char* key);
-
 void symtableGetType(symtable* table, char* symbol, enum SYM_TYPE* type);
 
-//bool symtTreeIsBalanced(symtTreeElementPtr ptr);
-
-//void symtTreeRebalance(symtTreeElementPtr ptr);
+symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, char* key);
 
 symtTreeElementPtr symtTreeRotateLeft(symtTreeElementPtr root);
 
@@ -63,16 +91,16 @@ symtTreeElementPtr symtTreeRotateRight(symtTreeElementPtr root);
 
 void symtTreeDestroy(symtTreeElementPtr root);
 
-//size_t symtTreeHeightUpdate(symtTreeElementPtr ptr);
-
 symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr newElementPtr, bool* isUnique);
+
+symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, bool* found, bool* allocErrFlag);
 
 size_t symtTreeElementHeight(symtTreeElementPtr Element);
 
-symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root);
-
 symtTreeElementPtr symtTreeFindMin(symtTreeElementPtr root);
 
-symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, bool* found);
+symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root);
+
+void symtTreePreorderPrintHeight(symtTreeElementPtr root);
 
 #endif
