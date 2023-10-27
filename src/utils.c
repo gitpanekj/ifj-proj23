@@ -54,18 +54,16 @@ TokenType is_kw(LiteralVector *vec){
     switch (len){
         case 2:
             if (memcmp(literal, "if", len)==0) return TOKEN_IF;
-            if (memcmp(literal, "of", len)==0) return TOKEN_OF;
-            if (memcmp(literal, "by", len)==0) return TOKEN_BY;
             return TOKEN_IDENTIFIER;
         case 3:
             if (memcmp(literal, "let", len)==0) return TOKEN_LET;
             if (memcmp(literal, "var", len)==0) return TOKEN_VAR;
             if (memcmp(literal, "Int", len)==0) return TOKEN_INTEGER_T;
+            if (memcmp(literal, "nil", len)==0) return TOKEN_NIL;
             return TOKEN_IDENTIFIER;
         case 4:
             if (memcmp(literal, "else", len)==0) return TOKEN_ELSE;
             if (memcmp(literal, "func", len)==0) return TOKEN_FUNC;
-            if (memcmp(literal, "nill", len)==0) return TOKEN_NILL;
             return TOKEN_IDENTIFIER;
         case 5:
             if (memcmp(literal, "while", len)==0) return TOKEN_WHILE;

@@ -4,15 +4,13 @@ if
 else
 while
 func
-by
-of
 return
 Int
 Int?
 Double?
 String
 String?
-nill
+nil
 
 lEt
 vaR

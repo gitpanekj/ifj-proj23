@@ -59,8 +59,6 @@ typedef enum {
     TOKEN_ELSE,                    // else
     TOKEN_WHILE,                   // while
     TOKEN_FUNC,                    // func
-    TOKEN_BY,                      // by
-    TOKEN_OF,                      // of
     TOKEN_RETURN,                  // return
     TOKEN_IDENTIFIER,              // ([a-zA-Z][a-zA-Z0-9_]*)|(_[a-zA-Z0-9_]+)
     TOKEN_INTEGER_T,               // Int
@@ -75,11 +73,10 @@ typedef enum {
     TOKEN_INTEGER,                 // [0-9]+
     TOKEN_DOUBLE,                  // [0-9]+(.[0-9]+)?[eE]([+-])?[0-9]+
     TOKEN_STRING,                  // 
-    TOKEN_NILL,                    // nill
+    TOKEN_NIL,                    // nil
 
     // EOF
     TOKEN_EOF,
-    TOKEN_EOL,
 
     // Non token characters
     WHITESPACE,
@@ -137,8 +134,7 @@ static const TokenType CharacterEncodingTable[256] = {
 
     [(unsigned char) ':'] = TOKEN_COLON,                  
     [(unsigned char) ','] = TOKEN_COMMA,                 
-    [(unsigned char) '_'] = TOKEN_UNDERSCORE,    
-    [(unsigned char) ';'] = TOKEN_SEMICOLON,       
+    [(unsigned char) '_'] = TOKEN_UNDERSCORE,         
 
     // Single or two character lexemes
     [(unsigned char) '!'] = TOKEN_EXCLAMATION_MARK,     
@@ -176,7 +172,6 @@ static const char TokenTypeToString[][27] = {
     [TOKEN_COLON]="TOKEN_COLON",                   // :
     [TOKEN_COMMA]="TOKEN_COMMA",                   // ,
     [TOKEN_UNDERSCORE]="TOKEN_UNDERSCORE",              // _
-    [TOKEN_SEMICOLON]="TOKEN_SEMICOLON",
 
     // Single or two character lexemes
     [TOKEN_DOUBLE_QUESTION_MARK]="TOKEN_DOUBLE_QUESTION_MARK",    // ??
@@ -208,8 +203,6 @@ static const char TokenTypeToString[][27] = {
     [TOKEN_ELSE]="TOKEN_ELSE",                    // else
     [TOKEN_WHILE]="TOKEN_WHILE",                   // while
     [TOKEN_FUNC]="TOKEN_FUNC",                    // func
-    [TOKEN_BY]="TOKEN_BY",                      // by
-    [TOKEN_OF]="TOKEN_OF",                      // of
     [TOKEN_RETURN]="TOKEN_RETURN",                  // return
     [TOKEN_INTEGER_T]="TOKEN_INTERGER_T",              // Int
     [TOKEN_DOUBLE_T]="TOKEN_DOUBLE_T",                // Double
@@ -226,10 +219,9 @@ static const char TokenTypeToString[][27] = {
     [TOKEN_INTEGER]="TOKEN_INTEGER",                 // [0-9]+
     [TOKEN_DOUBLE]="TOKEN_DOUBLE",                  // [0-9]+(.[0-9]+)?[eE]([+-])?[0-9]+
     [TOKEN_STRING]="TOKEN_STRING",                  // 
-    [TOKEN_NILL]="TOKEN_NILL",                    // nill
+    [TOKEN_NIL]="TOKEN_NIL",                    // nill
 
     [TOKEN_EOF]="TOKEN_EOF",
-    [TOKEN_EOL]="TOKEN_EOL",
     [TOKEN_LA_ERROR]="TOKEN_LA_ERROR",
     [TOKEN_MEMMORY_ERROR]="TOKEN_MEM_ERROR",
 

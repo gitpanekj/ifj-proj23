@@ -842,9 +842,7 @@ Token scan_token(Scanner *s){
     // Automata part - new line character
     if (peek(s) == '\n'){
         advance(s); // consume \n
-        InitToken(&t, TOKEN_EOL, NULL, 0);
         s->line++;
-        return t;
     }
 
 
