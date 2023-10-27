@@ -93,7 +93,7 @@ typedef struct {
     TokenType type;
     char* start_ptr;
     size_t literal_len;
-    bool follow_separator;
+    bool follows_separator;
 } Token;
 
 
