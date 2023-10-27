@@ -12,10 +12,11 @@
 #include "tokens.h"
 
 
-void InitToken(Token *t, TokenType type, char* literal, size_t literal_len){
+void InitToken(Token *t, TokenType type, char* literal, size_t literal_len, bool follows_separator){
     t->type = type;
     t->start_ptr = literal;
     t->literal_len = literal_len;
+    t->follows_separator = follows_separator;
 }
 
 void print_token(Token t){

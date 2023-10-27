@@ -24,13 +24,16 @@
  * which allows forward lookups.
  * Field line indicates current line number in input file.
  * Field literals contains a pointer to the literal vector
- * where literals are stored. 
+ * where literals are stored.
+ * Field separator flag determines whether previously produced token
+ * was separator - '{'.
  * 
  */
 typedef struct {
     char char_buffer[3];      //< Scanner buffer
     int line;                 //< Current line in input file
     LiteralVector *literals;  //< A pointer to the literal vector
+    bool separator_flag;      //< A separator flag
 } Scanner;
 
 

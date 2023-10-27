@@ -25,6 +25,7 @@ void scaner_init(Scanner *s, LiteralVector *literals){
     s->char_buffer[2] = fgetc(stdin);
     s->line = 1;
     s->literals = literals;
+    s->separator_flag = false;
 }
 
 
@@ -714,6 +715,9 @@ TokenType scan_operator(Scanner* s, TokenType expected_token_type){
         // single character tokens
         case TOKEN_PLUS...TOKEN_SEMICOLON:
             advance(s); // consume character
+            if (expected_token_type == TOKEN_L_BRACE){
+                s->separator_flag = true;
+            }
             return expected_token_type;
 
         // -, ->
@@ -806,19 +810,28 @@ Token scan_token(Scanner *s){
     char *literal_start;
     size_t literal_length=0;
     Token t;
+    bool follows_separator = s->separator_flag;
+    s->separator_flag = false;
 
 
-    InitToken(&t, TOKEN_DUMMY, NULL, 0);
+    InitToken(&t, TOKEN_DUMMY, NULL, 0, false);
 
     
     // TODO: nicer solution
-    while ((peek(s)==' ') || (peek(s)=='\t') || (peek(s)=='\r') ||
+    while ((peek(s)==' ') || (peek(s)=='\t') || (peek(s)=='\r')  || (peek(s)=='\n') ||
            forward_lookup(s, "//")==0 ||
            forward_lookup(s, "/*")==0
     ){
         // Automata part - Consume whitespaces
         // Consume whitespaces and does not produce any token
         consume_whitespace(s);
+
+        // Automata part - new line character
+        if (peek(s) == '\n'){
+            advance(s); // consume \n
+            follows_separator = true;
+            s->line++;
+        }
 
 
         // Automata part - Comments
@@ -832,43 +845,38 @@ Token scan_token(Scanner *s){
             if (consume_multi_line_comment(s) == false){
                 // TODO: error handling
                 error(s, "Unterminated multiline comment\n");
-                InitToken(&t, TOKEN_LA_ERROR, NULL, 0);
+                InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
                 return t;
             }
         }
     }
 
 
-    // Automata part - new line character
-    if (peek(s) == '\n'){
-        advance(s); // consume \n
-        s->line++;
-    }
 
 
     // Automata part - Identifiers and keywords
     if (forward_lookup(s, "_\\w")==0){ // Identifier starting with _
         
         // it starts with _ and is followed by alphanum character or _, therefore it must be identifier
-        if (scan_identifier(s) == false) {InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0);}
+        if (scan_identifier(s) == false) {InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
         literal_start = LV_submit(s->literals, &literal_length);
         
-        if (literal_start == NULL) {InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0);}
-        else {InitToken(&t, TOKEN_IDENTIFIER, literal_start, literal_length);}
+        if (literal_start == NULL) {InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
+        else {InitToken(&t, TOKEN_IDENTIFIER, literal_start, literal_length, follows_separator);}
 
         return t;
     }
     else if (is_alpha(peek(s))) { // Identifiers/keywords starting with letter
 
-        if (scan_identifier(s) == false) {InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0);}
+        if (scan_identifier(s) == false) {InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
         
         confirmed_token_type = is_kw(s->literals);
 
         if (confirmed_token_type == TOKEN_IDENTIFIER){
 
             literal_start = LV_submit(s->literals, &literal_length);
-            if (literal_start == NULL){ InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0);} 
-            else {InitToken(&t, TOKEN_IDENTIFIER, literal_start, literal_length);}
+            if (literal_start == NULL){ InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);} 
+            else {InitToken(&t, TOKEN_IDENTIFIER, literal_start, literal_length, follows_separator);}
 
         }
         else // is keyword
@@ -886,7 +894,7 @@ Token scan_token(Scanner *s){
                 confirmed_token_type++;
             }
 
-            InitToken(&t, confirmed_token_type, NULL, 0);
+            InitToken(&t, confirmed_token_type, NULL, 0, follows_separator);
         }
 
         return t;
@@ -903,7 +911,7 @@ Token scan_token(Scanner *s){
 
         confirmed_token_type = scan_operator(s, expected_token_type);
 
-        InitToken(&t, confirmed_token_type, NULL, 0);
+        InitToken(&t, confirmed_token_type, NULL, 0, follows_separator);
 
         return t;
     }
@@ -914,16 +922,16 @@ Token scan_token(Scanner *s){
         confirmed_token_type = scan_number_literal(s);
 
         if (confirmed_token_type == TOKEN_MEMMORY_ERROR){
-            InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0);
+            InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
         }
         else if (confirmed_token_type == TOKEN_LA_ERROR){
             LV_restore(s->literals);
-            InitToken(&t, TOKEN_LA_ERROR, NULL, 0);
+            InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
         }
         else {
             literal_start = LV_submit(s->literals, &literal_length);
-            if (literal_start == NULL){InitToken(&t, TOKEN_MEMMORY_ERROR, NULL,0 );}
-            else {InitToken(&t, confirmed_token_type, literal_start, literal_length);}
+            if (literal_start == NULL){InitToken(&t, TOKEN_MEMMORY_ERROR, NULL,0,false);}
+            else {InitToken(&t, confirmed_token_type, literal_start, literal_length, follows_separator);}
         }
 
         return t;
@@ -935,16 +943,16 @@ Token scan_token(Scanner *s){
         case MATCH: // """ - start of multiline strings
             confirmed_token_type =  scan_multi_line_string(s);
             if (confirmed_token_type == TOKEN_MEMMORY_ERROR){
-                InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0);
+                InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
             }
             else if (confirmed_token_type == TOKEN_LA_ERROR){
-                InitToken(&t, TOKEN_LA_ERROR, NULL, 0);
+                InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
                 LV_restore(s->literals);
             }
             else {
                 literal_start = LV_submit(s->literals, &literal_length);
-                if (literal_start == NULL){InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0);}
-                else {InitToken(&t, confirmed_token_type, literal_start, literal_length);}
+                if (literal_start == NULL){InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
+                else {InitToken(&t, confirmed_token_type, literal_start, literal_length, follows_separator);}
             }
 
 
@@ -957,15 +965,15 @@ Token scan_token(Scanner *s){
             confirmed_token_type = scan_single_line_string(s);
 
             if (confirmed_token_type == TOKEN_MEMMORY_ERROR){
-                InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0);
+                InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
             }
             else if (confirmed_token_type == TOKEN_LA_ERROR){
-                InitToken(&t, TOKEN_LA_ERROR, NULL, 0);
+                InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
             }
             else {
                 literal_start = LV_submit(s->literals, &literal_length);
-                if (literal_start == NULL) InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0);
-                else InitToken(&t, TOKEN_STRING, literal_start, literal_length);
+                if (literal_start == NULL) InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
+                else InitToken(&t, TOKEN_STRING, literal_start, literal_length, follows_separator);
             }
 
             return t;
@@ -973,20 +981,20 @@ Token scan_token(Scanner *s){
         case MISS_3: // Empty string
             advance(s); // consume "
             advance(s); // consume "
-            InitToken(&t, TOKEN_STRING, NULL, 0);
+            InitToken(&t, TOKEN_STRING, NULL, 0, follows_separator);
             return t;
     }
 
 
     // If scanner reaches EOF, return token with type of TOKEN_EOF
     if (is_at_end(s)) {
-        InitToken(&t, TOKEN_EOF, NULL, 0);
+        InitToken(&t, TOKEN_EOF, NULL, 0, follows_separator);
         return t;
     }
 
 
     // If no transition from initial automata state was possible, return lexical error - unexpected token
-    InitToken(&t, TOKEN_LA_ERROR, NULL, 0);
+    InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
 
     //consume invalid token
     // TODO: error handling

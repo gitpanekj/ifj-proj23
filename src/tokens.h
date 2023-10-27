@@ -9,6 +9,7 @@
 
 #ifndef TOKENS
 #define TOKENS
+#include <stdbool.h>
 
 typedef enum {
     TOKEN_DUMMY,                   // used in OperatorTable as a dummy value
@@ -92,6 +93,7 @@ typedef struct {
     TokenType type;
     char* start_ptr;
     size_t literal_len;
+    bool follow_separator;
 } Token;
 
 
@@ -100,7 +102,7 @@ typedef struct {
  * 
  * @param t 
  */
-void InitToken(Token *t, TokenType, char*, size_t);
+void InitToken(Token *t, TokenType, char*, size_t, bool);
 
 
 /**
