@@ -1,6 +1,6 @@
 /**
  * @file symtable.h
- * @author Tibor Simlastik (you@domain.com)
+ * @author Tibor Simlastik (t.simlastik@gmail.com)
  * @brief Imlementation of table of symbols based on AVL height balanced tree
  * @version 0.1
  * @date 2023-10-10
@@ -31,12 +31,12 @@ void* symtableInit(symtable* table,char* tablename, size_t nameLenght){
     table->root = NULL;
     table->nameLenght = nameLenght;
 
-    table->name = malloc(sizeof(char) * (nameLenght+1));
+    table->name = calloc(nameLenght + 1,sizeof(char));
     if(table->name == NULL){
         return NULL;
     }
 
-    strncpy(table->name, tablename, nameLenght+1);
+    strncpy(table->name, tablename, nameLenght);
     return table->name;
 }
 
@@ -69,45 +69,36 @@ void symtableDispose(symtable* table){
  * @param name Pointer to string of name of the inseted symbol
  * @param lenght Lenght of string
  * @param type Type of inserted symbol
- * @param isUnique Pointer to boolean that will be set true if symbol with unique name was inserted and false if 
- *                 inserted symbol is already in table  
+ * 
  * 
  * @return A pointer to the allocated memory for the table's name if successful,
  *         or NULL if memory allocation for name or newElement fails.
- *         If isUnique is false and return value is NULL, iserted symbol was inside
- *         of the table
+ *         If element with same name is found it is replaced(recomend using search before)
  * 
 */
-void* symtableInsert(symtable* table, char* name, size_t lenght, enum SYM_TYPE type, bool* isUnique){
+void* symtableInsert(symtable* table, char* name, size_t lenght, enum SYM_TYPE type){
     symtTreeElementPtr comparedElementPtr = NULL;
     symtTreeElementPtr newElementPtr = malloc(sizeof(struct symtTreeElement));
-    *isUnique = true;
     int cmpOutput;
     if(newElementPtr == NULL){
         return NULL;
     }
 
     newElementPtr->height = 1;
-    //newElementPtr->parentElement = NULL;
     newElementPtr->leftElement = NULL;
     newElementPtr->rightElement = NULL;
 
-    newElementPtr->data.name = malloc(sizeof(char)*(lenght+1));
+    newElementPtr->data.name = calloc(lenght+1, sizeof(char));
     if(newElementPtr->data.name == NULL){
         free(newElementPtr);
         return NULL;
     }
 
-    strncpy(newElementPtr->data.name,name,lenght+1);
+    strncpy(newElementPtr->data.name,name,lenght);
     newElementPtr->data.lenght = lenght;
     newElementPtr->data.type = type;
     
-    table->root = symtTreeInsert(table->root,newElementPtr, isUnique);
-    if(!(*isUnique)){
-        free(newElementPtr->data.name);
-        free(newElementPtr);
-        return NULL;
-    }
+    table->root = symtTreeInsert(table->root,newElementPtr);
     return newElementPtr;
 }
 
@@ -117,16 +108,17 @@ void* symtableInsert(symtable* table, char* name, size_t lenght, enum SYM_TYPE t
  * Wrapper fuction for deletion of symbol from table 
  *
  * @param table Pointer to table in which element will be deleted
- * @param symbol Pointer to string of name of symbol that is going to be deleted
+ * @param symbol Pointer to char string of name of symbol that is going to be deleted
+ * @param lenght lenght of the string symbol
  * @param allocErrFlag Pointer to bolean that will be set true in case reallocation fails
  * 
  * @return true if element with inserted symbol was deleted, false if it wasn't found
  *         in case realocation error inside deletion happend allErrFlag will be set true
  * 
 */
-bool symtableDelete(symtable* table, char* symbol, bool* allocErrFlag){
+bool symtableDelete(symtable* table, char* symbol, size_t lenght,  bool* allocErrFlag){
     bool found = false;
-    table->root = symtTreeDelete(table->root, symbol, &found, allocErrFlag);
+    table->root = symtTreeDelete(table->root, symbol, lenght,  &found, allocErrFlag);
     return found;
 
 }
@@ -149,14 +141,15 @@ char* symtableName(symtable* table){
  * 
  * @param table Pointer to table of symbo from which name will be returned
  * @param symbol Pointer to string of name of symbol that is going to be searched
+ * @param lenght pointer to lenght of string
  * @param type Pointer to enum SYM_TYPE that is going to be set to value of found Elements type
  * 
  * @return SYM_TYPE pointed by type will be set to found value of type of inserted table
  *         in case no element with insered symbol name is found set value pointed by type to
  *         NOT_FOUND
 */
-void symtableGetType(symtable* table, char* symbol, enum SYM_TYPE* type){
-    symtTreeElementPtr foundElement = symtTreeSearch(table->root, symbol);
+void symtableGetType(symtable* table, char* symbol, size_t lenght, enum SYM_TYPE* type){
+    symtTreeElementPtr foundElement = symtTreeSearch(table->root, symbol, lenght);
     if (foundElement == NULL){
         *type = NOT_FOUND;
         return;
@@ -168,21 +161,21 @@ void symtableGetType(symtable* table, char* symbol, enum SYM_TYPE* type){
  * @brief Recursive Function for searching element with same name as inputed key
  * 
  * @param root Pointer to root of the tree that is going to be searched
- * @param symbol Pointer to string of name of symbol that is going to be searched
+ * @param key Pointer to string of name of symbol that is going to be searched
  * 
  * @return pointer to found element or NULL if element that have same name as inputed key is not in tree
 */
-symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, char* key){
+symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, char* key, size_t keylen){
     if (root == NULL){
         return NULL;
     }
     int cmpOutput;
-    cmpOutput = strcmp(key,root->data.name);
+    cmpOutput = symtTreeLiteralcmp(key,root->data.name,keylen, root->data.lenght);
     if(cmpOutput < 0){
-        return symtTreeSearch(root->leftElement, key);
+        return symtTreeSearch(root->leftElement, key, keylen);
     }
     else if(cmpOutput > 0){
-        return symtTreeSearch(root->rightElement, key);
+        return symtTreeSearch(root->rightElement, key, keylen);
     }
     else{
         return root;
@@ -204,12 +197,13 @@ symtTreeElementPtr symtTreeRotateLeft(symtTreeElementPtr root){
 
     size_t rootLeftHeight = symtTreeElementHeight(root->leftElement);
     size_t rootRightHeight = symtTreeElementHeight(root->rightElement);
-    size_t rotatedLeftHeight = symtTreeElementHeight(root->leftElement);
-    size_t rotatedRightHeight = symtTreeElementHeight(root->rightElement);
     root->height = (rootLeftHeight >= rootRightHeight? rootLeftHeight : rootRightHeight) + 1;
-    //rotatedElementPtr->height = (rotatedLeftHeight >= rotatedRightHeight? rotatedLeftHeight : rotatedRightHeight) + 1;
-    //printf("rotLupdated height %s = %ld\n", rotatedElementPtr->data.name, rotatedElementPtr->height);
-    //printf("rotLupdatedroot height %s = %ld\n", root->data.name, root->height);
+
+    size_t rotatedLeftHeight = symtTreeElementHeight(rotatedElementPtr->leftElement);
+    size_t rotatedRightHeight = symtTreeElementHeight(rotatedElementPtr->rightElement);
+    rotatedElementPtr->height = (rotatedLeftHeight >= rotatedRightHeight? rotatedLeftHeight : rotatedRightHeight) + 1;
+    printf("rotLupdated height %s = %ld\n", rotatedElementPtr->data.name, rotatedElementPtr->height);
+    printf("rotLupdatedroot height %s = %ld\n", root->data.name, root->height);
 
 
     return rotatedElementPtr;
@@ -230,12 +224,13 @@ symtTreeElementPtr symtTreeRotateRight(symtTreeElementPtr root){
 
     size_t rootLeftHeight = symtTreeElementHeight(root->leftElement);
     size_t rootRightHeight = symtTreeElementHeight(root->rightElement);
-    size_t rotatedLeftHeight = symtTreeElementHeight(root->leftElement);
-    size_t rotatedRightHeight = symtTreeElementHeight(root->rightElement);
     root->height = (rootLeftHeight >= rootRightHeight? rootLeftHeight : rootRightHeight) + 1;
-    //rotatedElementPtr->height = (rotatedLeftHeight >= rotatedRightHeight? rotatedLeftHeight : rotatedRightHeight) + 1;
-    //printf("rotRupdated height %s = %ld\n", rotatedElementPtr->data.name, rotatedElementPtr->height);
-    //printf("rotRupdated root height %s = %ld\n", root->data.name, root->height);
+
+    size_t rotatedLeftHeight = symtTreeElementHeight(rotatedElementPtr->leftElement);
+    size_t rotatedRightHeight = symtTreeElementHeight(rotatedElementPtr->rightElement);
+    rotatedElementPtr->height = (rotatedLeftHeight >= rotatedRightHeight? rotatedLeftHeight : rotatedRightHeight) + 1;
+    printf("rotRupdated height %s = %ld\n", rotatedElementPtr->data.name, rotatedElementPtr->height);
+    printf("rotRupdated root height %s = %ld\n", root->data.name, root->height);
 
     return rotatedElementPtr;
 }
@@ -260,12 +255,11 @@ void symtTreeDestroy(symtTreeElementPtr root){
  * 
  * @param root Pointer to root of the subtreetree where new element will be inserted
  * @param newElementPtr Pointer to new Element that is going to be inserted if root of subtree is NULL
- * @param isUnique Pointer to bolean that is going to be set false if element that has same name as NewElementPtr
  * 
  * @return newElementPtr if tree inserted root was NULL,in case element that has same name as NewElementPtr
- *         is found set bolean pointed by isUnique to false and also return root, else return rebalanced root
+ *         is found it is replaced by ELement
 */
-symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr newElementPtr, bool* isUnique){
+symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr newElementPtr){
     size_t leftHeight;
     size_t rightHeight;
     int balance;
@@ -277,14 +271,17 @@ symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr ne
     int cmpOutput;
     cmpOutput = strcmp(newElementPtr->data.name,root->data.name);
     if(cmpOutput < 0){
-        root->leftElement = symtTreeInsert(root->leftElement,newElementPtr, isUnique);
+        root->leftElement = symtTreeInsert(root->leftElement,newElementPtr);
     }
     else if(cmpOutput > 0){
-        root->rightElement = symtTreeInsert(root->rightElement,newElementPtr,isUnique);
+        root->rightElement = symtTreeInsert(root->rightElement,newElementPtr);
     }
     else{
-        *isUnique = false;
-        return root;
+        newElementPtr->leftElement = root->leftElement;
+        newElementPtr->rightElement = root->rightElement;
+        free(root->data.name);
+        free(root);
+        return newElementPtr;
     }
 
    return symtTreeRebalance (root);
@@ -304,27 +301,28 @@ symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr ne
  * @param root Pointer to root of the subtreetree where new element will be deleted
  * @param key Pointer to string that is going to be compared with elements name  
  * @param found Pointer to bolean that will be set true if element is found in table
+ * @param keylen lenght of the key string
  * @param allocErrFlag Pointer to bolean that will be set true in case reallocation fails
  * 
  * @return newElementPtr if tree inserted root was NULL,in case element that has same name as NewElementPtr
  *         is found set bolean pointed by isUnique to false and also return root, else root
 */
-symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, bool* found, bool* allocErrFlag){
+symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, size_t keylen, bool* found, bool* allocErrFlag){
     symtTreeElementPtr onlyChildPtr;
     if (root == NULL){
         *found = false;
         return NULL;
     }
     int cmpOutput;
-    cmpOutput = strcmp(key,root->data.name);
+    cmpOutput = symtTreeLiteralcmp(key,root->data.name, keylen, root->data.lenght);
         
     if(cmpOutput < 0){
-        root->leftElement = symtTreeDelete(root->leftElement, key, found, allocErrFlag);
+        root->leftElement = symtTreeDelete(root->leftElement, key, keylen, found, allocErrFlag);
         printf("delup");
         return symtTreeRebalance (root);
     }
     else if(cmpOutput > 0){
-        root->rightElement = symtTreeDelete(root->rightElement, key, found, allocErrFlag);
+        root->rightElement = symtTreeDelete(root->rightElement, key, keylen, found, allocErrFlag);
         printf("delup");
         return symtTreeRebalance (root);
     }
@@ -346,7 +344,7 @@ symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, bool* foun
             root->data.lenght = minElementPtr->data.lenght;
             strncpy(root->data.name,minElementPtr->data.name, minElementPtr->data.lenght + 1);
             root->data.type = minElementPtr->data.type;
-            root->rightElement = symtTreeDelete(root->rightElement, minElementPtr->data.name, found, allocErrFlag);
+            root->rightElement = symtTreeDelete(root->rightElement, minElementPtr->data.name, minElementPtr->data.lenght, found, allocErrFlag);
             printf("delup");
             return symtTreeRebalance (root);
         }
@@ -394,10 +392,8 @@ symtTreeElementPtr symtTreeFindMin(symtTreeElementPtr root){
  * @return symtTreeElementPtr root of inserted subtree
  */
 symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root){
-    size_t leftHeight = symtTreeElementHeight(root->leftElement);
-    size_t rightHeight = symtTreeElementHeight(root->rightElement);
 
-    int balance = leftHeight - rightHeight;
+    int balance = symtTreeElementHeight(root->leftElement) - symtTreeElementHeight(root->rightElement);
     if(balance > 1){
         if(symtTreeElementHeight(root->leftElement->leftElement) > symtTreeElementHeight(root->leftElement->rightElement)){
             root = symtTreeRotateRight(root);
@@ -416,16 +412,18 @@ symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root){
             return root;
         }
         else{
-            leftHeight = symtTreeElementHeight(root->leftElement);
-            rightHeight = symtTreeElementHeight(root->rightElement);
+
             root->rightElement = symtTreeRotateRight(root->rightElement);
             root = symtTreeRotateLeft(root);
             return root;
         }
     }
     else{
+
+        size_t leftHeight = symtTreeElementHeight(root->leftElement);
+        size_t rightHeight = symtTreeElementHeight(root->rightElement);
         root->height = (leftHeight >= rightHeight? leftHeight : rightHeight) + 1;
-        //printf("elseupdated height %s = %ld\n", root->data.name, root->height);
+        printf("elseupdated height %s = %ld\n", root->data.name, root->height);
         return root;
     }
 
@@ -444,4 +442,21 @@ void symtTreePreorderPrintHeight(symtTreeElementPtr root){
     symtTreePreorderPrintHeight(root->leftElement);
     symtTreePreorderPrintHeight(root->rightElement);
 } 
+
+/**
+ * @brief Helper function for comparing literal (stored as string without '\0' with symbol name with '\0')
+ * 
+ * @param key pointer to string chars representing the key
+ * @param compared pointer to string of chars that is used to compare key with
+ * @param keylen lenght of key
+ * @param cmplen lenght of compared
+ * @return integer value < 0 if literal is lexicographicali smaller, >0 if it's greater, 0 if its equal
+ */
+int symtTreeLiteralcmp(char* key, char* compared, size_t keylen, size_t cmplen){
+    int cmpOut = strncmp(key, compared, keylen);
+    if(cmpOut == 0 && cmplen > keylen){
+        return -1;
+    }
+    return cmpOut;
+}
 

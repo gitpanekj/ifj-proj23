@@ -3,7 +3,7 @@
 
 #include <stdlib.h> //malloc
 #include <stdbool.h> //bool
-#include <string.h> //strncpy, strcmp
+#include <string.h> //strncpy, strcmp, strncmp
 
 
 /**
@@ -75,15 +75,15 @@ void* symtableInit(symtable* table, char* tablename, size_t nameLenght);
 
 void symtableDispose(symtable* table);
 
-void* symtableInsert(symtable* table, char* name, size_t lenght,enum SYM_TYPE type, bool *isUnique);
+void* symtableInsert(symtable* table, char* name, size_t lenght, enum SYM_TYPE type);
 
-bool symtableDelete(symtable* table, char* symbol, bool* allocErrFlag);
+bool symtableDelete(symtable* table, char* symbol, size_t lenght, bool* allocErrFlag);
 
 char* symtableName(symtable* table);
 
-void symtableGetType(symtable* table, char* symbol, enum SYM_TYPE* type);
+void symtableGetType(symtable* table, char* symbol, size_t lenght, enum SYM_TYPE* type);
 
-symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, char* key);
+symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, char* key, size_t keylen);
 
 symtTreeElementPtr symtTreeRotateLeft(symtTreeElementPtr root);
 
@@ -91,9 +91,9 @@ symtTreeElementPtr symtTreeRotateRight(symtTreeElementPtr root);
 
 void symtTreeDestroy(symtTreeElementPtr root);
 
-symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr newElementPtr, bool* isUnique);
+symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr newElementPtr);
 
-symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, bool* found, bool* allocErrFlag);
+symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, size_t keylen, bool* found, bool* allocErrFlag);
 
 size_t symtTreeElementHeight(symtTreeElementPtr Element);
 
@@ -102,5 +102,7 @@ symtTreeElementPtr symtTreeFindMin(symtTreeElementPtr root);
 symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root);
 
 void symtTreePreorderPrintHeight(symtTreeElementPtr root);
+
+int symtTreeLiteralcmp(char* key, char* compared, size_t keylen, size_t cmplen);
 
 #endif
