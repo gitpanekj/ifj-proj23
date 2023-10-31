@@ -22,9 +22,9 @@ enum SYM_TYPE{
  * @brief structure for storing data about a symbol
  * 
  * this struct is storing:
- * pointer to string of characters that store name of symbol
- * lenght of the string without the '\0
- * type of symbol
+ * pointer to string of characters that store name of symbol,
+ * lenght of the string without the '\0,
+ * type of symbol,
  * 
  */
 typedef struct{
@@ -37,9 +37,9 @@ typedef struct{
  * @brief tree node for storing data about symbol
  * this struck is storing:
  * 
- * data about the symbol
- * pointers to left and right subtree
- * height of the node in the tree
+ * data about the symbol,
+ * pointers to left and right subtree,
+ * height of the node in the tree,
  * 
  */
 typedef struct symtTreeElement{
@@ -100,8 +100,6 @@ size_t symtTreeElementHeight(symtTreeElementPtr Element);
 symtTreeElementPtr symtTreeFindMin(symtTreeElementPtr root);
 
 symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root);
-
-void symtTreePreorderPrintHeight(symtTreeElementPtr root);
 
 int symtTreeLiteralcmp(char* key, char* compared, size_t keylen, size_t cmplen);
 

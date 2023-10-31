@@ -229,8 +229,6 @@ symtTreeElementPtr symtTreeRotateRight(symtTreeElementPtr root){
     size_t rotatedLeftHeight = symtTreeElementHeight(rotatedElementPtr->leftElement);
     size_t rotatedRightHeight = symtTreeElementHeight(rotatedElementPtr->rightElement);
     rotatedElementPtr->height = (rotatedLeftHeight >= rotatedRightHeight? rotatedLeftHeight : rotatedRightHeight) + 1;
-    printf("rotRupdated height %s = %ld\n", rotatedElementPtr->data.name, rotatedElementPtr->height);
-    printf("rotRupdated root height %s = %ld\n", root->data.name, root->height);
 
     return rotatedElementPtr;
 }
@@ -423,25 +421,10 @@ symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root){
         size_t leftHeight = symtTreeElementHeight(root->leftElement);
         size_t rightHeight = symtTreeElementHeight(root->rightElement);
         root->height = (leftHeight >= rightHeight? leftHeight : rightHeight) + 1;
-        printf("elseupdated height %s = %ld\n", root->data.name, root->height);
         return root;
     }
 
 }
-
-/**
- * @brief function for printing all elements of inserted subtree traversed Preorder
- * 
- * @param root Pointer to root of subtree that is going to be traversed
- */
-void symtTreePreorderPrintHeight(symtTreeElementPtr root){
-    if(root == NULL){
-        return;
-    }
-    printf("symbol:%s; height:%ld\n", root->data.name,root->height);
-    symtTreePreorderPrintHeight(root->leftElement);
-    symtTreePreorderPrintHeight(root->rightElement);
-} 
 
 /**
  * @brief Helper function for comparing literal (stored as string without '\0' with symbol name with '\0')
