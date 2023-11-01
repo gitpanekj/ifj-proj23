@@ -713,7 +713,7 @@ TokenType scan_operator(Scanner* s, TokenType expected_token_type){
     switch (expected_token_type){
 
         // single character tokens
-        case TOKEN_PLUS...TOKEN_SEMICOLON:
+        case TOKEN_PLUS...TOKEN_UNDERSCORE:
             advance(s); // consume character
             if (expected_token_type == TOKEN_L_BRACE){
                 s->separator_flag = true;
@@ -744,34 +744,7 @@ TokenType scan_operator(Scanner* s, TokenType expected_token_type){
             }
 
             return expected_token_type;
-        
-
-        // Two character lexeme &&
-        case TOKEN_AND:
-            // consume && if possible
-             advance(s); // consume first &
-            if (peek(s) == '&'){
-                advance(s); // consume &
-                return TOKEN_AND;
-            } // return error token otherwise and set error message
-
-            // TODO: error handling
-            error(s, "Invalid token operator &\n");
-            return TOKEN_LA_ERROR;
-
-        // Two character lexeme ||
-        case TOKEN_OR:
-            // consume || if possible
-             advance(s); // consume first |
-            if (peek(s) == '|'){
-                advance(s); // consume |
-                return TOKEN_OR;
-            } // return error token otherwise and set error message
-
-            // TODO: error handling
-            error(s, "Invalid token operator |\n");
-            return TOKEN_LA_ERROR;
-        
+                
         // Two character ??
         case TOKEN_DOUBLE_QUESTION_MARK:
             advance(s); // consume first '?'
