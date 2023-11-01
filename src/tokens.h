@@ -18,7 +18,6 @@ typedef enum {
     TOKEN_PLUS,                    // +
     TOKEN_STAR,                    // *
     TOKEN_SLASH,                   // /
-    TOKEN_MODULO,                  // %
 
     TOKEN_L_BRACE,                 // {
     TOKEN_R_BRACE,                 // }
@@ -28,7 +27,6 @@ typedef enum {
     TOKEN_COLON,                   // :
     TOKEN_COMMA,                   // ,
     TOKEN_UNDERSCORE,              // _
-    TOKEN_SEMICOLON,               // ;
 
     // Single or two character lexemes
     TOKEN_MINUS,                   // -
@@ -47,8 +45,6 @@ typedef enum {
     TOKEN_NOT_EQUAL,               // !=
 
     // Two character lexemes
-    TOKEN_AND,                     // &&
-    TOKEN_OR,                      // ||
     TOKEN_DOUBLE_QUESTION_MARK,    // ??
 
 
@@ -74,13 +70,10 @@ typedef enum {
     TOKEN_INTEGER,                 // [0-9]+
     TOKEN_DOUBLE,                  // [0-9]+(.[0-9]+)?[eE]([+-])?[0-9]+
     TOKEN_STRING,                  // 
-    TOKEN_NIL,                    // nil
+    TOKEN_NIL,                     // nil
 
     // EOF
     TOKEN_EOF,
-
-    // Non token characters
-    WHITESPACE,
 
 
     // Special token types for error propagation
@@ -126,8 +119,7 @@ void print_token(Token);
 static const TokenType CharacterEncodingTable[256] = {
     [(unsigned char) '+'] = TOKEN_PLUS,
     [(unsigned char) '*'] = TOKEN_STAR,                  
-    [(unsigned char) '/'] = TOKEN_SLASH,                  
-    [(unsigned char) '%'] = TOKEN_MODULO,                
+    [(unsigned char) '/'] = TOKEN_SLASH,                                
 
     [(unsigned char) '{'] = TOKEN_L_BRACE,               
     [(unsigned char) '}'] = TOKEN_R_BRACE,               
@@ -145,11 +137,6 @@ static const TokenType CharacterEncodingTable[256] = {
     [(unsigned char) '<'] = TOKEN_LESS,                
     [(unsigned char) '>'] = TOKEN_GREATER,           
     [(unsigned char) '='] = TOKEN_EQUAL,
-
-    // two character lexems
-    [(unsigned char) '&'] = TOKEN_AND,
-    [(unsigned char) '|'] = TOKEN_OR,
-
 };
 
 
@@ -164,7 +151,6 @@ static const char TokenTypeToString[][27] = {
     [TOKEN_PLUS]="TOKEN_PLUS",                    // +
     [TOKEN_STAR]="TOKEN_STAR",                    // *
     [TOKEN_SLASH]="TOKEN_SLASH",                   // /
-    [TOKEN_MODULO]="TOKEN_MODULO",                  // %
 
     [TOKEN_L_BRACE]="TOKEN_L_BRACE",                 // {
     [TOKEN_R_BRACE]="TOKEN_R_BRACE",                 // }
@@ -191,11 +177,6 @@ static const char TokenTypeToString[][27] = {
     
     [TOKEN_EXCLAMATION_MARK]="TOKEN_EXCLAMATION_MARK",        // !
     [TOKEN_NOT_EQUAL]="TOKEN_NOT_EQUAL",               // !=
-
-    // Two character lexemes
-    [TOKEN_AND]="TOKEN_AND",                     // &&
-    [TOKEN_OR]="TOKEN_OR",                      // ||
-
 
 
     // Keywords
