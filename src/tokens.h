@@ -10,6 +10,7 @@
 #ifndef TOKENS
 #define TOKENS
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef enum {
     TOKEN_DUMMY,                   // used in OperatorTable as a dummy value
