@@ -1,5 +1,5 @@
 /**
- * @file token_vector.c
+ * @file lexical_analyzer.c
  * @author Jan Pánek (xpanek11@fit.vutbr.cz)
  * @brief
  * 
@@ -824,6 +824,12 @@ Token scan_token(Scanner *s){
         }
     }
 
+    // If scanner reaches EOF, return token with type of TOKEN_EOF
+    if (is_at_end(s)) {
+        InitToken(&t, TOKEN_EOF, NULL, 0, follows_separator);
+        return t;
+    }
+
 
 
 
@@ -956,13 +962,6 @@ Token scan_token(Scanner *s){
             advance(s); // consume "
             InitToken(&t, TOKEN_STRING, NULL, 0, follows_separator);
             return t;
-    }
-
-
-    // If scanner reaches EOF, return token with type of TOKEN_EOF
-    if (is_at_end(s)) {
-        InitToken(&t, TOKEN_EOF, NULL, 0, follows_separator);
-        return t;
     }
 
 
