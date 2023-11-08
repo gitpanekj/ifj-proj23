@@ -1,5 +1,5 @@
 /**
- * @file lexical_analyzer.c
+ * @file token_vector.c
  * @author Jan Pánek (xpanek11@fit.vutbr.cz)
  * @brief
  * 

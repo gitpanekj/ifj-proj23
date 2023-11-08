@@ -1,3 +1,12 @@
+/**
+ * @file literal_vector.h
+ * @author Jan Pánek (xpanek11@fit.vutbr.cz)
+ * @brief
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #ifndef LV
 #define LV
 
@@ -7,7 +16,7 @@
 #define INIT_CAPACITY 1
 #define IS_FULL(vec) (vec->forming_size >= vec->capacity - 1)
 #define GROW_CAPACITY(cap) cap*2
-#define SHRINK_CAPACITY(cap) cap/2;
+
 
 
 
@@ -20,7 +29,6 @@
  * confirmed size may udpated to forming_size or all the characters are discarded. 
  * 
  * Whenever confirmed_size of vector reaches its capacity, vector capacity is doubled.
- * If confirmed_size deacrease under 1/4 of capacity, capacity is reduced to 1/2.
  * 
  */
 typedef struct {
