@@ -14,7 +14,7 @@
 #include <stdbool.h> // bool
 
 #define INIT_CAPACITY 1
-#define LV_IS_FULL(vec) (vec->forming_size >= vec->capacity)
+#define IS_FULL(vec) (vec->forming_size >= vec->capacity - 1)
 #define GROW_CAPACITY(cap) cap*2
 
 
