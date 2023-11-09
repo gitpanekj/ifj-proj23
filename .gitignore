@@ -1,3 +1,4 @@
 .vscode
 tests/gtest
 *.o
+.DS_Store
