@@ -1,4 +1,6 @@
 /**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
  * @file syntactic_analysis.h
  * @author Kotoun Lukáš (xkotou08@stud.fit.vutbr.cz)
  * @brief
@@ -11,7 +13,7 @@
 #include <stdbool.h> 
 
 
-typedef enum 
+typedef enum ErrorCodes
 {
     LEXICAL_ERROR = 1,
     SYNTACTIC_ERROR = 2,
@@ -25,6 +27,20 @@ typedef enum
     INTERAL_COMPILER_ERROR = 99
 } ErrorCodes;
 
+typedef enum DataType
+{
+  INT,
+  INT_NILL,
+  DOUBLE,
+  DOUBLE_NILL,
+  STRING,
+  STRING_NILL,
+  INT_NILL,
+  NILL,
+  UNDEFINED
+} DataType;
+
+
 //struct for store name stored in literalVector
 typedef struct{
     char* nameStart;
@@ -37,5 +53,7 @@ typedef struct{
     //todo add param type
     size_t literal_len;
 } FunctionParam; 
+
+
 
 //todo add function 
