@@ -10,6 +10,6 @@
 
 int main(){
 
-    
+    analysisStart();
     return 0;
 }

@@ -12,6 +12,19 @@
 #include "symtable.h"
 #include <stdbool.h> 
 
+//-------------------macros-----------------
+// macro for passing function name to error handle for debuging
+#define assertEndOfLine() wasEndOfLine(__func__)
+#define assertToken(tokenShouldBe) tokenMustBe(tokenShouldBe, __func__)
+// macro for passing array to function as parameter: func(1,2,3) - function
+#define arrayFrom(...) ((TokenType[]){__VA_ARGS__})
+#define tokenIs(...) tokenIsInArray(arrayFrom(__VA_ARGS__), sizeof(arrayFrom(__VA_ARGS__)) / sizeof(arrayFrom(__VA_ARGS__)[0]))
+
+
+//-------------------global variables-----------------
+//add some global vars for SA and precedenc
+
+//-------------------structures-----------------
 
 typedef enum ErrorCodes
 {
@@ -35,8 +48,7 @@ typedef enum DataType
   DOUBLE_NILL,
   STRING,
   STRING_NILL,
-  INT_NILL,
-  NILL,
+  NIL,
   UNDEFINED
 } DataType;
 
@@ -47,6 +59,12 @@ typedef struct{
     size_t literal_len;
 } Name; 
 
+typedef struct{
+    char* nameStart;
+    size_t literal_len;
+    bool isConvertable;
+    DataType type;
+}Identifer; 
 
 typedef struct{
     char* paramNameStart;
@@ -55,5 +73,82 @@ typedef struct{
 } FunctionParam; 
 
 
+//-------------------functions-----------------
 
-//todo add function 
+void addBuildInFunctions();
+
+void analysisStart();
+
+void errorHandle(ErrorCodes ErrorType,const char *functionName);
+
+void wasEndOfLine(const char *functionName);
+
+void tokenMustBe(TokenType tokenShouldBe,const char *functionName);
+
+bool tokenIsInArray(TokenType tokenArr[], unsigned lenght);
+
+void getNextToken();
+
+//-------------------grammar rules as functions-----------------
+void rule_prog();
+
+void rule_prog_body();
+
+//------------------function rules------------
+void rule_func_list();
+
+void rule_func_decl();
+
+void rule_param_first();
+
+void rule_param();
+
+void rule_param_n();
+
+void rule_param_name();
+
+void rule_return_type();
+
+DataType rule_type();
+
+bool rule_func_body();
+
+bool rule_statement_func_list();
+
+bool rule_statement_func();
+
+void rule_return_value();
+
+//---------------global rules------------------
+
+void rule_body();
+
+void rule_statement_list();
+
+void rule_statement();
+
+void rule_if_cond();
+
+void rule_id_decl();
+
+void rule_decl_opt();
+
+void rule_assign();
+
+void rule_statement_action();
+
+void rule_first_arg();
+
+void rule_arg_n();
+
+void rule_arg();
+
+void rule_arg_opt();
+
+void rule_statement_value();
+
+void rule_arg_expr();
+
+DataType rule_term();
+
+DataType rule_literal();
