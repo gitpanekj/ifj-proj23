@@ -29,9 +29,11 @@ bool parse_expression(TokenVector *tokens){
     // FIXME: temporary solution - should be reaplced with Parser interface
     size_t vector_idx=0;
 
-
+    // TODO: check validity of the first token 
     current_token = TV_get(tokens, vector_idx);
-    next = token_to_expr_member(current_token);
+    if (!token_to_expr_member(current_token, &next)){
+        return false; // undeclared, undefined variable
+    }; 
     top_idx = ExpressionStack_top(&stack);
     top = &(stack.items[top_idx]);
 
@@ -56,7 +58,9 @@ bool parse_expression(TokenVector *tokens){
 
                 // get next token
                 current_token = TV_get(tokens, vector_idx);
-                next = token_to_expr_member(current_token); 
+                if (!token_to_expr_member(current_token, &next)){
+                    return false; // undeclared, undefined variable
+                }; 
                 break;
 
 
@@ -90,7 +94,9 @@ bool parse_expression(TokenVector *tokens){
 
 
                 current_token = TV_get(tokens, vector_idx);
-                next = token_to_expr_member(current_token);   
+                if (!token_to_expr_member(current_token, &next)){
+                    return false; // undeclared, undefined variable
+                };    
                 break;
         }
 
@@ -99,6 +105,8 @@ bool parse_expression(TokenVector *tokens){
         top = &(stack.items[top_idx]);
     }
     ExpressionStack_print(&stack);
+
+
 
     return true;
 }
@@ -111,9 +119,13 @@ bool rule_0(ExpressionStack* stack){
 
 bool rule_1(ExpressionStack* stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 1]);
-    TermDataType dtype = INT_CONVERTABLE;
+    
+    // Determine type of TERM
+    TermDataType dtype = op->data.term.data_type;
 
-    // semnatic actions
+
+    // Code generation
+    // push to stack
 
 
     ExpressionStackItem result;
@@ -130,12 +142,29 @@ bool rule_1(ExpressionStack* stack){
 
 bool rule_2(ExpressionStack* stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 2]);
-    
-    // semnatic actions
+
+    // unary '-' is valid for types int and double
+    TermDataType dtype = op->data.expr.data_type;
+    if (dtype == STRING || dtype == STRING_NIL){
+        fprintf(stderr, "Unsupported operand unary - for type string\n");
+        return false;
+    }
+    else if (dtype == NIL){
+        fprintf(stderr, "Unsupported operand unary - for type nil\n");
+        return false;
+    }
+    else if ( dtype == INT_NIL || dtype == DOUBLE_NIL){
+        fprintf(stderr, "Value of Int? or Double? must be unwrapped to value of type 'Int'/'Double'\n");
+        return false;
+    }
+
+    // TODO: code generation
+
+
 
 
     ExpressionStackItem result;
-    init_expression(&result, op->data.term.data_type);
+    init_expression(&result, dtype);
 
 
     reduce_rule(stack);
@@ -149,11 +178,19 @@ bool rule_2(ExpressionStack* stack){
 bool rule_3(ExpressionStack* stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 1]);
     
-    // semnatic actions
+    // postfix '!' is valid only for DOUBLE_NIL, INT_NIL, STRING_NIL
+    TermDataType dtype = op->data.expr.data_type;
+    if ((dtype != DOUBLE_NIL) && (dtype != INT_NIL) && (dtype != STRING_NIL)){
+        fprintf(stderr, "Cannot unwrap value of non-optional type\n");
+        return false;
+    }
+
+    // TODO: code generation
+
 
 
     ExpressionStackItem result;
-    init_expression(&result, op->data.term.data_type);
+    init_expression(&result, op->data.term.data_type-1); // TYPE_NILL follows TYPE in enum definition, hence -1
 
 
     reduce_rule(stack);
@@ -168,11 +205,59 @@ bool rule_4(ExpressionStack* stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+    // Invalid data types: nil, optional nil types
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    TermDataType result_dtype;
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL))
+    {
+        fprintf(stderr, "Invalid data type for '+' operator.\n");
+        return false;
+    }
+
+    // Type conversions
+    if (op1_dtype == op2_dtype){
+        result_dtype = op1_dtype;
+        if (op1_dtype == STRING){
+            // TODO: code generation
+        }
+        else if(op1_dtype == DOUBLE){
+            // TODO: code generation
+
+        }
+        else { // Int convertable, Int unconvertable
+            // TODO: code generation
+
+        }
+    }
+    else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+             ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        result_dtype = INT_UNCONVERTABLE;
+        // TODO: code generation
+
+    }
+    else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
+             ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
+    {
+        result_dtype =  DOUBLE;
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operand types for '+' operand\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, result_dtype);
 
 
     reduce_rule(stack);
@@ -187,11 +272,57 @@ bool rule_5(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+   // Invalid data types: nil, optional nil types, string
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    TermDataType result_dtype;
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL)  ||
+        (op2_dtype == STRING))
+    {
+        fprintf(stderr, "Invalid data type for '-' operator.\n");
+        return false;
+    }
+
+    // Type conversions
+    if (op1_dtype == op2_dtype){
+        result_dtype = op1_dtype;
+        if(op1_dtype == DOUBLE){
+            // TODO: code generation
+
+        }
+        else { // Int convertable, Int unconvertable
+            // TODO: code generation
+
+        }
+    }
+    else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+             ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        result_dtype = INT_UNCONVERTABLE;
+        // TODO: code generation
+
+    }
+    else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
+             ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
+    {
+        result_dtype =  DOUBLE;
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operand types for '-'\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, result_dtype);
 
 
     reduce_rule(stack);
@@ -206,11 +337,57 @@ bool rule_6(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+    // Invalid data types: nil, optional nil types, string
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    TermDataType result_dtype;
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL)  ||
+        (op2_dtype == STRING))
+    {
+        fprintf(stderr, "Invalid data type for '*' operator.\n");
+        return false;
+    }
+
+    // Type conversions
+    if (op1_dtype == op2_dtype){
+        result_dtype = op1_dtype;
+        if(op1_dtype == DOUBLE){
+            // TODO: code generation
+
+        }
+        else { // Int convertable, Int unconvertable
+            // TODO: code generation
+
+        }
+    }
+    else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+             ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        result_dtype = INT_UNCONVERTABLE;
+        // TODO: code generation
+
+    }
+    else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
+             ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
+    {
+        result_dtype =  DOUBLE;
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operand types for '*'\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, result_dtype);
 
 
     reduce_rule(stack);
@@ -225,11 +402,57 @@ bool rule_7(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+    // Invalid data types: nil, optional nil types, string
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    TermDataType result_dtype;
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL)  ||
+        (op2_dtype == STRING))
+    {
+        fprintf(stderr, "Invalid data type for '/' operator.\n");
+        return false;
+    }
+
+    // Type conversions
+    if (op1_dtype == op2_dtype){
+        result_dtype = op1_dtype;
+        if(op1_dtype == DOUBLE){
+            // TODO: code generation
+
+        }
+        else { // Int convertable, Int unconvertable
+            // TODO: code generation
+
+        }
+    }
+    else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+             ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        result_dtype = INT_UNCONVERTABLE;
+        // TODO: code generation
+
+    }
+    else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
+             ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
+    {
+        result_dtype =  DOUBLE;
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operand types for '/'\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, result_dtype);
 
 
     reduce_rule(stack);
@@ -240,15 +463,48 @@ bool rule_7(ExpressionStack *stack){
     return true;
 }
 
+
 bool rule_8(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+    // Invalid data types: nil, optional nil types, string
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    TermDataType result_dtype;
+
+    if ((op1_dtype == INT_NIL) && (op2_dtype == INT_CONVERTABLE || op2_dtype == INT_UNCONVERTABLE)){
+        result_dtype = INT_UNCONVERTABLE;
+    }
+    else if ((op1_dtype == DOUBLE_NIL) && (op2_dtype == DOUBLE || op2_dtype == INT_CONVERTABLE)){
+        if (op2_dtype == INT_CONVERTABLE){ // cast Int to Double
+
+        }
+
+        result_dtype = DOUBLE;
+        // TODO: code generation
+    }
+    else if ((op1_dtype == STRING_NIL) && (op2_dtype == STRING)){
+        result_dtype = STRING;  
+        // TODO: code generation
+    }
+    else if ((op1_dtype == NIL) &&
+             (op2_dtype != INT_NIL) &&
+             (op2_dtype != DOUBLE_NIL) &&
+             (op2_dtype != STRING_NIL) &&
+             (op2_dtype != NIL))
+    {
+        result_dtype = op2_dtype;
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operands for '\?\?' operator\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, result_dtype);
 
 
     reduce_rule(stack);
@@ -263,11 +519,38 @@ bool rule_9(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+
+    // Type check
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL))
+    {
+        fprintf(stderr, "Invalid data type for '==' operator.\n");
+        return false;
+    }
+    else if (op1_dtype == op2_dtype ||
+            ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+            ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operands for '==' operator\n");
+        return false;
+    }
+
+
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, op1->data.expr.data_type);
 
 
     reduce_rule(stack);
@@ -282,7 +565,31 @@ bool rule_10(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+    // Type check
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL))
+    {
+        fprintf(stderr, "Invalid data type for '!=' operator.\n");
+        return false;
+    }
+    else if (op1_dtype == op2_dtype ||
+       ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+       ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operands for '!=' operator\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
@@ -301,7 +608,31 @@ bool rule_11(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+    // Type check
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL))
+    {
+        fprintf(stderr, "Invalid data type for '<' operator.\n");
+        return false;
+    }
+    else if (op1_dtype == op2_dtype ||
+       ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+       ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operands for '<' operator\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
@@ -320,7 +651,31 @@ bool rule_12(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+    // Type check
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL))
+    {
+        fprintf(stderr, "Invalid data type for '<=' operator.\n");
+        return false;
+    }
+    else if (op1_dtype == op2_dtype ||
+       ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+       ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operands for '<=' operator\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
@@ -339,7 +694,34 @@ bool rule_13(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+    // Type check
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    // Invalid types: nill and optional types
+
+
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL))
+    {
+        fprintf(stderr, "Invalid data type for '>' operator.\n");
+        return false;
+    }
+    else if (op1_dtype == op2_dtype ||
+       ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+       ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operands for '>' operator\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
@@ -357,7 +739,34 @@ bool rule_14(ExpressionStack *stack){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
-    // semnatic actions
+    // Type check
+    TermDataType op1_dtype = op1->data.expr.data_type;
+    TermDataType op2_dtype = op2->data.expr.data_type;
+    // Invalid types: nill and optional types
+
+
+    if ((op1_dtype == NIL)         || 
+        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == DOUBLE_NIL)  ||
+        (op1_dtype == STRING_NIL)  ||
+        (op2_dtype == NIL)         || 
+        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == DOUBLE_NIL)  ||
+        (op2_dtype == STRING_NIL))
+    {
+        fprintf(stderr, "Invalid data type for '>=' operator.\n");
+        return false;
+    }
+    else if (op1_dtype == op2_dtype ||
+       ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+       ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
+    {
+        // TODO: code generation
+    }
+    else {
+        fprintf(stderr, "Invalid combination of operands for '>=' operator\n");
+        return false;
+    }
 
 
     ExpressionStackItem result;
@@ -376,11 +785,8 @@ bool rule_14(ExpressionStack *stack){
 bool rule_15(ExpressionStack *stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 2]);
     
-    // semnatic actions
-
-
     ExpressionStackItem result;
-    init_expression(&result, op->data.term.data_type);
+    init_expression(&result, op->data.expr.data_type);
 
 
     reduce_rule(stack);

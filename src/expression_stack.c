@@ -14,27 +14,28 @@
 /******************* ExpressionStackItem  ****************************/
 
 
-ExpressionStackItem token_to_expr_member(Token t){
-    ExpressionStackItem item;
+bool token_to_expr_member(Token t, ExpressionStackItem* item){
 
     switch (TOKEN_TO_MEMBER_TYPE[t.type]){
         case SEP:
-            item.type = END_OF_EXPR;
-            item.data.terminal.type = SEP;
+            item->type = END_OF_EXPR;
+            item->data.terminal.type = SEP;
             break;
         
         case TERM:
             if (t.type == TOKEN_IDENTIFIER){
-                init_identifier_term(&item, &t);
+                if (!init_identifier_term(item, &t)){
+                    return false;
+                }
             }
             else
             {
-                init_literal_term(&item, &t);
+                init_literal_term(item, &t);
             }
             break;
         // operators
         default:
-            init_terminal(&item, TOKEN_TO_MEMBER_TYPE[t.type]);
+            init_terminal(item, TOKEN_TO_MEMBER_TYPE[t.type]);
     }
 
     return item;
@@ -45,6 +46,7 @@ void init_literal_term(ExpressionStackItem *item, Token *t){
     item->type = LITERAL;
     item->data.term.data_type =   t->type == TOKEN_INTEGER  ? INT_UNCONVERTABLE 
                                 : t->type == TOKEN_DOUBLE ? DOUBLE
+                                : t->type == TOKEN_NIL    ? NIL
                                 :                          STRING;
 
     item->data.term.literal = t->start_ptr;
@@ -53,7 +55,7 @@ void init_literal_term(ExpressionStackItem *item, Token *t){
 }
 
 
-void init_identifier_term(ExpressionStackItem *item, Token *t){
+bool init_identifier_term(ExpressionStackItem *item, Token *t){
     item->type = IDENTIFIER;
     item->data.term.literal = t->start_ptr;
     item->data.term.literal_len = t->literal_len;
@@ -61,6 +63,8 @@ void init_identifier_term(ExpressionStackItem *item, Token *t){
 
     // TODO: type determined based on table of symbols
     item->data.term.data_type = INT_UNCONVERTABLE;
+
+    return true;
 }
 
 
@@ -100,11 +104,16 @@ void ExpressionMember_print(ExpressionStackItem *item){
     }
 
     if (item->type == LITERAL || item->type == IDENTIFIER){
-        printf("%.*s ", (int) item->data.term.literal_len, item->data.term.literal);
+        if (item->data.term.data_type == NIL){
+            printf("nill ");
+        }
+        else {
+            printf("%.*s ", (int) item->data.term.literal_len, item->data.term.literal);
+        }
     }
 
     if (item->type == EXPRESSION){
-        printf("E ");
+        printf("E(%s)", DATA_TYPES[item->data.expr.data_type]);
     }
     
     //printf("], ");

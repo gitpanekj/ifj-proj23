@@ -18,11 +18,12 @@
 
 
 typedef enum {LITERAL, IDENTIFIER, TERMINAL, EXPRESSION, END_OF_EXPR} ExpressionMemberClass;
-typedef enum {INT_CONVERTABLE, INT_UNCONVERTABLE, INT_NULL, DOUBLE, DOUBLE_NILL, STRING, STRING_NILL, NIL} TermDataType;
+typedef enum {INT_CONVERTABLE,INT_UNCONVERTABLE, INT_NIL, DOUBLE, DOUBLE_NIL, STRING, STRING_NIL, NIL} TermDataType;
 typedef enum {SEP, TERM, L_PAR, R_PAR, PLUS, MINUS, STAR, SLASH, EQEQ, NEQ, LEQ, GEQ, LT, GT, EXCL, QUEST} ExpressionMemberType;
 static const char ITEMS[][27] = {"LITERAL", "IDENTIFIER", "TERMINAL", "EXPRESSION", "NOT_MEMBER"};
 static const char TYPES[][8] = {"SEP", "TERM","L_PAR","R_PAR","PLUS","MINUS","STAR","SLASH","EQEQ","NEQ","LEQ","GEQ","LT","GT","EXCL","QUEST"};
 static const char TYPE_CHAR[][8] = {"$", "TERM","(",")","+","-","*","/","==","!=","LEQ",">=","<",">","!","??"};
+static const char DATA_TYPES[][50] = {"INT_CONVERTABLE","INT_UNCONVERTABLE", "INT_NIL", "DOUBLE", "DOUBLE_NIL", "STRING", "STRING_NIL", "NIL"};
 
 typedef struct {
   ExpressionMemberClass type;
@@ -108,11 +109,11 @@ void reduce_rule(ExpressionStack*);
 
 
 
-ExpressionStackItem token_to_expr_member(Token);
+bool token_to_expr_member(Token, ExpressionStackItem*);
 
 void init_literal_term(ExpressionStackItem*, Token*);
 
-void init_identifier_term(ExpressionStackItem*, Token*);
+bool init_identifier_term(ExpressionStackItem*, Token*);
 
 void init_terminal(ExpressionStackItem*, ExpressionMemberType);
 
