@@ -5,6 +5,9 @@
  * @file syntactic_analysis.h
  *
  */
+
+#ifndef SYNTACTIC_ANALYSIS
+#define SYNTACTIC_ANALYSIS
 #include "lexical_analyzer.h"
 #include "literal_vector.h"
 #include "tokens.h"
@@ -23,6 +26,9 @@
 
 //-------------------global variables-----------------
 // add some global vars for SA and precedenc
+extern Token tokenHistory[2];
+extern Token token;
+extern Scanner scanner;
 
 //-------------------structures-----------------
 
@@ -43,13 +49,15 @@ typedef enum ErrorCodes
 typedef enum DataType
 {
     INT,
-    INT_NILL,
+    INT_NIL,
     DOUBLE,
-    DOUBLE_NILL,
+    DOUBLE_NIL,
     STRING,
-    STRING_NILL,
+    STRING_NIL,
     NIL,
-    UNDEFINED
+    UNDEFINED,
+    INT_CONVERTABLE,
+    INT_UNCONVERTABLE
 } DataType;
 
 // struct for store name stored in literalVector
@@ -153,3 +161,5 @@ void rule_arg_expr();
 DataType rule_term();
 
 DataType rule_literal();
+
+#endif

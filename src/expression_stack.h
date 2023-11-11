@@ -13,29 +13,28 @@
 
 #include "tokens.h"
 #include "token_vector.h"
+#include "syntactic_analysis.h"
 #include <stdbool.h>
 
 
 
 typedef enum {LITERAL, IDENTIFIER, TERMINAL, EXPRESSION, END_OF_EXPR} ExpressionMemberClass;
-typedef enum {INT_CONVERTABLE,INT_UNCONVERTABLE, INT_NIL, DOUBLE, DOUBLE_NIL, STRING, STRING_NIL, NIL} TermDataType;
 typedef enum {SEP, TERM, L_PAR, R_PAR, PLUS, MINUS, STAR, SLASH, EQEQ, NEQ, LEQ, GEQ, LT, GT, EXCL, QUEST} ExpressionMemberType;
 static const char ITEMS[][27] = {"LITERAL", "IDENTIFIER", "TERMINAL", "EXPRESSION", "NOT_MEMBER"};
 static const char TYPES[][8] = {"SEP", "TERM","L_PAR","R_PAR","PLUS","MINUS","STAR","SLASH","EQEQ","NEQ","LEQ","GEQ","LT","GT","EXCL","QUEST"};
 static const char TYPE_CHAR[][8] = {"$", "TERM","(",")","+","-","*","/","==","!=","LEQ",">=","<",">","!","??"};
-static const char DATA_TYPES[][50] = {"INT_CONVERTABLE","INT_UNCONVERTABLE", "INT_NIL", "DOUBLE", "DOUBLE_NIL", "STRING", "STRING_NIL", "NIL"};
 
 typedef struct {
   ExpressionMemberClass type;
   
   union {
     struct {
-      TermDataType data_type;
+      DataType data_type;
     } expr;
 
     struct {
       ExpressionMemberType type;
-      TermDataType data_type;
+      DataType data_type;
       char *literal;
       size_t literal_len;
     } term;
@@ -117,7 +116,7 @@ bool init_identifier_term(ExpressionStackItem*, Token*);
 
 void init_terminal(ExpressionStackItem*, ExpressionMemberType);
 
-void init_expression(ExpressionStackItem*, TermDataType);
+void init_expression(ExpressionStackItem*, DataType);
 
 bool is_expression(ExpressionStackItem*);
 

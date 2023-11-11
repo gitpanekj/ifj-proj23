@@ -75,7 +75,7 @@ void init_terminal(ExpressionStackItem *item, ExpressionMemberType type){
 }
 
 
-void init_expression(ExpressionStackItem *item, TermDataType dtype){
+void init_expression(ExpressionStackItem *item, DataType dtype){
     item->type = EXPRESSION;
     item->data.expr.data_type = dtype;
 }
@@ -113,7 +113,7 @@ void ExpressionMember_print(ExpressionStackItem *item){
     }
 
     if (item->type == EXPRESSION){
-        printf("E(%s)", DATA_TYPES[item->data.expr.data_type]);
+        printf("E(%d)", item->data.expr.data_type);
     }
     
     //printf("], ");

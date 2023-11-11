@@ -15,6 +15,7 @@
 #include "tokens.h"
 #include "token_vector.h"
 #include "expression_stack.h"
+#include "syntactic_analysis.h"
 
 
 typedef enum {ERROR, OPEN, CLOSE, EQ} PRECEDENCE;
@@ -114,7 +115,7 @@ static rule RULES[16] = {
 };
 
 
-bool parse_expression(TokenVector *tokens);
+bool parse_expression(Token[2], DataType*, ErrorCodes*);
 
 
 

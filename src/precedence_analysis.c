@@ -9,10 +9,11 @@
 
 #include "precedence_analysis.h"
 #include "expression_stack.h"
+#include "syntactic_analysis.h"
 
 
 
-bool parse_expression(TokenVector *tokens){
+bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes *err){
 
     ExpressionStack stack;
     ExpressionStack_init(&stack); 
@@ -24,16 +25,21 @@ bool parse_expression(TokenVector *tokens){
     int rule_number;
     bool valid;
 
-    Token current_token;
 
-    // FIXME: temporary solution - should be reaplced with Parser interface
-    size_t vector_idx=0;
-
-    // TODO: check validity of the first token 
-    current_token = TV_get(tokens, vector_idx);
-    if (!token_to_expr_member(current_token, &next)){
+    if (!token_to_expr_member(tokenHistory[0], &next)){
+        ExpressionStack_dispose(&stack);
+        *err = UNDEFINED_VARIABLE;
         return false; // undeclared, undefined variable
-    }; 
+    };
+
+    if (next.type == END_OF_EXPR){
+        ExpressionStack_dispose(&stack);
+        *err = SYNTACTIC_ERROR;
+        return false;  
+    }
+
+
+
     top_idx = ExpressionStack_top(&stack);
     top = &(stack.items[top_idx]);
 
@@ -46,7 +52,7 @@ bool parse_expression(TokenVector *tokens){
             case ERROR:
                 fprintf(stderr, "Error occured during expression parsing: invalid order.\n");
                 ExpressionStack_dispose(&stack);
-                vector_idx++; // consume token which caused error
+                getNextToken(); // consume token which caused error
                 return false;
 
             case OPEN:
@@ -54,13 +60,19 @@ bool parse_expression(TokenVector *tokens){
 
                 ExpressionStack_push(&stack, next);
 
-                vector_idx++; // consume token and get next
-
-                // get next token
-                current_token = TV_get(tokens, vector_idx);
-                if (!token_to_expr_member(current_token, &next)){
+                
+                if (!token_to_expr_member(tokenHistory[1], &next)){
+                    ExpressionStack_dispose(&stack);
+                    *err = UNDEFINED_VARIABLE;
                     return false; // undeclared, undefined variable
-                }; 
+                };
+
+                if (next.type == END_OF_EXPR){
+                    break;
+                }
+
+                getNextToken(); // consume token and get next
+
                 break;
 
 
@@ -72,6 +84,7 @@ bool parse_expression(TokenVector *tokens){
                 if (rule_number == -1){
                    fprintf(stderr, "Error occured during expression parsing: Syntactic error.\n");
                    ExpressionStack_dispose(&stack);
+                   *err = SYNTACTIC_ERROR;
                    return false;
                 }
 
@@ -82,6 +95,7 @@ bool parse_expression(TokenVector *tokens){
                 if (!valid){
                     fprintf(stderr, "Error occured during expression parsing: Semantic error.\n");
                     ExpressionStack_dispose(&stack);
+                    *err = TYPE_COMPATIBILITY_ERROR;
                     return false;
                 }
                 break;
@@ -89,14 +103,19 @@ bool parse_expression(TokenVector *tokens){
             case EQ:
                 ExpressionStack_push(&stack, next);
 
-
-                vector_idx++; // consume token and get next
-
-
-                current_token = TV_get(tokens, vector_idx);
-                if (!token_to_expr_member(current_token, &next)){
+                if (!token_to_expr_member(tokenHistory[1], &next)){
+                    ExpressionStack_dispose(&stack);
+                    *err = UNDEFINED_VARIABLE;
                     return false; // undeclared, undefined variable
-                };    
+                };
+
+                if (next.type == END_OF_EXPR){
+                    break;
+                }
+
+                getNextToken(); // consume token and get next
+
+
                 break;
         }
 
@@ -104,9 +123,10 @@ bool parse_expression(TokenVector *tokens){
         top_idx = ExpressionStack_top(&stack);
         top = &(stack.items[top_idx]);
     }
+    
     ExpressionStack_print(&stack);
 
-
+    *result_dtype = stack.items[1].data.expr.data_type;
 
     return true;
 }
@@ -121,7 +141,7 @@ bool rule_1(ExpressionStack* stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 1]);
     
     // Determine type of TERM
-    TermDataType dtype = op->data.term.data_type;
+    DataType dtype = op->data.term.data_type;
 
 
     // Code generation
@@ -144,7 +164,7 @@ bool rule_2(ExpressionStack* stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 2]);
 
     // unary '-' is valid for types int and double
-    TermDataType dtype = op->data.expr.data_type;
+    DataType dtype = op->data.expr.data_type;
     if (dtype == STRING || dtype == STRING_NIL){
         fprintf(stderr, "Unsupported operand unary - for type string\n");
         return false;
@@ -179,10 +199,20 @@ bool rule_3(ExpressionStack* stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 1]);
     
     // postfix '!' is valid only for DOUBLE_NIL, INT_NIL, STRING_NIL
-    TermDataType dtype = op->data.expr.data_type;
-    if ((dtype != DOUBLE_NIL) && (dtype != INT_NIL) && (dtype != STRING_NIL)){
-        fprintf(stderr, "Cannot unwrap value of non-optional type\n");
-        return false;
+    DataType dtype = op->data.expr.data_type;
+    switch (dtype){
+        case DOUBLE_NIL:
+            dtype = DOUBLE;
+            break;
+        case INT_NIL:
+            dtype = INT_UNCONVERTABLE;
+            break;
+        case STRING_NIL:
+            dtype = STRING;
+            break;
+        default:
+            fprintf(stderr, "Cannot unwrap value of non-optional type\n");
+            return false;
     }
 
     // TODO: code generation
@@ -190,7 +220,7 @@ bool rule_3(ExpressionStack* stack){
 
 
     ExpressionStackItem result;
-    init_expression(&result, op->data.term.data_type-1); // TYPE_NILL follows TYPE in enum definition, hence -1
+    init_expression(&result, dtype); // TYPE_NILL follows TYPE in enum definition, hence -1
 
 
     reduce_rule(stack);
@@ -206,9 +236,9 @@ bool rule_4(ExpressionStack* stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
     // Invalid data types: nil, optional nil types
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
-    TermDataType result_dtype;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
+    DataType result_dtype;
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -273,9 +303,9 @@ bool rule_5(ExpressionStack *stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
    // Invalid data types: nil, optional nil types, string
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
-    TermDataType result_dtype;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
+    DataType result_dtype;
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -338,9 +368,9 @@ bool rule_6(ExpressionStack *stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
     // Invalid data types: nil, optional nil types, string
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
-    TermDataType result_dtype;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
+    DataType result_dtype;
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -403,9 +433,9 @@ bool rule_7(ExpressionStack *stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
     // Invalid data types: nil, optional nil types, string
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
-    TermDataType result_dtype;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
+    DataType result_dtype;
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -469,9 +499,9 @@ bool rule_8(ExpressionStack *stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
     // Invalid data types: nil, optional nil types, string
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
-    TermDataType result_dtype;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
+    DataType result_dtype;
 
     if ((op1_dtype == INT_NIL) && (op2_dtype == INT_CONVERTABLE || op2_dtype == INT_UNCONVERTABLE)){
         result_dtype = INT_UNCONVERTABLE;
@@ -521,8 +551,8 @@ bool rule_9(ExpressionStack *stack){
     
 
     // Type check
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -566,8 +596,8 @@ bool rule_10(ExpressionStack *stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
     // Type check
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -609,8 +639,8 @@ bool rule_11(ExpressionStack *stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
     // Type check
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -652,8 +682,8 @@ bool rule_12(ExpressionStack *stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
     // Type check
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -695,8 +725,8 @@ bool rule_13(ExpressionStack *stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
     // Type check
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
     // Invalid types: nill and optional types
 
 
@@ -740,8 +770,8 @@ bool rule_14(ExpressionStack *stack){
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
     // Type check
-    TermDataType op1_dtype = op1->data.expr.data_type;
-    TermDataType op2_dtype = op2->data.expr.data_type;
+    DataType op1_dtype = op1->data.expr.data_type;
+    DataType op2_dtype = op2->data.expr.data_type;
     // Invalid types: nill and optional types
 
 

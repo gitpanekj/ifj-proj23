@@ -169,20 +169,20 @@ DataType rule_type()
     case TOKEN_INTEGER_T:
         return INT;
         break;
-    case TOKEN_INTEGER_NILL_T:
-        return INT_NILL;
+    case TOKEN_INTEGER_NIL_T:
+        return INT_NIL;
         break;
     case TOKEN_DOUBLE_T:
         return DOUBLE;
         break;
-    case TOKEN_DOUBLE_NILL_T:
-        return DOUBLE_NILL;
+    case TOKEN_DOUBLE_NIL_T:
+        return DOUBLE_NIL;
         break;
     case TOKEN_STRING_T:
         return STRING;
         break;
-    case TOKEN_STRING_NILL_T:
-        return STRING_NILL;
+    case TOKEN_STRING_NIL_T:
+        return STRING_NIL;
         break;
     default:
         error(SYNTACTIC_ERROR);

@@ -60,11 +60,11 @@ typedef enum {
     TOKEN_RETURN,                  // return
     TOKEN_IDENTIFIER,              // ([a-zA-Z][a-zA-Z0-9_]*)|(_[a-zA-Z0-9_]+)
     TOKEN_INTEGER_T,               // Int
-    TOKEN_INTEGER_NILL_T,          // Int?
+    TOKEN_INTEGER_NIL_T,          // Int?
     TOKEN_DOUBLE_T,                // Double
-    TOKEN_DOUBLE_NILL_T,           // Double?
+    TOKEN_DOUBLE_NIL_T,           // Double?
     TOKEN_STRING_T,                // String
-    TOKEN_STRING_NILL_T,           // String?
+    TOKEN_STRING_NIL_T,           // String?
 
 
     // Literals
@@ -191,9 +191,9 @@ static const char TokenTypeToString[][27] = {
     [TOKEN_INTEGER_T]="TOKEN_INTERGER_T",              // Int
     [TOKEN_DOUBLE_T]="TOKEN_DOUBLE_T",                // Double
     [TOKEN_STRING_T]="TOKEN_STRING_T",                // String
-    [TOKEN_INTEGER_NILL_T]="TOKEN_INTEGER_NILL_T",          // Int?
-    [TOKEN_DOUBLE_NILL_T]="TOKEN_DOUBLE_NILL_T",           // Double?
-    [TOKEN_STRING_NILL_T]="TOKEN_STRING_NILL_T",           // String?
+    [TOKEN_INTEGER_NIL_T]="TOKEN_INTEGER_NIL_T",          // Int?
+    [TOKEN_DOUBLE_NIL_T]="TOKEN_DOUBLE_NIL_T",           // Double?
+    [TOKEN_STRING_NIL_T]="TOKEN_STRING_NIL_T",           // String?
 
     // Identifier
     [TOKEN_IDENTIFIER]="TOKEN_IDENTIFIER",              // ([a-zA-Z][a-zA-Z0-9_]*)|(_[a-zA-Z0-9_]+)
@@ -203,7 +203,7 @@ static const char TokenTypeToString[][27] = {
     [TOKEN_INTEGER]="TOKEN_INTEGER",                 // [0-9]+
     [TOKEN_DOUBLE]="TOKEN_DOUBLE",                  // [0-9]+(.[0-9]+)?[eE]([+-])?[0-9]+
     [TOKEN_STRING]="TOKEN_STRING",                  // 
-    [TOKEN_NIL]="TOKEN_NIL",                    // nill
+    [TOKEN_NIL]="TOKEN_NIL",                        // nill
 
     [TOKEN_EOF]="TOKEN_EOF",
     [TOKEN_LA_ERROR]="TOKEN_LA_ERROR",
