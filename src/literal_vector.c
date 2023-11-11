@@ -24,7 +24,7 @@ void LV_free(LiteralVector *vec){
 
 
 void* LV_add(LiteralVector* vec, char c){
-    if (LV_IS_FULL(vec)){ // grow size
+    if (IS_FULL(vec)){ // grow size
         size_t new_cap = GROW_CAPACITY(vec->capacity);
 
         void* tmp_ptr = realloc(vec->literal_array, sizeof(char)*new_cap);

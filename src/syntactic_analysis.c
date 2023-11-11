@@ -1,9 +1,8 @@
 /**
  * Implementace překladače imperativního jazyka IFJ23.
  *
+ * @author Lukáš Kotoun xkotou08
  * @file syntactic_analysis.c
- * @author Kotoun Lukáš (xkotou08@stud.fit.vutbr.cz)
- * @brief
  *
  */
 
@@ -38,8 +37,6 @@ void addBuildInFunctions()
 
 void analysisStart()
 {
-    printf("token");
-
     LV_init(&literalVector);
     scaner_init(&scanner, &literalVector);
 
@@ -117,20 +114,6 @@ void rule_param_first()
     rule_param_n();
 }
 
-void rule_param()
-{
-    rule_param_name();
-    getNextToken();
-    assertToken(TOKEN_IDENTIFIER);
-    // semantic rules (code gen or storing token) and add to first layer of func symtable
-
-    getNextToken();
-    assertToken(TOKEN_COLON);
-    getNextToken();
-    DataType type = rule_type();
-    // todo store data type in param and add it to param vector
-}
-
 void rule_param_n()
 {
 
@@ -145,11 +128,25 @@ void rule_param_n()
     rule_param_n();
 }
 
+void rule_param()
+{
+    rule_param_name();
+    getNextToken();
+    assertToken(TOKEN_IDENTIFIER);
+    // semantic rules (code gen or storing token) and add to first layer of func symtable
+
+    getNextToken();
+    assertToken(TOKEN_COLON);
+    getNextToken();
+    DataType type = rule_type();
+    // todo store data type in param and add it to param vector
+}
+
 void rule_param_name()
 {
     if (!tokenIs(TOKEN_IDENTIFIER, TOKEN_UNDERSCORE))
     {
-        errorHandle(SYNTACTIC_ERROR, __func__);
+        error(SYNTACTIC_ERROR);
     }
     // todo add param name to param vector
 }
@@ -188,7 +185,7 @@ DataType rule_type()
         return STRING_NILL;
         break;
     default:
-        errorHandle(SYNTACTIC_ERROR, __func__);
+        error(SYNTACTIC_ERROR);
         break;
     }
     return 0;
@@ -230,14 +227,14 @@ bool rule_statement_func()
     else if (tokenIs(TOKEN_IF))
     {
         getNextToken();
-        rule_if_cond();
+        rule_if_cond(); // rule_if_cond will leave { in token
 
         // todo create scoped symtable
         bool ifBodyHaveReturn = rule_func_body();
 
         getNextToken();
         assertToken(TOKEN_ELSE);
-
+        getNextToken();
         // todo create scoped symtable
         bool elseBodyHaveReturn = rule_func_body();
 
@@ -276,7 +273,7 @@ bool rule_statement_func()
     }
     else
     {
-        errorHandle(SYNTACTIC_ERROR, __func__);
+        error(SYNTACTIC_ERROR);
     }
 
     return false;
@@ -319,14 +316,14 @@ void rule_statement()
     if (tokenIs(TOKEN_IF))
     {
         getNextToken();
-        rule_if_cond();
+        rule_if_cond(); // rule_if_cond will leave { in token
 
         // todo create scoped symtable
         rule_body();
 
         getNextToken();
         assertToken(TOKEN_ELSE);
-
+        getNextToken();
         // todo create scoped symtable
         rule_body();
 
@@ -364,7 +361,7 @@ void rule_statement()
     }
     else
     {
-        errorHandle(SYNTACTIC_ERROR, __func__);
+        error(SYNTACTIC_ERROR);
     }
 }
 
@@ -375,6 +372,7 @@ void rule_if_cond()
         getNextToken();
         assertToken(TOKEN_IDENTIFIER);
         // todo add ID to scope without nill type, scope is defined and is store id stack on top
+        getNextToken(); // need same end state as precedence analysis
         return;
     }
     getNextToken(); // need double for precedenc
@@ -414,7 +412,7 @@ void rule_assign()
     if (tokenIs(TOKEN_EQUAL))
     {
         getNextToken();
-        rule_assign();
+        rule_statement_value();
     }
 }
 
@@ -425,7 +423,7 @@ void rule_statement_action()
     {
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
-        getNextToken();
+        getNextToken(); // get token after (
         // todo in arg rules store data to params vector - structure for it defined in symtable - will be global. after each push to vector clear it
         rule_first_arg();
         getNextToken();
@@ -438,12 +436,13 @@ void rule_statement_action()
         // left side ID is one token back
         leftSideIdentifier.nameStart = tokenHistory[0].start_ptr;
         leftSideIdentifier.literal_len = tokenHistory[0].literal_len;
+        getNextToken(); // get token after =
         // todo find in symtable and check types or add to global symtable and store type from assignment (cant be undefined funciton)
         rule_statement_value();
     }
     else
     {
-        errorHandle(SYNTACTIC_ERROR, __func__);
+        error(SYNTACTIC_ERROR);
     }
 }
 
@@ -487,13 +486,15 @@ void rule_arg()
 
 void rule_arg_opt()
 {
+    // previous token (identifier) is paramID
     if (tokenIs(TOKEN_R_PAR, TOKEN_COMMA))
     {
-        // param ID is one token back
-        // todo store type to param/arg struct - arg token (token of ID) is in history[0] , use function get_type_from_var
-        // todo store param as NULL (should be default)
+        // paramID is one token back
+        // todo store type to param/arg struct - arg token (token of ID - cant be literal) is in history[0] , use function get_type_from_var
+        // todo store param name as NULL (should be default)
         return;
     }
+    // previous token is paramName
     assertToken(TOKEN_COLON);
     // param name is one token back
     // todo store param name - is in token history[0] (token of ID)
@@ -522,12 +523,13 @@ void rule_arg_expr()
     {
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
-        getNextToken();
+        getNextToken(); // get token after (
         // todo in arg rules store data to params vector - structure for it defined in symtable - will be global. after each push to vector clear it
         rule_first_arg();
         getNextToken();
         assertToken(TOKEN_R_PAR);
         // todo add function semantic actions
+        // todo store function return type to statementValueType
     }
     else
     {
@@ -563,7 +565,7 @@ DataType rule_literal()
         return NIL;
         break;
     default:
-        errorHandle(SYNTACTIC_ERROR, __func__);
+        error(SYNTACTIC_ERROR);
         break;
     }
     return 0;
@@ -579,7 +581,7 @@ void errorHandle(ErrorCodes ErrorType, const char *functionName)
         fprintf(stderr, "Lexical error at line %d, column %d: Invalid token.\n", 0, 0);
         break;
     case SYNTACTIC_ERROR:
-        fprintf(stderr, "[Error call from function: %s]. Syntactic error at line %d, column %d: Unexpected token.\n", functionName, 0, 0);
+        fprintf(stderr, "[Error call from function: %s]. Syntactic error at line %d, column %d: Unexpected token.\n", functionName, scanner.line, 0);
         break;
     default:
         fprintf(stderr, "[Error call from function: %s]. Semantic error at line %d, column %d:", functionName, scanner.line, 0);
@@ -626,9 +628,9 @@ void wasEndOfLine(const char *functionName)
     }
 }
 
-void tokenMustBe(TokenType tokenShouldBe, const char *functionName)
+void tokenMustBe(TokenType mustBe, const char *functionName)
 {
-    if (tokenShouldBe != token.type)
+    if (mustBe != token.type)
     {
         errorHandle(SYNTACTIC_ERROR, functionName);
     }
@@ -652,7 +654,7 @@ void getNextToken()
     token = tokenHistory[1]; // for working without index
     if (token.type == TOKEN_LA_ERROR)
     {
-        errorHandle(LEXICAL_ERROR, "");
+        error(LEXICAL_ERROR);
     }
 }
 // todo function for convert variable (ID) to data type - by finding in sym table - if not find return error
