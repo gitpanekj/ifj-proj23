@@ -16,121 +16,108 @@
 /** 
  *@brief Initializes a symbol table.
  *
- * This fuction initializes a symbol table by setting its root node to NULL and
- * allocate memory for the table's name and copy the name from paramater 'tablename' with size of param 'nameLenght'
+ * This fuction initializes a symbol table by setting its root node to NULL
  *
  * @param table Pointer to the symbol table to be initialized.
- * @param tablename The name of the symbol table.
- * @param nameLenght The length of the table name.
- *
- * @return Pointer to the allocated memory for the table's name if successful,
- *         or NULL if memory allocation fails
  * 
 */
-void* symtableInit(symtable* table,char* tablename, size_t nameLenght){
+void symtableInit(symtable* table){
     table->root = NULL;
-    table->nameLenght = nameLenght;
-
-    table->name = calloc(nameLenght + 1,sizeof(char));
-    if(table->name == NULL){
-        return NULL;
-    }
-
-    strncpy(table->name, tablename, nameLenght);
-    return table->name;
 }
 
 /** 
  *@brief Cleanup and dealoccation of all memory used in table of symbol
  *
  * This fuction calls recursive fuction symtTreeDestroy to remove and free all nodes
- * in symtTree, frees the memory for table name sets pointers name and the tree to NULL
- * and sets height to 0;
+ * in symtTree, frees the memory for table name sets pointer to tree to NULL
  *
  * @param table Pointer to the symbol table to be disposed.
 */
 void symtableDispose(symtable* table){
     symtTreeDestroy(table->root);
     table->root = NULL;
-    free(table->name);
-    table->name = NULL;
-    table->nameLenght = 0;
 }
 
 /** 
  *@brief Creation of new element of table of symbol and isertion in the symtTree
  *
- * This fuction allocates memory for new symtTreeElement copy arguments name, lenght and type
- * to data (allocates memory for new string with leght of param leght and copy the string to it)
- * searches via recursive binary search (symtTreeInsert) to find leafnode and sets parent that pointed to that node
- * to point to newElement and  update height with fuction symtTreeRebalance;
+ * This fuction calls recursivee fuction symtTreeInsert that searches for element pointer 
+ * that is NULL, whe it finds it, it will allocate memory for new element and iserts the inputed data inside of it
+ * in case allocation fails it raises allocErrFlag and this wrapper fuction return false
+ * 
  *
- * @param table Pointer to table where new symbol is added
- * @param name Pointer to string of name of the inseted symbol
- * @param lenght Lenght of string
- * @param type Type of inserted symbol
+ * @param table Pointer to table where new data about the symbol is added
+ * @param data data about a new symbol that is going to be added to table, in case its data about an fuction
+ *              params should be either allocated or NULL
  * 
  * 
- * @return A pointer to the allocated memory for the table's name if successful,
- *         or NULL if memory allocation for name or newElement fails.
- *         If element with same name is found it is replaced(recomend using search before)
- * 
+ * @return true if no allocation error happends
+ * @return false if memory for new element was not able to be allocated
 */
-void* symtableInsert(symtable* table, char* name, size_t lenght, enum SYM_TYPE type){
-    symtTreeElementPtr comparedElementPtr = NULL;
-    symtTreeElementPtr newElementPtr = malloc(sizeof(struct symtTreeElement));
-    int cmpOutput;
-    if(newElementPtr == NULL){
-        return NULL;
-    }
+bool symtableInsert(symtable* table, symData data){
+    bool allocErrFlag = false;
+    table->root = symtTreeInsert(table->root, data, &allocErrFlag);
+    return !allocErrFlag;
+}
+/**
+ * @brief wrapper fuction for inserring variable symbol to table
+ * 
+ * @param table Pointer to table where new data about the symbol is added
+ * @param name name of the new variable
+ * @param type type of the variable
+ * @param isConstant flag for determining if variable is constant
+ * @param isDefined flag for determining if variable is defined
+ * @param isInitialized flag for determining if variable is initialized
+ * @return true 
+ * @return false 
+ */
+bool symtableInsertVar(symtable* table, Name name,  DATA_TYPE type, bool isConstant, bool isDefined, bool isInitialized){
+    symData new_symbol = {.name = name, .type = type, .isConstant = isConstant, .isDefined = isDefined, 
+                        .isInitialized = isInitialized, .isFuction = false, .params = NULL, .paramCount = 0};
+    return symtableInsert(table,new_symbol);
+}
 
-    newElementPtr->height = 1;
-    newElementPtr->leftElement = NULL;
-    newElementPtr->rightElement = NULL;
+/**
+ * @brief wrapper fuction for inserring function symbol to table
+ * 
+ * @param table Pointer to table where new data about the symbol is added
+ * @param name name of the new fuction
+ * @param ret_type return type of the fuction
+ * @param isConstant flag for determining if fuction/ret_type is constant 
+ * @param isDefined flag for determining if function is defined
+ * @param isInitialized flag for determining if function is initialized
+ * @param params pointer to dynamic array of fuction parameters, this pointer needs to be NULL if fuction doesn't have params
+ *               else it should points to dynamicaly allocated memory, that will be freed when delete/dispose is called
+ * @param paramCount number of parameters in params array
+ * @return true 
+ * @return false 
+ */
+bool symtableInsertFunc(symtable* table, Name name, DATA_TYPE ret_type, bool isConstant, bool isDefined, bool isInitialized, 
+                        parameter* params, size_t paramCount){
+    symData new_symbol = {.name = name, .type = ret_type, .isConstant = isConstant, .isDefined = isDefined, 
+                        .isInitialized = isInitialized, .isFuction = true, .params = params, .paramCount = paramCount};
+    return symtableInsert(table,new_symbol);
 
-    newElementPtr->data.name = calloc(lenght+1, sizeof(char));
-    if(newElementPtr->data.name == NULL){
-        free(newElementPtr);
-        return NULL;
-    }
-
-    strncpy(newElementPtr->data.name,name,lenght);
-    newElementPtr->data.lenght = lenght;
-    newElementPtr->data.type = type;
-    
-    table->root = symtTreeInsert(table->root,newElementPtr);
-    return newElementPtr;
 }
 
 /** 
- *@brief Deletion of element of table of symbol with same symbol as inserded value
+ *@brief Deletion of element from table of symbol with same symbol name as inserded value
  *
  * Wrapper fuction for deletion of symbol from table 
  *
  * @param table Pointer to table in which element will be deleted
- * @param symbol Pointer to char string of name of symbol that is going to be deleted
- * @param lenght lenght of the string symbol
- * @param allocErrFlag Pointer to bolean that will be set true in case reallocation fails
+ * @param symbol name of the symbol that is going to be deleted
  * 
  * @return true if element with inserted symbol was deleted, false if it wasn't found
- *         in case realocation error inside deletion happend allErrFlag will be set true
  * 
 */
-bool symtableDelete(symtable* table, char* symbol, size_t lenght,  bool* allocErrFlag){
+bool symtableDelete(symtable* table, Name symbol){
     bool found = false;
-    table->root = symtTreeDelete(table->root, symbol, lenght,  &found, allocErrFlag);
+    table->root = symtTreeDelete(table->root, symbol,  &found);
     return found;
 
 }
-/** 
- * @brief Function for returning  name of table
- * 
- * @param table Pointer to table of symbol from which name will be returner
- * @return Pointer to string with the name of inserted table
-*/
-char* symtableName(symtable* table){
-    return table->name;
-}
+
 
 /** 
  * @brief Function for getting the type of a symbol from table
@@ -140,42 +127,38 @@ char* symtableName(symtable* table){
  * variable pointed by type in case no element is found sets variable pointed by type to NOT_FOUND 
  * 
  * @param table Pointer to table of symbo from which name will be returned
- * @param symbol Pointer to string of name of symbol that is going to be searched
- * @param lenght pointer to lenght of string
- * @param type Pointer to enum SYM_TYPE that is going to be set to value of found Elements type
+ * @param symbol name of the symbol of which the data will be retrieved
  * 
- * @return SYM_TYPE pointed by type will be set to found value of type of inserted table
- *         in case no element with insered symbol name is found set value pointed by type to
- *         NOT_FOUND
+ * @return symData* pointer to data of searched symbol
+ * @return NULL when symbols with searched name wasn't found
 */
-void symtableGetType(symtable* table, char* symbol, size_t lenght, enum SYM_TYPE* type){
-    symtTreeElementPtr foundElement = symtTreeSearch(table->root, symbol, lenght);
-    if (foundElement == NULL){
-        *type = NOT_FOUND;
-        return;
+symData* symtableGetData(symtable* table, Name symbol){
+    symtTreeElementPtr foundElement = symtTreeSearch(table->root, symbol);
+    if (foundElement == NULL){ 
+        return NULL;
     }
-    *type = foundElement->data.type;
+    return &(foundElement->data);
 }
 
 /** 
  * @brief Recursive Function for searching element with same name as inputed key
  * 
  * @param root Pointer to root of the tree that is going to be searched
- * @param key Pointer to string of name of symbol that is going to be searched
+ * @param key name of the symbol that is searched in table
  * 
  * @return pointer to found element or NULL if element that have same name as inputed key is not in tree
 */
-symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, char* key, size_t keylen){
+symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, Name key){
     if (root == NULL){
         return NULL;
     }
     int cmpOutput;
-    cmpOutput = symtTreeLiteralcmp(key,root->data.name,keylen, root->data.lenght);
+    cmpOutput = symtTreeNameCmp(key,root->data.name);
     if(cmpOutput < 0){
-        return symtTreeSearch(root->leftElement, key, keylen);
+        return symtTreeSearch(root->leftElement, key);
     }
     else if(cmpOutput > 0){
-        return symtTreeSearch(root->rightElement, key, keylen);
+        return symtTreeSearch(root->rightElement, key);
     }
     else{
         return root;
@@ -202,8 +185,6 @@ symtTreeElementPtr symtTreeRotateLeft(symtTreeElementPtr root){
     size_t rotatedLeftHeight = symtTreeElementHeight(rotatedElementPtr->leftElement);
     size_t rotatedRightHeight = symtTreeElementHeight(rotatedElementPtr->rightElement);
     rotatedElementPtr->height = (rotatedLeftHeight >= rotatedRightHeight? rotatedLeftHeight : rotatedRightHeight) + 1;
-    printf("rotLupdated height %s = %ld\n", rotatedElementPtr->data.name, rotatedElementPtr->height);
-    printf("rotLupdatedroot height %s = %ld\n", root->data.name, root->height);
 
 
     return rotatedElementPtr;
@@ -244,42 +225,51 @@ void symtTreeDestroy(symtTreeElementPtr root){
     }
     symtTreeDestroy(root->leftElement);
     symtTreeDestroy(root->rightElement);
-    free(root->data.name);
+    free(root->data.params);
     free(root);
 }
 
 /** 
- * @brief recursive Fuction for inserting new element to the tree
+ * @brief recursive Fuction for inserting new symbol to the tree
  * 
  * @param root Pointer to root of the subtreetree where new element will be inserted
- * @param newElementPtr Pointer to new Element that is going to be inserted if root of subtree is NULL
+ * @param data data about new symbol
  * 
- * @return newElementPtr if tree inserted root was NULL,in case element that has same name as NewElementPtr
- *         is found it is replaced by ELement
+ * @return newElementPtr if root was NULL and also allocates memory for it, i
+ * @return rebalanced root when its traversing back to the root of the symtablee tree
+ * @return root if name of newly added symbol is in allready in table (only data is changed and in case there were params the are freed)
 */
-symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr newElementPtr){
+symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symData data, bool* allocErrFlag){
     size_t leftHeight;
     size_t rightHeight;
-    int balance;
+    symtTreeElementPtr newElementPtr;
 
-    if (root == NULL){
+    if  (root == NULL){
+        newElementPtr = malloc(sizeof(struct symtTreeElement));
+        if(newElementPtr == NULL){
+        * allocErrFlag= true;
+        return NULL;
+        }
+
+        newElementPtr->height = 1;
+        newElementPtr->leftElement = NULL;
+        newElementPtr->rightElement = NULL;
+        newElementPtr->data = data;
         return newElementPtr;
     }
 
     int cmpOutput;
-    cmpOutput = strcmp(newElementPtr->data.name,root->data.name);
+    cmpOutput = symtTreeNameCmp(data.name,root->data.name);
     if(cmpOutput < 0){
-        root->leftElement = symtTreeInsert(root->leftElement,newElementPtr);
+        root->leftElement = symtTreeInsert(root->leftElement,data, allocErrFlag);
     }
     else if(cmpOutput > 0){
-        root->rightElement = symtTreeInsert(root->rightElement,newElementPtr);
+        root->rightElement = symtTreeInsert(root->rightElement,data, allocErrFlag);
     }
     else{
-        newElementPtr->leftElement = root->leftElement;
-        newElementPtr->rightElement = root->rightElement;
-        free(root->data.name);
-        free(root);
-        return newElementPtr;
+        free(root->data.params);
+        root->data = data;
+        return root;
     }
 
    return symtTreeRebalance (root);
@@ -297,53 +287,47 @@ symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr ne
  * else return rebalnced root
  * 
  * @param root Pointer to root of the subtreetree where new element will be deleted
- * @param key Pointer to string that is going to be compared with elements name  
+ * @param key name of the symbol that is going to be deleted
  * @param found Pointer to bolean that will be set true if element is found in table
- * @param keylen lenght of the key string
  * @param allocErrFlag Pointer to bolean that will be set true in case reallocation fails
  * 
- * @return newElementPtr if tree inserted root was NULL,in case element that has same name as NewElementPtr
- *         is found set bolean pointed by isUnique to false and also return root, else root
+ * @return NULL if root is equal to NULL and set found to false/ or if found element doesn't have a child
+ * @return rebalanced root when traversing back from left/right element or when removing element with 2 childs
+ * @return onlyChildPtr if deleted element has only one child element
 */
-symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, size_t keylen, bool* found, bool* allocErrFlag){
+symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, Name key, bool* found){
     symtTreeElementPtr onlyChildPtr;
     if (root == NULL){
         *found = false;
         return NULL;
     }
     int cmpOutput;
-    cmpOutput = symtTreeLiteralcmp(key,root->data.name, keylen, root->data.lenght);
+    cmpOutput = symtTreeNameCmp(key,root->data.name);
         
     if(cmpOutput < 0){
-        root->leftElement = symtTreeDelete(root->leftElement, key, keylen, found, allocErrFlag);
-        printf("delup");
+        root->leftElement = symtTreeDelete(root->leftElement, key, found);
         return symtTreeRebalance (root);
     }
     else if(cmpOutput > 0){
-        root->rightElement = symtTreeDelete(root->rightElement, key, keylen, found, allocErrFlag);
-        printf("delup");
+        root->rightElement = symtTreeDelete(root->rightElement, key, found);
         return symtTreeRebalance (root);
     }
     else{
         *found = true; 
-        if(root->leftElement == NULL && root->rightElement == NULL ){
-            free(root->data.name);
+        if(root->leftElement == NULL && root->rightElement == NULL){
+            free(root->data.params);
             free(root);
             return NULL;
         }
 
-        if(root->leftElement != NULL && root->rightElement != NULL ){
+        if(root->leftElement != NULL && root->rightElement != NULL){
             symtTreeElementPtr minElementPtr = symtTreeFindMin(root->rightElement);
-            root->data.name = realloc(root->data.name, sizeof(char) * (minElementPtr->data.lenght + 1));
-            if (root->data.name == NULL){
-                *allocErrFlag = true;
-                return root;
+            free(root->data.params);
+            root->data = minElementPtr->data;
+            if(minElementPtr == root->rightElement){
+                root->rightElement = NULL;
             }
-            root->data.lenght = minElementPtr->data.lenght;
-            strncpy(root->data.name,minElementPtr->data.name, minElementPtr->data.lenght + 1);
-            root->data.type = minElementPtr->data.type;
-            root->rightElement = symtTreeDelete(root->rightElement, minElementPtr->data.name, minElementPtr->data.lenght, found, allocErrFlag);
-            printf("delup");
+            free(minElementPtr);
             return symtTreeRebalance (root);
         }
         else if(root->leftElement == NULL){
@@ -352,7 +336,7 @@ symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, size_t key
         else{
             onlyChildPtr = root->leftElement;
         }
-        free(root->data.name);
+        free(root->data.params);
         free(root);
         return onlyChildPtr;
     }
@@ -370,6 +354,7 @@ size_t symtTreeElementHeight(symtTreeElementPtr Element){
     }
     return Element->height;
 }
+
 /**
  * @brief function for founding minimal element of the subtree(leftomost element)
  * 
@@ -390,6 +375,10 @@ symtTreeElementPtr symtTreeFindMin(symtTreeElementPtr root){
  * @return symtTreeElementPtr root of inserted subtree
  */
 symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root){
+
+    if(root == NULL){
+        return NULL;
+    }
 
     int balance = symtTreeElementHeight(root->leftElement) - symtTreeElementHeight(root->rightElement);
     if(balance > 1){
@@ -441,5 +430,32 @@ int symtTreeLiteralcmp(char* key, char* compared, size_t keylen, size_t cmplen){
         return -1;
     }
     return cmpOut;
+}
+/**
+ * @brief Fuction for comparing 2 variables of type Name
+ * 
+ * Name are choosen in a way that this fuction is used in fuction of table of symbols
+ * 
+ * @param keyName name of the compared key
+ * @param elemName name of the symbol stored in currently compared table element
+ * @return int 0 when names are equal
+ * @return int <0 when left name is smaller than right name
+ * @return int >0 when left name is greater than right name 
+ */
+int symtTreeNameCmp(Name keyName, Name elemName){
+    //lenght of shorter name
+    size_t cmpLen = keyName.literal_len <= elemName.literal_len ? keyName.literal_len: elemName.literal_len;
+
+    int cmpOut = strncmp(keyName.nameStart, elemName.nameStart, cmpLen);
+
+    if(cmpOut == 0 && (keyName.literal_len != elemName.literal_len)){
+        if(keyName.literal_len < elemName.literal_len){
+            return -1;
+        }
+        else{
+            return 1;
+        }
+    }
+    return cmpOut; 
 }
 

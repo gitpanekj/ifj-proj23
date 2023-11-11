@@ -7,31 +7,61 @@
 
 
 /**
- * @brief Enum for storing the type of symbol
+ * @brief Enum type for storing the type of variable represented by the symbol 
+ *        or the return type of the fuction represented by the symbol
  * 
  */
-enum SYM_TYPE{
-    NOT_FOUND,
-    FUNCTION,
+typedef enum{
+    UNDEFINED,
     INT,
+    INT_NIL,
     DOUBLE,
-    STRING
-};
+    DOUBLE_NIL,
+    STRING,
+    STRING_NIL,
+    NIL,
+}DATA_TYPE;
 
 /**
- * @brief structure for storing data about a symbol
- * 
- * this struct is storing:
- * pointer to string of characters that store name of symbol,
- * lenght of the string without the '\0,
- * type of symbol,
+ * @brief type for storing pointer to literal vectior
+ * representing the name of the symbol and its lenght
  * 
  */
 typedef struct{
-    char* name; //< name of the symbol
-    size_t lenght; //< lenght of the name
-    enum SYM_TYPE type;//< type of the symbol
-} symtData;
+    char *nameStart; //< pointer to start of the name
+    size_t literal_len; //<lenght of the literal representing the name
+} Name;
+
+/**
+ * @brief type for representing the parameter of a fuction
+ * 
+ */
+typedef struct{
+    Name name;//<name of the parameter
+    DATA_TYPE type;//<parameter type
+} parameter;
+
+/**
+ * @brief type for storing data about a symbol
+ * 
+ * it stores the name, type/return type of the symbol, flag for if the func/var is constant, defined and initialized;
+ * flag for recognising the symbol as fuction, pointer to dynamicly allocated array of parameters (need to be allocated before
+ * inserting to the type, freeing done durring delete/dispose), and number of parameters
+ * 
+ */
+typedef struct{
+
+    Name name;
+    DATA_TYPE type; //< type of the variable or return type of fuction represented by the symbol
+    bool isConstant; //< if true variable/fuction is constant
+    bool isDefined; //< if true value/variable has been defined
+    bool isInitialized; //< if true value/variable has been initialized
+
+    bool isFuction;
+    parameter* params;  //< pointer to dynamicly allocated array of params (need to be allocated before
+                        //its inserted to the data, freeing is done durring delete/dispose of the table) 
+    size_t paramCount;
+} symData;
 
 /**
  * @brief tree node for storing data about symbol
@@ -43,7 +73,7 @@ typedef struct{
  * 
  */
 typedef struct symtTreeElement{
-    symtData data; //< data about thr symbol
+    symData data; //< data about thr symbol
 
     //struct symtTreeElement* parentElement; //null means element is root
     struct symtTreeElement* leftElement; //< pointer to left subtree
@@ -56,34 +86,33 @@ typedef struct symtTreeElement{
 //typedef struct symtTreeElementStruct* symtTreeElementPtr;
 
 /**
- * @brief type for representing the tree as table of symbols and for storing the tables name
+ * @brief type for representing the tree as table of symbols
  * 
  * this type stores:
- * pointer to a AVL tree of Elements containing data about symbols
- * pointer to string of characters representing the name of table
- * leght of the string without the '\0'  
+ * pointer to a AVL tree of Elements containing data about symbols  
  * 
  */
 typedef struct{
     symtTreeElementPtr root;//< poiter to root of tree that stores data about the symbols
-    char* name; //< name of the table
-    size_t nameLenght; //<lenght of the name of table of sybols
 } symtable;
 
 
-void* symtableInit(symtable* table, char* tablename, size_t nameLenght);
+void symtableInit(symtable* table);
 
 void symtableDispose(symtable* table);
 
-void* symtableInsert(symtable* table, char* name, size_t lenght, enum SYM_TYPE type);
+bool symtableInsert(symtable* table, symData data);
 
-bool symtableDelete(symtable* table, char* symbol, size_t lenght, bool* allocErrFlag);
+bool symtableInsertVar(symtable* table, Name name,  DATA_TYPE type, bool isConstant, bool isDefined, bool isInitialized);
 
-char* symtableName(symtable* table);
+bool symtableInsertFunc(symtable* table, Name name, DATA_TYPE type, bool isConstant, bool isDefined, bool isInitialized, parameter* params,
+                        size_t paramCount);
 
-void symtableGetType(symtable* table, char* symbol, size_t lenght, enum SYM_TYPE* type);
+bool symtableDelete(symtable* table, Name symbol);
 
-symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, char* key, size_t keylen);
+symData *symtableGetData(symtable* table, Name symbol);
+
+symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, Name key);
 
 symtTreeElementPtr symtTreeRotateLeft(symtTreeElementPtr root);
 
@@ -91,9 +120,9 @@ symtTreeElementPtr symtTreeRotateRight(symtTreeElementPtr root);
 
 void symtTreeDestroy(symtTreeElementPtr root);
 
-symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symtTreeElementPtr newElementPtr);
+symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symData data, bool* allocErrFlag);
 
-symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, char* key, size_t keylen, bool* found, bool* allocErrFlag);
+symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, Name key, bool* found);
 
 size_t symtTreeElementHeight(symtTreeElementPtr Element);
 
@@ -102,5 +131,7 @@ symtTreeElementPtr symtTreeFindMin(symtTreeElementPtr root);
 symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root);
 
 int symtTreeLiteralcmp(char* key, char* compared, size_t keylen, size_t cmplen);
+
+int symtTreeNameCmp(Name keyName, Name elemName);
 
 #endif
