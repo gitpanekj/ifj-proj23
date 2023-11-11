@@ -416,22 +416,6 @@ symtTreeElementPtr symtTreeRebalance (symtTreeElementPtr root){
 }
 
 /**
- * @brief Helper function for comparing literal (stored as string without '\0' with symbol name with '\0')
- * 
- * @param key pointer to string chars representing the key
- * @param compared pointer to string of chars that is used to compare key with
- * @param keylen lenght of key
- * @param cmplen lenght of compared
- * @return integer value < 0 if literal is lexicographicali smaller, >0 if it's greater, 0 if its equal
- */
-int symtTreeLiteralcmp(char* key, char* compared, size_t keylen, size_t cmplen){
-    int cmpOut = strncmp(key, compared, keylen);
-    if(cmpOut == 0 && cmplen > keylen){
-        return -1;
-    }
-    return cmpOut;
-}
-/**
  * @brief Fuction for comparing 2 variables of type Name
  * 
  * Name are choosen in a way that this fuction is used in fuction of table of symbols
