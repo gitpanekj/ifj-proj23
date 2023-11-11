@@ -324,10 +324,8 @@ symtTreeElementPtr symtTreeDelete(symtTreeElementPtr root, Name key, bool* found
             symtTreeElementPtr minElementPtr = symtTreeFindMin(root->rightElement);
             free(root->data.params);
             root->data = minElementPtr->data;
-            if(minElementPtr == root->rightElement){
-                root->rightElement = NULL;
-            }
-            free(minElementPtr);
+            minElementPtr->data.params = NULL;
+            root->rightElement = symtTreeDelete(root->rightElement,minElementPtr->data.name,found);
             return symtTreeRebalance (root);
         }
         else if(root->leftElement == NULL){
