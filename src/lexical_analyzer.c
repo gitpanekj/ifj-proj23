@@ -610,6 +610,7 @@ TokenType scan_multi_line_string(Scanner *s){
                     break;
                 default:
                     new_line = false;
+                    string_len++;
                     if (LV_add(s->literals, peek(s))==NULL) return TOKEN_MEMMORY_ERROR;
                     advance(s);
             }
@@ -713,7 +714,7 @@ TokenType scan_operator(Scanner* s, TokenType expected_token_type){
     switch (expected_token_type){
 
         // single character tokens
-        case TOKEN_PLUS...TOKEN_UNDERSCORE:
+        case TOKEN_PLUS...TOKEN_SEMICOLON:
             advance(s); // consume character
             if (expected_token_type == TOKEN_L_BRACE){
                 s->separator_flag = true;
