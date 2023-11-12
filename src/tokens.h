@@ -147,7 +147,7 @@ static const TokenType CharacterEncodingTable[256] = {
  * @brief Lookup table mapping token type to corresponding string representation.
  * 
  */
-static const char TokenTypeToString[][27] = {
+static const char TokenTypeToString[][28] = {
     [TOKEN_DUMMY]="TOKEN_DUMMY",                  // used in OperatorTable as a dummy value
 
     // Single character lexemes
