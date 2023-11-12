@@ -8,7 +8,10 @@
 
 #include <stdio.h>
 #include "syntactic_analysis.h"
-
+#include "precedence_analysis.h"
+#include "symtable.h"
+#include "param_vector.h"
+#include "literal_vector.h"
 // global variables define
 Scanner scanner;
 //? name like this or pointer node of function with all data (symtTreeElementPtr) or symtData
@@ -38,10 +41,11 @@ void addBuildInFunctions()
 void analysisStart()
 {
     LV_init(&literalVector);
+
     scaner_init(&scanner, &literalVector);
 
     getNextToken();
-
+    rule_prog();
     // todo global symtable init
     // todo add rule_prog() call
 
@@ -83,6 +87,7 @@ void rule_func_list()
 void rule_func_decl()
 {
     // todo semantic actions
+    assertEndOfLine();
     assertToken(TOKEN_FUNC);
     getNextToken();
     assertToken(TOKEN_IDENTIFIER);
@@ -98,6 +103,7 @@ void rule_func_decl()
     currentFunctionReturnType = UNDEFINED;
     // todo add return type storage
     rule_return_type();
+    getNextToken();
     // todo function definicion (with def to true)
     bool haveReturn = rule_func_body();
     // todo check if should have return type
@@ -133,12 +139,14 @@ void rule_param()
     rule_param_name();
     getNextToken();
     assertToken(TOKEN_IDENTIFIER);
-    // semantic rules (code gen or storing token) and add to first layer of func symtable
-
+    // sore name for adding to symtable after getting data type, isDefined = true, isConstant = true
+    Name paramId = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
+    // semantic rules code gen or make variableVector for storing variable for code generate after processing all params (mostly for function call)
     getNextToken();
     assertToken(TOKEN_COLON);
     getNextToken();
     DataType type = rule_type();
+    // todo add paramid to local symtable
     // todo store data type in param and add it to param vector
 }
 
@@ -247,7 +255,13 @@ bool rule_statement_func()
         getNextToken();
         getNextToken();
         // todo create sym table
+        DataType exprType;
+        ErrorCodes exprErrCode;
         // todo add calling precedence analys
+        if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+        {
+            error(exprErrCode);
+        }
         // precedenc should leave { for me in token variable
         rule_func_body();
 
@@ -336,6 +350,13 @@ void rule_statement()
         getNextToken();
         // todo create sym table
         // todo add calling precedence analys
+        DataType exprType;
+        ErrorCodes exprErrCode;
+        if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+        {
+            error(exprErrCode);
+        }
+        // pre
         // precedenc should leave { for me in token variable
         rule_body();
 
@@ -371,13 +392,19 @@ void rule_if_cond()
     {
         getNextToken();
         assertToken(TOKEN_IDENTIFIER);
+        // todo check if token exist in some scope
         // todo add ID to scope without nill type, scope is defined and is store id stack on top
         getNextToken(); // need same end state as precedence analysis
         return;
     }
-    getNextToken(); // need double for precedenc
     getNextToken();
     // todo call preceden analysis and check bool type
+    DataType exprType;
+    ErrorCodes exprErrCode;
+    if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+    {
+        error(exprErrCode);
+    }
 }
 
 void rule_id_decl()
@@ -426,8 +453,8 @@ void rule_statement_action()
         getNextToken(); // get token after (
         // todo in arg rules store data to params vector - structure for it defined in symtable - will be global. after each push to vector clear it
         rule_first_arg();
-        getNextToken();
         assertToken(TOKEN_R_PAR);
+        getNextToken();
 
         // todo add function semantic actions
     }
@@ -453,8 +480,8 @@ void rule_first_arg()
         return;
 
     rule_arg();
+
     // todo push param/arg structure to vector
-    getNextToken();
     rule_arg_n();
 }
 
@@ -466,8 +493,8 @@ void rule_arg_n()
     assertToken(TOKEN_COMMA);
     getNextToken();
     rule_arg();
+
     // todo push param/arg structure to vector
-    getNextToken();
     rule_arg_n();
 }
 
@@ -478,7 +505,10 @@ void rule_arg()
         // todo store type returned from rule_literal to param/arg struct
         // todo store param as NULL (should be default)
         rule_literal();
+        getNextToken();
+        return;
     }
+    // still dont know if ID is paramName or paramId
     assertToken(TOKEN_IDENTIFIER);
     getNextToken();
     rule_arg_opt();
@@ -501,6 +531,8 @@ void rule_arg_opt()
     // todo store returned data type from term as param datatype
     getNextToken();
     rule_term();
+
+    getNextToken();
 }
 
 void rule_statement_value()
@@ -514,6 +546,12 @@ void rule_statement_value()
     {
         getNextToken();
         // todo call precedence        check bool and store type to statementValueType
+        DataType exprType;
+        ErrorCodes exprErrCode;
+        if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+        {
+            error(exprErrCode);
+        }
     }
 }
 
@@ -526,14 +564,21 @@ void rule_arg_expr()
         getNextToken(); // get token after (
         // todo in arg rules store data to params vector - structure for it defined in symtable - will be global. after each push to vector clear it
         rule_first_arg();
-        getNextToken();
         assertToken(TOKEN_R_PAR);
+        getNextToken();
         // todo add function semantic actions
         // todo store function return type to statementValueType
     }
     else
     {
         // todo call precedence check bool and store type to statementValueType
+
+        DataType exprType;
+        ErrorCodes exprErrCode;
+        if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+        {
+            error(exprErrCode);
+        }
     }
 }
 
@@ -578,7 +623,7 @@ void errorHandle(ErrorCodes ErrorType, const char *functionName)
     switch (ErrorType)
     {
     case LEXICAL_ERROR:
-        fprintf(stderr, "Lexical error at line %d, column %d: Invalid token.\n", 0, 0);
+        fprintf(stderr, "Lexical error at line %d, column %d: Invalid token.\n", scanner.line, 0);
         break;
     case SYNTACTIC_ERROR:
         fprintf(stderr, "[Error call from function: %s]. Syntactic error at line %d, column %d: Unexpected token.\n", functionName, scanner.line, 0);

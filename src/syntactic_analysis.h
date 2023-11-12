@@ -9,10 +9,9 @@
 #ifndef SYNTACTIC_ANALYSIS
 #define SYNTACTIC_ANALYSIS
 #include "lexical_analyzer.h"
-#include "literal_vector.h"
 #include "tokens.h"
-#include "symtable.h"
-#include "param_vector.h"
+
+
 #include <stdbool.h>
 
 //-------------------macros-----------------
@@ -60,7 +59,7 @@ typedef enum DataType
     INT_UNCONVERTABLE
 } DataType;
 
-// struct for store name stored in literalVector
+// struct for storing ptr to name stored in literalVector
 typedef struct
 {
     char *nameStart;

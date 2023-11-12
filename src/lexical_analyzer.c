@@ -25,7 +25,7 @@ void scaner_init(Scanner *s, LiteralVector *literals){
     s->char_buffer[2] = fgetc(stdin);
     s->line = 1;
     s->literals = literals;
-    s->separator_flag = false;
+    s->separator_flag = true;
 }
 
 
