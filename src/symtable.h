@@ -105,7 +105,7 @@ bool symtableInsert(symtable* table, symData data);
 
 bool symtableInsertVar(symtable* table, Name name,  DATA_TYPE type, bool isConstant, bool isDefined, bool isInitialized);
 
-bool symtableInsertFunc(symtable* table, Name name, DATA_TYPE type, bool isConstant, bool isDefined, bool isInitialized, parameter* params,
+bool symtableInsertFunc(symtable* table, Name name, DATA_TYPE type, bool isDefined, bool isInitialized, parameter* params,
                         size_t paramCount);
 
 bool symtableDelete(symtable* table, Name symbol);
