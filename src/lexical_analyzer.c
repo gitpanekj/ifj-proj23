@@ -610,6 +610,7 @@ TokenType scan_multi_line_string(Scanner *s){
                     break;
                 default:
                     new_line = false;
+                    string_len++;
                     if (LV_add(s->literals, peek(s))==NULL) return TOKEN_MEMMORY_ERROR;
                     advance(s);
             }
