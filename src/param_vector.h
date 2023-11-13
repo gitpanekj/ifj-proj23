@@ -5,24 +5,23 @@
  * @file param_vector.h
  *
  */
+#ifndef PARAM_VECTOR
+#define PARAM_VECTOR
 #include <stdlib.h>
 #include <stdbool.h>
+#include "symtable.h"
 // todo replace with struct from symtable
-typedef struct
-{
-    int data;
-    /* data */
-} testStruct;
 
 typedef struct
 {
-    testStruct *data;
+    Parameter *data;
     unsigned paramCount;
 } ParamVector;
 
 void paramVectorInit(ParamVector *vector);
 
-bool paramVectorPush(ParamVector *vector, testStruct param);
+bool paramVectorPush(ParamVector *vector, Parameter param);
 
 void paramVectorDispose(ParamVector *vector);
 
+#endif

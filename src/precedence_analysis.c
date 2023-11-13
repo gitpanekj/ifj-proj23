@@ -53,8 +53,8 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
     // if token
     while ((next.type != END_OF_EXPR) || (!ExpressionStack_empty(&stack))){
         
-        ExpressionStack_print(&stack);
-        printf("%s, %s\n", TYPES[top->data.terminal.type], TYPES[next.data.terminal.type]);
+        // ExpressionStack_print(&stack);
+        // printf("%s, %s\n", TYPES[top->data.terminal.type], TYPES[next.data.terminal.type]);
         
         switch (PRECEDENCE_TABLE[top->data.terminal.type][next.data.terminal.type]){
             case ERROR:
@@ -171,7 +171,7 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
 
     }
     
-    ExpressionStack_print(&stack);
+   // ExpressionStack_print(&stack);
 
     *result_dtype = stack.items[1].data.expr.data_type;
 

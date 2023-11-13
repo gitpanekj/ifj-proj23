@@ -10,8 +10,8 @@
 #define SYNTACTIC_ANALYSIS
 #include "lexical_analyzer.h"
 #include "tokens.h"
-
-
+#include "symstack.h"
+#include "symtable.h"
 #include <stdbool.h>
 
 //-------------------macros-----------------
@@ -45,41 +45,14 @@ typedef enum ErrorCodes
     INTERAL_COMPILER_ERROR = 99
 } ErrorCodes;
 
-typedef enum DataType
-{
-    INT,
-    INT_NIL,
-    DOUBLE,
-    DOUBLE_NIL,
-    STRING,
-    STRING_NIL,
-    NIL,
-    UNDEFINED,
-    INT_CONVERTABLE,
-    INT_UNCONVERTABLE
-} DataType;
-
-// struct for storing ptr to name stored in literalVector
-typedef struct
-{
-    char *nameStart;
-    size_t literal_len;
-} Name;
 
 typedef struct
 {
-    char *nameStart;
-    size_t literal_len;
+    Name name;
     bool isConvertable;
     DataType type;
-} Identifer;
+} Identifier;
 
-typedef struct
-{
-    char *paramNameStart;
-    // todo add param type
-    size_t literal_len;
-} FunctionParam;
 
 //-------------------functions-----------------
 

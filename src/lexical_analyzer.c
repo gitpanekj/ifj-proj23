@@ -691,7 +691,7 @@ TokenType scan_multi_line_string(Scanner *s){
                 LV_add(s->literals, string[i]);
         }
     }
-
+    s->line++;
     return result;
 }
 

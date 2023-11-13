@@ -11,7 +11,8 @@
  *        or the return type of the fuction represented by the symbol
  * 
  */
-typedef enum{
+typedef enum DataType
+{
     UNDEFINED,
     INT,
     INT_NIL,
@@ -20,7 +21,9 @@ typedef enum{
     STRING,
     STRING_NIL,
     NIL,
-}DATA_TYPE;
+    INT_CONVERTABLE,
+    INT_UNCONVERTABLE
+} DataType;
 
 /**
  * @brief type for storing pointer to literal vectior
@@ -38,8 +41,8 @@ typedef struct{
  */
 typedef struct{
     Name name;//<name of the parameter
-    DATA_TYPE type;//<parameter type
-} parameter;
+    DataType type;//<parameter type
+} Parameter;
 
 /**
  * @brief type for storing data about a symbol
@@ -52,13 +55,13 @@ typedef struct{
 typedef struct{
 
     Name name;
-    DATA_TYPE type; //< type of the variable or return type of fuction represented by the symbol
+    DataType type; //< type of the variable or return type of fuction represented by the symbol
     bool isConstant; //< if true variable/fuction is constant
     bool isDefined; //< if true value/variable has been defined
     bool isInitialized; //< if true value/variable has been initialized
 
     bool isFuction;
-    parameter* params;  //< pointer to dynamicly allocated array of params (need to be allocated before
+    Parameter* params;  //< pointer to dynamicly allocated array of params (need to be allocated before
                         //its inserted to the data, freeing is done durring delete/dispose of the table) 
     size_t paramCount;
 } symData;
@@ -103,9 +106,9 @@ void symtableDispose(symtable* table);
 
 bool symtableInsert(symtable* table, symData data);
 
-bool symtableInsertVar(symtable* table, Name name,  DATA_TYPE type, bool isConstant, bool isDefined, bool isInitialized);
+bool symtableInsertVar(symtable* table, Name name,  DataType type, bool isConstant, bool isDefined, bool isInitialized);
 
-bool symtableInsertFunc(symtable* table, Name name, DATA_TYPE type, bool isDefined, bool isInitialized, parameter* params,
+bool symtableInsertFunc(symtable* table, Name name, DataType type, bool isDefined, bool isInitialized, Parameter* params,
                         size_t paramCount);
 
 bool symtableDelete(symtable* table, Name symbol);

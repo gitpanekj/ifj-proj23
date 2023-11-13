@@ -71,7 +71,7 @@ bool symtableInsert(symtable* table, symData data){
  * @return true 
  * @return false 
  */
-bool symtableInsertVar(symtable* table, Name name,  DATA_TYPE type, bool isConstant, bool isDefined, bool isInitialized){
+bool symtableInsertVar(symtable* table, Name name,  DataType type, bool isConstant, bool isDefined, bool isInitialized){
     symData new_symbol = {.name = name, .type = type, .isConstant = isConstant, .isDefined = isDefined, 
                         .isInitialized = isInitialized, .isFuction = false, .params = NULL, .paramCount = 0};
     return symtableInsert(table,new_symbol);
@@ -92,8 +92,8 @@ bool symtableInsertVar(symtable* table, Name name,  DATA_TYPE type, bool isConst
  * @return true 
  * @return false 
  */
-bool symtableInsertFunc(symtable* table, Name name, DATA_TYPE ret_type, bool isDefined, bool isInitialized, 
-                        parameter* params, size_t paramCount){
+bool symtableInsertFunc(symtable* table, Name name, DataType ret_type, bool isDefined, bool isInitialized, 
+                        Parameter* params, size_t paramCount){
     symData new_symbol = {.name = name, .type = ret_type, .isConstant = true, .isDefined = isDefined, 
                         .isInitialized = isInitialized, .isFuction = true, .params = params, .paramCount = paramCount};
     return symtableInsert(table,new_symbol);

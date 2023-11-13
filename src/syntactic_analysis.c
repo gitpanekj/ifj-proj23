@@ -12,25 +12,27 @@
 #include "symtable.h"
 #include "param_vector.h"
 #include "literal_vector.h"
+
 // global variables define
 Scanner scanner;
-//? name like this or pointer node of function with all data (symtTreeElementPtr) or symtData
-Name currentFunctionName;
-
-DataType currentFunctionReturnType;
-DataType statementValueType;
-
-// todo add global param/argument struct
-
-Token token;
-Identifer leftSideIdentifier; // variable
-// rightside - call precedence or get func name 1 from history array
-
 LiteralVector literalVector;
 Token tokenHistory[2];
+Token token;
+
+//? name like this or pointer node of function with all data (symtTreeElementPtr) or symtData
+symData currentFunction; // pointer to data of current function - if processing function
+Name currentFunctionName;
+
+DataType currentFunctionReturnType = UNDEFINED; // type for return type check
+DataType statementValueType;                    // type returned from statement value rule
+
+Parameter currentParameter;    // currently being processed function parameter/argument
+Identifier leftSideIdentifier; // current variable on left side of statement (for example a in this statement: var a = 5 + 6 ...)
 
 // TODO add symtable - global for functions and variables
-// TODO add symstack
+symtable globalSymtable; // table with global variables and functions
+// symtable currentSymtable; // symtable of current scope
+symStack stackSymtable; // stack of scoped symtables
 //?add global to end of symstack
 
 void addBuildInFunctions()
@@ -40,16 +42,26 @@ void addBuildInFunctions()
 
 void analysisStart()
 {
+
     LV_init(&literalVector);
-
     scaner_init(&scanner, &literalVector);
+    symStackInit(&stackSymtable);
+    // symtableInit(&globalSymtable);
+    // symStackPush(&stackSymtable, &globalSymtable);
 
+
+    // char *pointerToStart = "example";
+    // Name name = {.nameStart=pointerToStart,.literal_len=6};
+    // symtableInsertVar(&globalSymtable,(Name){.nameStart=pointerToStart,.literal_len=6},INT,false,false,false);
+    // symData* varData = symtableGetData(&globalSymtable,(Name){.nameStart=pointerToStart,.literal_len=7});
     getNextToken();
     rule_prog();
     // todo global symtable init
     // todo add rule_prog() call
 
     // todo add check if all variables and function was defined and inizialized
+    // symtableDispose(&globalSymtable);
+    // symStackDispose(&stackSymtable);
 }
 
 // todo add syntactic rules
@@ -103,7 +115,6 @@ void rule_func_decl()
     currentFunctionReturnType = UNDEFINED;
     // todo add return type storage
     rule_return_type();
-    getNextToken();
     // todo function definicion (with def to true)
     bool haveReturn = rule_func_body();
     // todo check if should have return type
@@ -168,6 +179,7 @@ void rule_return_type()
     assertToken(TOKEN_RIGHT_ARROW);
     getNextToken();
     currentFunctionReturnType = rule_type();
+    getNextToken();
 }
 
 DataType rule_type()
@@ -415,8 +427,8 @@ void rule_id_decl()
         leftSideIdentifier.isConvertable = false;
     getNextToken();
     assertToken(TOKEN_IDENTIFIER);
-    leftSideIdentifier.literal_len = token.literal_len;
-    leftSideIdentifier.nameStart = token.start_ptr;
+    leftSideIdentifier.name.literal_len = token.literal_len;
+    leftSideIdentifier.name.nameStart = token.start_ptr;
 }
 
 void rule_decl_opt()
@@ -461,8 +473,8 @@ void rule_statement_action()
     else if (tokenIs(TOKEN_EQUAL)) // assigment to variable
     {
         // left side ID is one token back
-        leftSideIdentifier.nameStart = tokenHistory[0].start_ptr;
-        leftSideIdentifier.literal_len = tokenHistory[0].literal_len;
+        leftSideIdentifier.name.nameStart = tokenHistory[0].start_ptr;
+        leftSideIdentifier.name.literal_len = tokenHistory[0].literal_len;
         getNextToken(); // get token after =
         // todo find in symtable and check types or add to global symtable and store type from assignment (cant be undefined funciton)
         rule_statement_value();
@@ -546,6 +558,7 @@ void rule_statement_value()
     {
         getNextToken();
         // todo call precedence        check bool and store type to statementValueType
+
         DataType exprType;
         ErrorCodes exprErrCode;
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
