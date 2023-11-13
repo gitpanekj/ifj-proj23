@@ -26,7 +26,8 @@ Name currentFunctionName;
 DataType currentFunctionReturnType = UNDEFINED; // type for return type check
 DataType statementValueType;                    // type returned from statement value rule
 
-Parameter currentParameter;    // currently being processed function parameter/argument
+Parameter currentParameter; // currently being processed function parameter/argument
+ParamVector parameterVector;
 Identifier leftSideIdentifier; // current variable on left side of statement (for example a in this statement: var a = 5 + 6 ...)
 
 // TODO add symtable - global for functions and variables
@@ -45,10 +46,9 @@ void analysisStart()
 
     LV_init(&literalVector);
     scaner_init(&scanner, &literalVector);
-    symStackInit(&stackSymtable);
-    // symtableInit(&globalSymtable);
-    // symStackPush(&stackSymtable, &globalSymtable);
-
+    // symStackInit(&stackSymtable);
+    //  symtableInit(&globalSymtable);
+    //  symStackPush(&stackSymtable, &globalSymtable);
 
     // char *pointerToStart = "example";
     // Name name = {.nameStart=pointerToStart,.literal_len=6};
@@ -62,6 +62,7 @@ void analysisStart()
     // todo add check if all variables and function was defined and inizialized
     // symtableDispose(&globalSymtable);
     // symStackDispose(&stackSymtable);
+    LV_free(&literalVector);
 }
 
 // todo add syntactic rules
@@ -108,9 +109,12 @@ void rule_func_decl()
     getNextToken();
     assertToken(TOKEN_L_PAR);
     getNextToken();
+    paramVectorInit(&parameterVector);
+
     // todo add param vector - start with NULL and use global param struct
     rule_param_first();
     assertToken(TOKEN_R_PAR);
+    paramVectorPrint(&parameterVector);
     getNextToken();
     currentFunctionReturnType = UNDEFINED;
     // todo add return type storage
@@ -148,6 +152,7 @@ void rule_param_n()
 void rule_param()
 {
     rule_param_name();
+
     getNextToken();
     assertToken(TOKEN_IDENTIFIER);
     // sore name for adding to symtable after getting data type, isDefined = true, isConstant = true
@@ -159,6 +164,8 @@ void rule_param()
     DataType type = rule_type();
     // todo add paramid to local symtable
     // todo store data type in param and add it to param vector
+    currentParameter.type = type;
+    // paramVectorPush(&parameterVector, currentParameter);
 }
 
 void rule_param_name()
@@ -167,7 +174,10 @@ void rule_param_name()
     {
         error(SYNTACTIC_ERROR);
     }
+
     // todo add param name to param vector
+    // currentParameter.name.literal_len = token.literal_len;
+    // currentParameter.name.nameStart = token.start_ptr;
 }
 //? if storing current function as node of symtable, make from void datatype and return it to local variable in rule_func_decl
 void rule_return_type()

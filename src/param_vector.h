@@ -22,6 +22,8 @@ void paramVectorInit(ParamVector *vector);
 
 bool paramVectorPush(ParamVector *vector, Parameter param);
 
+void paramVectorPrint(ParamVector *vector);
+
 void paramVectorDispose(ParamVector *vector);
 
 #endif
