@@ -48,8 +48,8 @@ char hex_to_dec(char c){
 
 
 TokenType is_kw(LiteralVector *vec){
-    size_t len = vec->forming_size-vec->confirmed_size;
-    char * literal = &(vec->literal_array[vec->confirmed_size]);
+    size_t len = vec->forming_size;
+    char * literal = &(vec->literal_buffer);
 
     switch (len){
         case 2:
