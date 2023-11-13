@@ -9,20 +9,19 @@ void symStackInit(symStack* stack){
 
 
 /**
- * @brief function for pushing initiated table to stack 
+ * @brief function for pushing pointer to initiated dynamic table to stack 
  * 
  * @param stack stack where the symtable will be stored
- * @param table newly initiated table added to stack
+ * @param table pointer to newly initalizated dynamicaly allocated table to be stored in the stack 
  * @return void* return NULL if allocation of new element failed else returns pointer to new symstack element 
  */
-void* symStackPush(symStack* stack, symtable table){
+void* symStackPush(symStack* stack, symtable* table){
     symStackElementPtr newElementPtr = malloc(sizeof(struct symStackElement));
-    symtable* newTable = malloc(sizeof(symtable));
     if(newElementPtr == NULL){
         return NULL;
     }
 
-    *(newElementPtr->symtable) = table;
+    newElementPtr->symtable = table;
     newElementPtr->nextELement = stack->topTable;
     stack->topTable = newElementPtr;
 
