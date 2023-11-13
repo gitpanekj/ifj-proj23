@@ -13,9 +13,9 @@
 #include <stdlib.h> // size_t
 #include <stdbool.h> // bool
 
-#define INIT_CAPACITY 1
-#define LV_IS_FULL(vec) (vec->forming_size >= vec->capacity - 1)
-#define GROW_CAPACITY(cap) cap*2
+
+#define BUFFER_BASE_SIZE 64
+#define LV_BASE_SIZE     64
 
 
 
@@ -32,10 +32,13 @@
  * 
  */
 typedef struct {
-    char *literal_array;   //< array of literals
-    size_t confirmed_size; //< number characters in array
-    size_t forming_size;   //< confirmed_size + current size of literal which is being formed
-    size_t capacity;       //< Size of allocated memory space
+    char *literal_buffer;   //< buffer for forming token
+    size_t forming_size;    //< size of forming buffer
+    size_t buffer_capacity; //< capacity of literal buffer
+
+    char **items;           //< array of literals
+    size_t n_items;         //< number of literal in LiteralVector
+    size_t capacity;        //< Size of allocated memory space
 } LiteralVector;
 
 
@@ -89,7 +92,7 @@ char* LV_submit(LiteralVector*, size_t*);
  * @param vec pointer to literal vector
  * @return char* 
  */
-void LV_restore(LiteralVector*);
+void* LV_restore(LiteralVector*);
 
 
 #endif

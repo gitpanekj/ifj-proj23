@@ -494,9 +494,9 @@ TokenType scan_single_line_string(Scanner *s){
             }
     }
 
-    // restore state of literal vector and process cached literl string
-    LV_restore(s->literals);
-    char *string = &(s->literals->literal_array[s->literals->confirmed_size]);
+    // process cached literl string
+    s->literals->forming_size = 0;
+    char *string = s->literals->literal_buffer;
 
     // Process cached string literals.
     // Transform escape sequences to its corresponding ASCII values
@@ -616,9 +616,9 @@ TokenType scan_multi_line_string(Scanner *s){
             }
     }
 
-    // restore state of literal vector and process cached literl string
-    LV_restore(s->literals);
-    char *string = &(s->literals->literal_array[s->literals->confirmed_size]);
+    // process cached literl string
+    s->literals->forming_size = 0;
+    char *string = s->literals->literal_buffer;
 
 
     // Process cached string literals.
@@ -627,8 +627,7 @@ TokenType scan_multi_line_string(Scanner *s){
     int current_line_indentation = 0;
     new_line = true;
     int encoded_escape;
-
-    for (int i=0;i<string_len-indentation-2;i++){ // -2 - because of which is not part of literal \n
+    for (int i=0;i<string_len-indentation-1;i++){ // -2 - because of which is not part of literal \n
         switch(string[i]){
             case '\n':
                 LV_add(s->literals, string[i]);
@@ -780,14 +779,13 @@ Token scan_token(Scanner *s){
 
     TokenType confirmed_token_type;
     TokenType expected_token_type;
-
     char *literal_start;
     size_t literal_length=0;
     Token t;
     bool follows_separator = s->separator_flag;
     s->separator_flag = false;
 
-
+    if (LV_restore(s->literals)==NULL){InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false); return t;}
     InitToken(&t, TOKEN_DUMMY, NULL, 0, false);
 
     
@@ -862,8 +860,6 @@ Token scan_token(Scanner *s){
         }
         else // is keyword
         {
-            // remove buffered characters
-            LV_restore(s->literals);
 
             // check Int?, Double?, String?
             if (( confirmed_token_type == TOKEN_INTEGER_T ||
@@ -906,7 +902,6 @@ Token scan_token(Scanner *s){
             InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
         }
         else if (confirmed_token_type == TOKEN_LA_ERROR){
-            LV_restore(s->literals);
             InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
         }
         else {
@@ -928,7 +923,6 @@ Token scan_token(Scanner *s){
             }
             else if (confirmed_token_type == TOKEN_LA_ERROR){
                 InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
-                LV_restore(s->literals);
             }
             else {
                 literal_start = LV_submit(s->literals, &literal_length);
