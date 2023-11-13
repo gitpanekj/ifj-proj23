@@ -812,6 +812,7 @@ Token scan_token(Scanner *s){
         // Consumes comment and does not produce any token
         if (forward_lookup(s, "//")==0){ // single-line comment
             consume_single_line_comment(s);
+            follows_separator = true;
         }
         
         if (forward_lookup(s, "/*")==0) { // multi-line comment
