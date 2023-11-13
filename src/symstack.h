@@ -12,7 +12,7 @@
  * 
  */
 typedef struct symStackElement{
-    symtable *symtable; //< heap allocated table
+    symtable *symtable; //< pointer to table
     struct symStackElement *nextELement; //< next element of the stack
 }* symStackElementPtr;
 
@@ -31,7 +31,7 @@ typedef struct{
 
 void symStackInit(symStack* stack);
 
-void* symStackPush(symStack* stack, symtable table);
+void* symStackPush(symStack* stack, symtable* table);
 
 void symStackPop(symStack* stack);
 
