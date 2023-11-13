@@ -108,11 +108,11 @@ void reduce_rule(ExpressionStack*);
 
 
 
-bool token_to_expr_member(Token, ExpressionStackItem*);
+void token_to_expr_member(Token, ExpressionStackItem*);
 
 void init_literal_term(ExpressionStackItem*, Token*);
 
-bool init_identifier_term(ExpressionStackItem*, Token*);
+void init_identifier_term(ExpressionStackItem*, Token*);
 
 void init_terminal(ExpressionStackItem*, ExpressionMemberType);
 

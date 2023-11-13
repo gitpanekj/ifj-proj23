@@ -10,10 +10,8 @@ int main(){
     LV_init(&literals);
 
     scaner_init(&scanner, &literals);
-
     getNextToken();
     getNextToken();
-
 
 
     if (!parse_expression(tokenHistory, &result_dtype, &err)){

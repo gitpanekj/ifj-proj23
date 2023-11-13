@@ -14,7 +14,7 @@
 /******************* ExpressionStackItem  ****************************/
 
 
-bool token_to_expr_member(Token t, ExpressionStackItem* item){
+void token_to_expr_member(Token t, ExpressionStackItem* item){
 
     switch (TOKEN_TO_MEMBER_TYPE[t.type]){
         case SEP:
@@ -24,9 +24,7 @@ bool token_to_expr_member(Token t, ExpressionStackItem* item){
         
         case TERM:
             if (t.type == TOKEN_IDENTIFIER){
-                if (!init_identifier_term(item, &t)){
-                    return false;
-                }
+                init_identifier_term(item, &t);
             }
             else
             {
@@ -37,8 +35,6 @@ bool token_to_expr_member(Token t, ExpressionStackItem* item){
         default:
             init_terminal(item, TOKEN_TO_MEMBER_TYPE[t.type]);
     }
-
-    return item;
 }
 
 
@@ -55,16 +51,13 @@ void init_literal_term(ExpressionStackItem *item, Token *t){
 }
 
 
-bool init_identifier_term(ExpressionStackItem *item, Token *t){
+void init_identifier_term(ExpressionStackItem *item, Token *t){
     item->type = IDENTIFIER;
     item->data.term.literal = t->start_ptr;
     item->data.term.literal_len = t->literal_len;
     item->data.term.type = TERM;
 
-    // TODO: type determined based on table of symbols
-    item->data.term.data_type = INT_UNCONVERTABLE;
-
-    return true;
+    item->data.term.data_type = UNDEFINED;
 }
 
 

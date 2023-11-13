@@ -26,18 +26,24 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
     bool valid;
 
 
-    if (!token_to_expr_member(tokenHistory[0], &next)){
-        ExpressionStack_dispose(&stack);
-        *err = UNDEFINED_VARIABLE;
-        return false; // undeclared, undefined variable
-    };
+    token_to_expr_member(tokenHistory[0], &next);
+
+    // check whether identifier is defined
+    if (next.type == IDENTIFIER){
+        // TODO: check whether identifier is defined
+        next.data.term.data_type = INT_UNCONVERTABLE;
+        if (false){
+            ExpressionStack_dispose(&stack);
+            *err = UNDEFINED_VARIABLE;
+            return false; // undeclared, undefined variable
+        }
+    }
 
     if (next.type == END_OF_EXPR){
         ExpressionStack_dispose(&stack);
         *err = SYNTACTIC_ERROR;
         return false;  
     }
-
 
 
     top_idx = ExpressionStack_top(&stack);
@@ -48,6 +54,8 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
     while ((next.type != END_OF_EXPR) || (!ExpressionStack_empty(&stack))){
         
         ExpressionStack_print(&stack);
+        printf("%s, %s\n", TYPES[top->data.terminal.type], TYPES[next.data.terminal.type]);
+        
         switch (PRECEDENCE_TABLE[top->data.terminal.type][next.data.terminal.type]){
             case ERROR:
                 fprintf(stderr, "Error occured during expression parsing: invalid order.\n");
@@ -57,15 +65,33 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
 
             case OPEN:
                 mark_start_of_expr(&stack, top_idx);
-
                 ExpressionStack_push(&stack, next);
+                
+                // refresh top of stack
+                top_idx = ExpressionStack_top(&stack);
+                top = &(stack.items[top_idx]);
 
                 
-                if (!token_to_expr_member(tokenHistory[1], &next)){
-                    ExpressionStack_dispose(&stack);
-                    *err = UNDEFINED_VARIABLE;
-                    return false; // undeclared, undefined variable
-                };
+                token_to_expr_member(tokenHistory[1], &next);
+
+                if (next.type == IDENTIFIER && tokenHistory[1].follows_separator==true){
+                   if (PRECEDENCE_TABLE[top->data.terminal.type][next.data.terminal.type] == ERROR){
+                        next.type = END_OF_EXPR;
+                        next.data.terminal.type = SEP;
+                        break;
+                   }
+                }
+
+                // check whether identifier is defined
+                if (next.type == IDENTIFIER){
+                    // TODO: check whether identifier is defined
+                    next.data.term.data_type = INT_UNCONVERTABLE;
+                    if (false){
+                        ExpressionStack_dispose(&stack);
+                        *err = UNDEFINED_VARIABLE;
+                        return false; // undeclared, undefined variable
+                    }
+                }
 
                 if (next.type == END_OF_EXPR){
                     break;
@@ -98,16 +124,40 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
                     *err = TYPE_COMPATIBILITY_ERROR;
                     return false;
                 }
+
+
+                // refresh top of stack
+                top_idx = ExpressionStack_top(&stack);
+                top = &(stack.items[top_idx]);
                 break;
 
             case EQ:
                 ExpressionStack_push(&stack, next);
+                // refresh top of stack
+                top_idx = ExpressionStack_top(&stack);
+                top = &(stack.items[top_idx]);
 
-                if (!token_to_expr_member(tokenHistory[1], &next)){
-                    ExpressionStack_dispose(&stack);
-                    *err = UNDEFINED_VARIABLE;
-                    return false; // undeclared, undefined variable
-                };
+
+                token_to_expr_member(tokenHistory[1], &next);
+
+                if (next.type == IDENTIFIER && tokenHistory[1].follows_separator==true){
+                   if (PRECEDENCE_TABLE[top->data.terminal.type][next.data.terminal.type] == ERROR){
+                        next.type = END_OF_EXPR;
+                        next.data.terminal.type = SEP;
+                        break;
+                   }
+                }
+
+                // check whether identifier is defined
+                if (next.type == IDENTIFIER){
+                    // TODO: check whether identifier is defined
+                    next.data.term.data_type = INT_UNCONVERTABLE;
+                    if (false){
+                        ExpressionStack_dispose(&stack);
+                        *err = UNDEFINED_VARIABLE;
+                        return false; // undeclared, undefined variable
+                    }
+                }
 
                 if (next.type == END_OF_EXPR){
                     break;
@@ -115,13 +165,10 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
 
                 getNextToken(); // consume token and get next
 
-
                 break;
         }
 
-        // refresh top of stack
-        top_idx = ExpressionStack_top(&stack);
-        top = &(stack.items[top_idx]);
+
     }
     
     ExpressionStack_print(&stack);
