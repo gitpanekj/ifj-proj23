@@ -31,7 +31,7 @@ ParamVector parameterVector;
 Identifier leftSideIdentifier; // current variable on left side of statement (for example a in this statement: var a = 5 + 6 ...)
 
 // TODO add symtable - global for functions and variables
-symtable globalSymtable; // table with global variables and functions
+symtable *globalSymtable; // table with global variables and functions
 // symtable currentSymtable; // symtable of current scope
 symStack stackSymtable; // stack of scoped symtables
 //?add global to end of symstack
@@ -46,22 +46,22 @@ void analysisStart()
 
     LV_init(&literalVector);
     scaner_init(&scanner, &literalVector);
-    // symStackInit(&stackSymtable);
-    //  symtableInit(&globalSymtable);
-    //  symStackPush(&stackSymtable, &globalSymtable);
+    // todo global symtable init
+    symStackInit(&stackSymtable);
+    symtableInit(&globalSymtable);
+    symStackPush(&stackSymtable, globalSymtable);
 
-    // char *pointerToStart = "example";
+     char *pointerToStart = "example";
     // Name name = {.nameStart=pointerToStart,.literal_len=6};
-    // symtableInsertVar(&globalSymtable,(Name){.nameStart=pointerToStart,.literal_len=6},INT,false,false,false);
-    // symData* varData = symtableGetData(&globalSymtable,(Name){.nameStart=pointerToStart,.literal_len=7});
+//   symtableInsertVar(globalSymtable,(Name){.nameStart=pointerToStart,.literal_len=6},STRING_NIL,true,false,false);
+//   symData* varData = symtableGetData(globalSymtable,(Name){.nameStart=pointerToStart,.literal_len=6});
+//   printf("%d",varData->type);
     getNextToken();
     rule_prog();
-    // todo global symtable init
-    // todo add rule_prog() call
 
     // todo add check if all variables and function was defined and inizialized
-    // symtableDispose(&globalSymtable);
-    // symStackDispose(&stackSymtable);
+
+    symStackDispose(&stackSymtable);
     LV_free(&literalVector);
 }
 

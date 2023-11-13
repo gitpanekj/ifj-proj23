@@ -16,13 +16,14 @@
 /** 
  *@brief Initializes a symbol table.
  *
- * This fuction initializes a symbol table by setting its root node to NULL
+ * This fuction initializes a symbol table by allocating symtable type on heap and setting its root node to NULL
  *
- * @param table Pointer to the symbol table to be initialized.
+ * @param table Double pointer to the symbol table to be initialized.
  * 
 */
-void symtableInit(symtable* table){
-    table->root = NULL;
+void symtableInit(symtable** table){
+    *table = (symtable *)malloc(sizeof(symtable));
+    (*table)->root = NULL;
 }
 
 /** 

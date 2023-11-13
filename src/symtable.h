@@ -100,7 +100,7 @@ typedef struct{
 } symtable;
 
 
-void symtableInit(symtable* table);
+void symtableInit(symtable** table);
 
 void symtableDispose(symtable* table);
 

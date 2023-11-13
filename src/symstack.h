@@ -35,6 +35,8 @@ void* symStackPush(symStack* stack, symtable* table);
 
 void symStackPop(symStack* stack);
 
+void symStackPopAndDispose(symStack* stack);
+
 symtable *symStackTop(symStack* stack);
 
 symtable *symStackActive(symStack* stack);
