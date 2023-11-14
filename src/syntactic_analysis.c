@@ -10,7 +10,6 @@
 #include "syntactic_analysis.h"
 #include "precedence_analysis.h"
 #include "symtable.h"
-#include "param_vector.h"
 #include "literal_vector.h"
 
 // global variables define
@@ -20,7 +19,7 @@ Token tokenHistory[2];
 Token token;
 
 //? name like this or pointer node of function with all data (symtTreeElementPtr) or symtData
-symData currentFunction; // pointer to data of current function - if processing function
+symtable *currentFunctionSymtable; // pointer to data of current function - if processing function
 Name currentFunctionName;
 
 DataType currentFunctionReturnType = UNDEFINED; // type for return type check
@@ -33,7 +32,7 @@ Identifier leftSideIdentifier; // current variable on left side of statement (fo
 // TODO add symtable - global for functions and variables
 symtable *globalSymtable; // table with global variables and functions
 // symtable currentSymtable; // symtable of current scope
-symStack stackSymtable; // stack of scoped symtables
+symStack symtableStack; // stack of scoped symtables
 //?add global to end of symstack
 
 void addBuildInFunctions()
@@ -46,26 +45,37 @@ void analysisStart()
 
     LV_init(&literalVector);
     scaner_init(&scanner, &literalVector);
-    // todo global symtable init
-    symStackInit(&stackSymtable);
-    symtableInit(&globalSymtable);
-    symStackPush(&stackSymtable, globalSymtable);
+    symStackInit(&symtableStack);
+    if (!symtableInit(&globalSymtable))
+        error(INTERAL_COMPILER_ERROR);
+    symStackPush(&symtableStack, globalSymtable);
+    //! mess for symTable and symstack testing
+    // char *pointerToStart = "esxample";
+    // symtable *tab = createAndPushSymtable();
+    // symtableInsertVar(tab, (Name){.nameStart = pointerToStart, .literal_len = 6}, STRING_NIL, true, false, false);
+    // createAndPushSymtable();
+    //     char *pointerTsoStart = "asd";
 
-     char *pointerToStart = "example";
-    // Name name = {.nameStart=pointerToStart,.literal_len=6};
-//   symtableInsertVar(globalSymtable,(Name){.nameStart=pointerToStart,.literal_len=6},STRING_NIL,true,false,false);
-//   symData* varData = symtableGetData(globalSymtable,(Name){.nameStart=pointerToStart,.literal_len=6});
-//   printf("%d",varData->type);
+    // createAndPushSymtable();
+    // symData *varData = getDataFromSymstack((Name){.nameStart = pointerTsoStart, .literal_len = 6});
+    //     symStackPopAndDispose(&symtableStack);
+    //  if (!symtableInit(&globalSymtable))
+    //     error(INTERAL_COMPILER_ERROR);
+    //     symStackPush(&symtableStack,globalSymtable);
+    //     symtableInsertVar(globalSymtable, (Name){.nameStart = pointerToStart, .literal_len = 6}, INT, true, false, false);
+    //     varData = symtableGetData(symStackTop(&symtableStack), (Name){.nameStart = pointerToStart, .literal_len = 6});
+    //     printf("%d", varData->type);
+
     getNextToken();
     rule_prog();
 
     // todo add check if all variables and function was defined and inizialized
 
-    symStackDispose(&stackSymtable);
+    symStackDispose(&symtableStack);
     LV_free(&literalVector);
 }
 
-// todo add syntactic rules
+//-------------- grammar rules --------------------------
 
 void rule_prog()
 {
@@ -100,25 +110,27 @@ void rule_func_list()
 void rule_func_decl()
 {
     // todo semantic actions
+
     assertEndOfLine();
     assertToken(TOKEN_FUNC);
     getNextToken();
     assertToken(TOKEN_IDENTIFIER);
-    currentFunctionName.literal_len = token.literal_len;
-    currentFunctionName.nameStart = token.start_ptr;
+    // currentFunctionName.literal_len = token.literal_len;
+    // currentFunctionName.nameStart = token.start_ptr;
+    Name funcName = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
     getNextToken();
     assertToken(TOKEN_L_PAR);
     getNextToken();
-    paramVectorInit(&parameterVector);
 
-    // todo add param vector - start with NULL and use global param struct
+    currentFunctionSymtable = createAndPushSymtable();
+    paramVectorInit(&parameterVector);
     rule_param_first();
     assertToken(TOKEN_R_PAR);
-    paramVectorPrint(&parameterVector);
+
     getNextToken();
     currentFunctionReturnType = UNDEFINED;
-    // todo add return type storage
     rule_return_type();
+    storeOrCheckFunctionSymtable(funcName, currentFunctionReturnType, parameterVector, true);
     // todo function definicion (with def to true)
     bool haveReturn = rule_func_body();
     // todo check if should have return type
@@ -165,7 +177,7 @@ void rule_param()
     // todo add paramid to local symtable
     // todo store data type in param and add it to param vector
     currentParameter.type = type;
-    // paramVectorPush(&parameterVector, currentParameter);
+    paramVectorPush(&parameterVector, currentParameter);
 }
 
 void rule_param_name()
@@ -176,14 +188,15 @@ void rule_param_name()
     }
 
     // todo add param name to param vector
-    // currentParameter.name.literal_len = token.literal_len;
-    // currentParameter.name.nameStart = token.start_ptr;
+    currentParameter.name.literal_len = token.literal_len;
+    currentParameter.name.nameStart = token.start_ptr;
 }
 //? if storing current function as node of symtable, make from void datatype and return it to local variable in rule_func_decl
 void rule_return_type()
 {
     if (tokenIs(TOKEN_L_BRACE))
     {
+        currentFunctionReturnType = UNDEFINED;
         return;
     }
     assertToken(TOKEN_RIGHT_ARROW);
@@ -637,6 +650,110 @@ DataType rule_literal()
         break;
     }
     return 0;
+}
+
+//-------------- functions for semantic checks --------------------------
+
+void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVector params, bool definition)
+{
+
+    symData *data = getDataFromSymstack(funcName);
+    if (data == NULL) // function is not in table - first call => do definition
+    {
+        symtableInsertFunc(globalSymtable, funcName, returnType, definition, params.data, params.paramCount);
+        return;
+    }
+    else if (!data->isFunction)
+    { // funcName is like variable in scoped symtables
+      //! error type?
+    }
+    else
+    {
+        if (data->paramCount != -1) // -1 => any number of parameters (for build functions)
+        {
+            // check param names and count
+            if (params.paramCount != data->paramCount || !compareParams(params.data, data->params, params.paramCount))
+                error(FUNCTION_CALL_ERROR);
+        }
+        // need to check undefined type due to a function call without assignment
+        if (data->isDefined)
+        {
+            if (data->isDefined && definition)                       // function redefinition => error
+                error(DEFINITION_ERROR);                             //! ask to error code
+            if (returnType != UNDEFINED && returnType != data->type) // type of current function call is not undefined (assigment with function) =>
+                error(FUNCTION_CALL_ERROR);                          // => types must be equal
+        }
+        else
+        {
+            if (definition) // function has not been defined and the definition is now being processed
+            {
+                if (data->type != UNDEFINED && returnType != data->type) // stored type is not undefine => types must be equal
+                    error(FUNCTION_CALL_ERROR);
+
+                data->type = returnType;
+                data->isDefined = true;
+            }
+            else
+            {                                                           // the function has not been defined and the definition is not being processed
+                if (data->type != UNDEFINED && returnType != UNDEFINED) // both are not undefined => type must be equal
+                {
+                    if (data->type != returnType)
+                        error(FUNCTION_CALL_ERROR);
+                }
+                else if (returnType != UNDEFINED) // only type of current function call is not undefined (assigment with function) => set function to that type
+                {
+                    data->type = returnType;
+                } // only stored data type is not undefined => do nothing
+            }
+        }
+    }
+}
+
+bool compareParams(Parameter *params1, Parameter *params2, int paramCount)
+{
+    for (int i = 0; i < paramCount; i++)
+    {
+        if (params1[i].type != params2[i].type || symtTreeNameCmp(params1[i].name, params2[i].name) != 0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+/**
+ * @brief Find and return data of variable or function given by name in symstack
+ * This function finds the first occurrence of a name in symtables stored on symstack and returns a pointer to its data.
+ * And sets the active table on the symstack to the table where it found the data.
+ * @param name Name of variable or functionto be found
+ * @return symData* Pointer to data of var
+ * @return if name was not found return null
+ */
+symData *getDataFromSymstack(Name name)
+{
+    symData *data;
+    symStackActiveToTop(&symtableStack);
+    while (symStackIsActive(&symtableStack))
+    {
+        data = symtableGetData(symStackActive(&symtableStack), name);
+        if (data != NULL)
+            return data;
+        else
+            symStackNext(&symtableStack);
+    }
+    return NULL;
+}
+
+/**
+ * @brief Init new symtable and add it to symstack
+ *
+ * @return address of new symtable
+ */
+symtable *createAndPushSymtable()
+{
+    symtable *table;
+    if (!symtableInit(&table) || symStackPush(&symtableStack, table) == NULL)
+        error(INTERAL_COMPILER_ERROR);
+    return table;
 }
 
 void errorHandle(ErrorCodes ErrorType, const char *functionName)

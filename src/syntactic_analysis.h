@@ -12,6 +12,7 @@
 #include "tokens.h"
 #include "symstack.h"
 #include "symtable.h"
+#include "param_vector.h"
 #include <stdbool.h>
 
 //-------------------macros-----------------
@@ -59,6 +60,14 @@ typedef struct
 void addBuildInFunctions();
 
 void analysisStart();
+
+void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVector params, bool definition);
+
+bool compareParams(Parameter *params1, Parameter *params2, int paramCount);
+
+symData *getDataFromSymstack(Name name);
+
+symtable* createAndPushSymtable();
 
 void errorHandle(ErrorCodes ErrorType, const char *functionName);
 

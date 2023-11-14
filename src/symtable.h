@@ -60,10 +60,10 @@ typedef struct{
     bool isDefined; //< if true value/variable has been defined
     bool isInitialized; //< if true value/variable has been initialized
 
-    bool isFuction;
+    bool isFunction;
     Parameter* params;  //< pointer to dynamicly allocated array of params (need to be allocated before
                         //its inserted to the data, freeing is done durring delete/dispose of the table) 
-    size_t paramCount;
+    int paramCount;
 } symData;
 
 /**
@@ -100,7 +100,7 @@ typedef struct{
 } symtable;
 
 
-void symtableInit(symtable** table);
+bool symtableInit(symtable** table);
 
 void symtableDispose(symtable* table);
 
@@ -108,8 +108,8 @@ bool symtableInsert(symtable* table, symData data);
 
 bool symtableInsertVar(symtable* table, Name name,  DataType type, bool isConstant, bool isDefined, bool isInitialized);
 
-bool symtableInsertFunc(symtable* table, Name name, DataType type, bool isDefined, bool isInitialized, Parameter* params,
-                        size_t paramCount);
+bool symtableInsertFunc(symtable* table, Name name, DataType ret_type, bool isDefined, Parameter* params,
+                        int paramCount);
 
 bool symtableDelete(symtable* table, Name symbol);
 

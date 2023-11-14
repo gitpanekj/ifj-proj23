@@ -20,10 +20,15 @@
  *
  * @param table Double pointer to the symbol table to be initialized.
  * 
+ * @return false in case of allocation fail 
 */
-void symtableInit(symtable** table){
+bool symtableInit(symtable** table){
     *table = (symtable *)malloc(sizeof(symtable));
+     if(*table == NULL){
+        return false;
+     }
     (*table)->root = NULL;
+    return true;
 }
 
 /** 
@@ -74,7 +79,7 @@ bool symtableInsert(symtable* table, symData data){
  */
 bool symtableInsertVar(symtable* table, Name name,  DataType type, bool isConstant, bool isDefined, bool isInitialized){
     symData new_symbol = {.name = name, .type = type, .isConstant = isConstant, .isDefined = isDefined, 
-                        .isInitialized = isInitialized, .isFuction = false, .params = NULL, .paramCount = 0};
+                        .isInitialized = isInitialized, .isFunction = false, .params = NULL, .paramCount = 0};
     return symtableInsert(table,new_symbol);
 }
 
@@ -84,19 +89,17 @@ bool symtableInsertVar(symtable* table, Name name,  DataType type, bool isConsta
  * @param table Pointer to table where new data about the symbol is added
  * @param name name of the new fuction
  * @param ret_type return type of the fuction
- * @param isConstant flag for determining if fuction/ret_type is constant 
  * @param isDefined flag for determining if function is defined
- * @param isInitialized flag for determining if function is initialized
  * @param params pointer to dynamic array of fuction parameters, this pointer needs to be NULL if fuction doesn't have params
  *               else it should points to dynamicaly allocated memory, that will be freed when delete/dispose is called
  * @param paramCount number of parameters in params array
  * @return true 
  * @return false 
  */
-bool symtableInsertFunc(symtable* table, Name name, DataType ret_type, bool isDefined, bool isInitialized, 
-                        Parameter* params, size_t paramCount){
+bool symtableInsertFunc(symtable* table, Name name, DataType ret_type, bool isDefined, 
+                        Parameter* params, int paramCount){
     symData new_symbol = {.name = name, .type = ret_type, .isConstant = true, .isDefined = isDefined, 
-                        .isInitialized = isInitialized, .isFuction = true, .params = params, .paramCount = paramCount};
+                        .isInitialized = true, .isFunction = true, .params = params, .paramCount = paramCount};
     return symtableInsert(table,new_symbol);
 
 }

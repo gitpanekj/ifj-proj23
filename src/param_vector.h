@@ -15,7 +15,7 @@
 typedef struct
 {
     Parameter *data;
-    unsigned paramCount;
+    int paramCount;
 } ParamVector;
 
 void paramVectorInit(ParamVector *vector);

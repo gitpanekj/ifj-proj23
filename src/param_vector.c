@@ -8,12 +8,6 @@
 #include <stdio.h>
 #include "param_vector.h"
 
-void paramInit(Parameter *param)
-{
-    param->name.literal_len = 0;
-    param->name.nameStart = NULL;
-    param->type = UNDEFINED;
-}
 
 void paramVectorInit(ParamVector *vector)
 {
@@ -40,12 +34,10 @@ void paramVectorPrint(ParamVector *vector)
     {
         if (vector->data[i].name.nameStart == NULL)
         {
-
             printf("paramVector: param number: %d, param name: _, param type: %d\n", i + 1, vector->data[i].type);
         }
         else
         {
-            printf(" - %.*s", (int)vector->data[i].name.literal_len, vector->data[i].name.nameStart);
             printf("paramVector: param number: %d, param name:  %.*s, param type: %d\n", i + 1, (int)vector->data[i].name.literal_len, vector->data[i].name.nameStart, vector->data[i].type);
         }
     }
