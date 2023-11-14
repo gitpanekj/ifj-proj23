@@ -46,6 +46,12 @@ typedef enum ErrorCodes
     INTERAL_COMPILER_ERROR = 99
 } ErrorCodes;
 
+typedef enum FunctionStatus
+{
+    UNDEFINED_FUNCTION,
+    JUST_DEFINED_FUNCTION,
+    DEFINED_FUNCTION
+} FunctionStatus;
 
 typedef struct
 {
@@ -63,7 +69,13 @@ void analysisStart();
 
 void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVector params, bool definition);
 
-bool compareParams(Parameter *params1, Parameter *params2, int paramCount);
+bool compareDataTypeCompatibility(DataType assignTo, DataType assignFrom);
+
+DataType deriveDataType(DataType type1, DataType type2, bool moreGenreal);
+
+bool compareFunctionParamTypesAndDerive(DataType *storedParam, DataType *currentParam, FunctionStatus status);
+
+bool compareParamsAndDerive(Parameter *params1, Parameter *params2, int paramCount, FunctionStatus status);
 
 symData *getDataFromSymstack(Name name);
 

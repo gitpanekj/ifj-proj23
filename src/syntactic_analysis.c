@@ -664,41 +664,59 @@ void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVecto
         return;
     }
     else if (!data->isFunction)
-    { // funcName is like variable in scoped symtables
-      //! error type?
+    {                            // funcName is like variable in scoped symtables
+        error(DEFINITION_ERROR); //! ask to error code
     }
     else
     {
+        if (data->isDefined && definition) // function redefinition => error
+            error(DEFINITION_ERROR);       //! ask to error code
+
+        FunctionStatus status;
+        if (data->isDefined)
+            status = DEFINED_FUNCTION;
+        else if (definition)
+            status = JUST_DEFINED_FUNCTION;
+        else
+            status = UNDEFINED_FUNCTION;
+
         if (data->paramCount != -1) // -1 => any number of parameters (for build functions)
         {
             // check param names and count
-            if (params.paramCount != data->paramCount || !compareParams(params.data, data->params, params.paramCount))
+            if (params.paramCount != data->paramCount || !compareParamsAndDerive(data->params, params.data, params.paramCount, status))
                 error(FUNCTION_CALL_ERROR);
         }
+
         // need to check undefined type due to a function call without assignment
-        if (data->isDefined)
+        if (status == DEFINED_FUNCTION)
         {
-            if (data->isDefined && definition)                       // function redefinition => error
-                error(DEFINITION_ERROR);                             //! ask to error code
-            if (returnType != UNDEFINED && returnType != data->type) // type of current function call is not undefined (assigment with function) =>
-                error(FUNCTION_CALL_ERROR);                          // => types must be equal
+            if (returnType != UNDEFINED &&
+                !compareDataTypeCompatibility(returnType, data->type))
+            {                               // type of current function call is not undefined (assigment with function) =>
+                error(FUNCTION_CALL_ERROR); // => types must be compatible
+            }
         }
         else
         {
-            if (definition) // function has not been defined and the definition is now being processed
+            if (status == JUST_DEFINED_FUNCTION) // function has not been defined and the definition is now being processed
             {
-                if (data->type != UNDEFINED && returnType != data->type) // stored type is not undefine => types must be equal
+                if (data->type != UNDEFINED &&
+                    !compareDataTypeCompatibility(data->type, returnType))
+                { // stored type is not undefine (was used to assigment) => types must be compatible - stored type is derivate from left side
                     error(FUNCTION_CALL_ERROR);
-
+                }
                 data->type = returnType;
                 data->isDefined = true;
             }
             else
             {                                                           // the function has not been defined and the definition is not being processed
-                if (data->type != UNDEFINED && returnType != UNDEFINED) // both are not undefined => type must be equal
+                if (data->type != UNDEFINED && returnType != UNDEFINED) // both are not undefined => type must be compatible
                 {
-                    if (data->type != returnType)
+                    if (!compareDataTypeCompatibility(data->type, returnType) && !compareDataTypeCompatibility(returnType, data->type))
+                    {
                         error(FUNCTION_CALL_ERROR);
+                    }
+                    data->type = deriveDataType(data->type, returnType, false); // derive less general data type
                 }
                 else if (returnType != UNDEFINED) // only type of current function call is not undefined (assigment with function) => set function to that type
                 {
@@ -709,17 +727,177 @@ void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVecto
     }
 }
 
-bool compareParams(Parameter *params1, Parameter *params2, int paramCount)
+bool compareDataTypeCompatibility(DataType assignTo, DataType assignFrom)
+{
+    switch (assignTo)
+    {
+    case UNDEFINED: // only case in variable in 1 pass SA
+        return true;
+        break;
+    case NIL: // only case in function parameter in 1 pass SA
+        return true;
+    case INT:
+        if (assignFrom == INT)
+            return true;
+        break;
+    case INT_NIL:
+        if (assignFrom == INT || assignFrom == INT_NIL || assignFrom == NIL)
+            return true;
+        break;
+    case DOUBLE:
+        if (assignFrom == DOUBLE)
+            return true;
+        break;
+    case DOUBLE_NIL:
+        if (assignFrom == DOUBLE || assignFrom == DOUBLE_NIL || assignFrom == NIL)
+            return true;
+        break;
+    case STRING:
+        if (assignFrom == STRING)
+            return true;
+        break;
+    case STRING_NIL:
+        if (assignFrom == STRING || assignFrom == STRING_NIL || assignFrom == NIL)
+            return true;
+        break;
+    default:
+        return false;
+        break;
+    }
+    return false;
+}
+
+// type1 and type2 must be compatible - check by compareDataTypeCompatibility
+DataType deriveDataType(DataType type1, DataType type2, bool moreGenreal)
+{
+    if (moreGenreal)
+    {
+        // more general data type from type1 and type2
+        switch (type1)
+        {
+        case NIL:
+            if (type2 == INT)
+                return INT_NIL;
+            else if (type2 == DOUBLE)
+                return DOUBLE_NIL;
+            else if (type2 == STRING)
+                return STRING_NIL;
+            return type2; // nill or type with nill
+            break;
+        case INT:
+            if (type2 == INT_NIL || type2 == NIL)
+                return INT_NIL;
+            else
+                return INT;
+            break;
+        case INT_NIL:
+            return INT_NIL;
+            break;
+        case DOUBLE:
+            if (type2 == DOUBLE_NIL || type2 == NIL)
+                return DOUBLE_NIL;
+            else
+                return DOUBLE;
+            break;
+        case DOUBLE_NIL:
+            return DOUBLE_NIL;
+            break;
+        case STRING:
+            if (type2 == STRING_NIL || type2 == NIL)
+                return STRING_NIL;
+            else
+                return STRING;
+            break;
+        case STRING_NIL:
+            return STRING_NIL;
+            break;
+        case UNDEFINED:
+            return type2;
+            break;
+        default:
+            return UNDEFINED;
+            break;
+        }
+    }
+    else
+    {
+        // less general data type from type1 and type2
+        switch (type1)
+        {
+        case NIL:
+            return type2;
+            break;
+        case INT:
+            return INT;
+            break;
+        case INT_NIL:
+            if (type2 == NIL || type2 == UNDEFINED)
+                return INT_NIL;
+            return type2;
+            break;
+        case DOUBLE:
+            return DOUBLE;
+            break;
+        case DOUBLE_NIL:
+            if (type2 == NIL || type2 == UNDEFINED)
+                return DOUBLE_NIL;
+            return type2;
+            break;
+        case STRING:
+            return STRING;
+            break;
+        case STRING_NIL:
+            if (type2 == NIL || type2 == UNDEFINED)
+                return STRING_NIL;
+            return type2;
+            break;
+        case UNDEFINED:
+            return type2;
+            break;
+        default:
+            return UNDEFINED;
+            break;
+        }
+    }
+}
+
+bool compareFunctionParamTypesAndDerive(DataType *storedParam, DataType *currentParam, FunctionStatus status)
+{
+    switch (status)
+    {
+    case DEFINED_FUNCTION:
+        return compareDataTypeCompatibility(*storedParam, *currentParam); // sending current param to stored param
+        break;
+    case JUST_DEFINED_FUNCTION:
+        if (!compareDataTypeCompatibility(*currentParam, *storedParam)) // sending stored data to current param
+            return false;
+        *storedParam = *currentParam; // store param from real definition
+        break;
+    case UNDEFINED_FUNCTION:
+        if (!compareDataTypeCompatibility(*currentParam, *storedParam) && !compareDataTypeCompatibility(*storedParam, *currentParam)) // don't know which is assigned to which
+            return false;
+        *storedParam = deriveDataType(*storedParam, *currentParam, true); // store more general params derived from storedParam and currentParam
+        break;
+    default:
+        return false;
+        break;
+    }
+    return true;
+}
+
+bool compareParamsAndDerive(Parameter *storedParams, Parameter *currentParams, int paramCount, FunctionStatus status)
 {
     for (int i = 0; i < paramCount; i++)
     {
-        if (params1[i].type != params2[i].type || symtTreeNameCmp(params1[i].name, params2[i].name) != 0)
+        if (symtTreeNameCmp(storedParams[i].name, currentParams[i].name) != 0 ||
+            !compareFunctionParamTypesAndDerive(&storedParams[i].type, &currentParams[i].type, status))
         {
             return false;
         }
     }
     return true;
 }
+
 /**
  * @brief Find and return data of variable or function given by name in symstack
  * This function finds the first occurrence of a name in symtables stored on symstack and returns a pointer to its data.
