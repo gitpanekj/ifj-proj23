@@ -144,6 +144,77 @@ symData* symtableGetData(symtable* table, Name symbol){
     return &(foundElement->data);
 }
 
+/**
+ * @brief Wrapper fuction for checking if all symbols in table have value isDefined set to true
+ * 
+ * !!NOTE: Empty table will return TRUE
+ * 
+ * @param table pointer to table that is going to be checked
+ * @return true all symbols in table ware defined
+ * @return false at least one symbol in table was not defined
+ */
+bool symtableAllDefined(symtable* table){
+    return symtTreeAllDefined(table->root, true, false);
+}
+
+/**
+ * @brief Wrapper fuction for checking if all Function symbols in table have value isDefined set to true
+ * 
+ * !!NOTE: Empty table and table filled with symbols of Variables will return TRUE
+ * 
+ * @param table pointer to table that is going to be checked
+ * @return true all function symbols in table were defined
+ * @return false at least one function symbol was not defined 
+ */
+bool symtableAllFuncDefined(symtable* table){
+    return symtTreeAllDefined(table->root, false, true);
+}
+
+/**
+ * @brief Wrapper fuction for checking if all Variable symbols in table have value isDefined set to true  
+ * 
+ * !!NOTE: Empty table and table filled with symbols of Functions will return TRUE
+ * 
+ * @param table pointer to table that is going to be checked
+ * @return true all variable symbols in table were defined
+ * @return false at least one variable symbol was not defined 
+ */
+bool symtableAllVarDefined(symtable* table){
+    return symtTreeAllDefined(table->root, false, false);
+}
+
+/**
+ * @brief recursive fuction for checking if all choosen symbols in tree have value isDefined set to true
+ * 
+ * !!NOTE: Empty tree and tree filled with symbols of diferent value of isFunction
+ *        will return TRUE 
+ * 
+ * @param root root of the traversed tree
+ * @param all boolen that when true all symbols are checked(does not matter if isFuction is true)
+ * @param isFunction boolean for choosing what type of symbol is checked (all need to be false to take efect)
+ * @return true all symbols of choosen type are defined
+ * @return false at least one symbol of choose type is not defined at the time of search
+ */
+bool symtTreeCheckIsDefined(symtTreeElementPtr root, bool all, bool isFunction){
+    if(root = NULL){
+        return true;
+    }
+
+    if(all || (isFunction == root->data.isFunction)){ //
+        if(!root->data.isDefined){
+            return false;
+        }
+    }
+
+    if(!symtTreeAllDefined(root->leftElement, all, isFunction)){
+        return false;
+    }
+    else if(!symtTreeAllDefined(root->rightElement, all, isFunction)){
+        return false;
+    }
+    return true;
+}
+
 /** 
  * @brief Recursive Function for searching element with same name as inputed key
  * 
