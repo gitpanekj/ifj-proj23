@@ -43,7 +43,7 @@ typedef enum ErrorCodes
     TYPE_COMPATIBILITY_ERROR = 7,
     TYPE_INFERENCE_ERROR = 8,
     OTHER_SEMANTIC_ERROR = 9,
-    INTERAL_COMPILER_ERROR = 99
+    INTERNAL_COMPILER_ERROR = 99
 } ErrorCodes;
 
 typedef enum FunctionStatus
@@ -56,7 +56,7 @@ typedef enum FunctionStatus
 typedef struct
 {
     Name name;
-    bool isConvertable;
+    bool isConstant;
     DataType type;
 } Identifier;
 
@@ -67,7 +67,7 @@ void addBuildInFunctions();
 
 void analysisStart();
 
-void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVector params, bool definition);
+void storeOrCheckFunction(Name funcName, DataType returnType, ParamVector params, bool definition);
 
 bool compareDataTypeCompatibility(DataType assignTo, DataType assignFrom);
 
@@ -76,6 +76,10 @@ DataType deriveDataType(DataType type1, DataType type2, bool moreGenreal);
 bool compareFunctionParamTypesAndDerive(DataType *storedParam, DataType *currentParam, FunctionStatus status);
 
 bool compareParamsAndDerive(Parameter *params1, Parameter *params2, int paramCount, FunctionStatus status);
+
+symData *getFunctionDataFromSymstack(Name name);
+
+symData *getVariableDataFromSymstack(Name name);
 
 symData *getDataFromSymstack(Name name);
 

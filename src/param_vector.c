@@ -8,6 +8,12 @@
 #include <stdio.h>
 #include "param_vector.h"
 
+void paramInit(Parameter *param)
+{
+    param->name.literal_len = 0;
+    param->name.nameStart = NULL;
+    param->type = UNDEFINED;
+}
 
 void paramVectorInit(ParamVector *vector)
 {
@@ -25,7 +31,6 @@ bool paramVectorPush(ParamVector *vector, Parameter param)
     vector->data[vector->paramCount - 1].name.literal_len = param.name.literal_len;
     vector->data[vector->paramCount - 1].name.nameStart = param.name.nameStart;
     vector->data[vector->paramCount - 1].type = param.type;
-
     return true;
 }
 void paramVectorPrint(ParamVector *vector)
