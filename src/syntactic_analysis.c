@@ -32,7 +32,8 @@ Identifier leftSideIdentifier;      // current variable on left side of statemen
 symtable *globalSymtable; // table with global variables and functions
 // symtable currentSymtable; // symtable of current scope
 symStack symtableStack; // stack of scoped symtables
-//?add global to end of symstack
+
+// todo create global counter of while count soped and add it to while calling
 
 void addBuildInFunctions()
 {
@@ -286,11 +287,6 @@ bool rule_statement_func()
         statementValueType = UNDEFINED;
         leftSideIdentifier.type = currentFunctionReturnType;
         rule_return_value();
-        // function should have a return type but does not.
-        if (currentFunctionReturnType != UNDEFINED && statementValueType == UNDEFINED)
-            error(FUNCTION_RETURN_ERROR);
-        if (!compareDataTypeCompatibility(currentFunctionReturnType, statementValueType))
-            error(FUNCTION_CALL_ERROR);
         return true;
     }
     else if (tokenIs(TOKEN_IF))
@@ -377,12 +373,24 @@ void rule_return_value()
         return;
     else
     {
+        // check if function is not supposed to return a value but the return is followed by an expression
         if (currentFunctionReturnType == UNDEFINED)
-        { // check if the function is not supposed to return a value but the return is followed by an expression
+        {
             error(FUNCTION_RETURN_ERROR);
         }
-        //! grammar change should by only expression - precedence
-        rule_statement_value();
+        ErrorCodes exprErrCode;
+        DataType returnType = UNDEFINED;
+        getNextToken();
+        if (!parse_expression(tokenHistory, &returnType, &exprErrCode))
+        {
+            error(exprErrCode);
+        }
+        // check if function should have a return type but does not
+        if (currentFunctionReturnType != UNDEFINED && returnType == UNDEFINED)
+            error(FUNCTION_RETURN_ERROR);
+        // type in return expression is not
+        if (!compareDataTypeCompatibility(currentFunctionReturnType, returnType))
+            error(FUNCTION_CALL_ERROR);
     }
 }
 //---------------global rules------------------
@@ -436,7 +444,7 @@ void rule_statement()
         getNextToken();
         DataType exprType;
         ErrorCodes exprErrCode;
-        // todo check bool type - boollean 
+        // todo check bool type - boollean
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
         {
             error(exprErrCode);
@@ -462,7 +470,7 @@ void rule_statement()
         rule_id_decl();
         getNextToken();
         rule_decl_opt();
-        
+
         if (leftSideIdentifier.type == UNDEFINED && (statementValueType == UNDEFINED || statementValueType == NIL))
         {
             error(TYPE_INFERENCE_ERROR);
@@ -579,7 +587,7 @@ void rule_statement_action()
             error(UNDEFINED_VARIABLE);
         else if (variableData->isConstant && variableData->isInitialized)
         {
-            error(OTHER_SEMANTIC_ERROR); 
+            error(OTHER_SEMANTIC_ERROR);
         }
         leftSideIdentifier.type = variableData->type;
         getNextToken(); // get token after =
@@ -768,13 +776,13 @@ void storeOrCheckFunction(Name funcName, DataType returnType, ParamVector params
         return;
     }
     else if (!data->isFunction)
-    {                                // funcName is like variable in scoped symtables
+    { // funcName is variable in scoped symtables
         error(DEFINITION_ERROR);
     }
     else
     {
         if (data->isDefined && definition) // function redefinition => error
-            error(DEFINITION_ERROR);      
+            error(DEFINITION_ERROR);
 
         FunctionStatus status;
         if (data->isDefined)
