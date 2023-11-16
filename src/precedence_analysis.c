@@ -639,7 +639,7 @@ bool rule_9(ExpressionStack *stack){
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.expr.data_type);
+    init_expression(&result, BOOLEAN);
 
 
     reduce_rule(stack);
@@ -682,7 +682,7 @@ bool rule_10(ExpressionStack *stack){
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, BOOLEAN);
 
 
     reduce_rule(stack);
@@ -725,7 +725,7 @@ bool rule_11(ExpressionStack *stack){
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, BOOLEAN);
 
 
     reduce_rule(stack);
@@ -768,7 +768,7 @@ bool rule_12(ExpressionStack *stack){
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, BOOLEAN);
 
 
     reduce_rule(stack);
@@ -814,7 +814,7 @@ bool rule_13(ExpressionStack *stack){
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, BOOLEAN);
 
 
     reduce_rule(stack);
@@ -859,7 +859,7 @@ bool rule_14(ExpressionStack *stack){
 
 
     ExpressionStackItem result;
-    init_expression(&result, op1->data.term.data_type);
+    init_expression(&result, BOOLEAN);
 
 
     reduce_rule(stack);
@@ -875,7 +875,7 @@ bool rule_15(ExpressionStack *stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 2]);
     
     ExpressionStackItem result;
-    init_expression(&result, op->data.expr.data_type);
+    init_expression(&result, BOOLEAN);
 
 
     reduce_rule(stack);
