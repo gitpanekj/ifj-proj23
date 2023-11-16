@@ -121,7 +121,7 @@ bool symtableAllFuncDefined(symtable* table);
 
 bool symtableAllVarDefined(symtable* table);
 
-bool symtTreeAllDefined(symtTreeElementPtr root, bool all, bool isFunction);
+bool symtTreeCheckIsDefined(symtTreeElementPtr root, bool all, bool isFunction);
 
 symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, Name key);
 

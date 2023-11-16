@@ -39,7 +39,7 @@ typedef enum ErrorCodes
     DEFINITION_ERROR = 3,
     FUNCTION_CALL_ERROR = 4, // wrong parameter type/lenght in function call or wrong return type
     UNDEFINED_VARIABLE = 5,  // use of undefined or uninialized variable
-    FUNCTIN_RETURN_ERROR = 6,
+    FUNCTION_RETURN_ERROR = 6,
     TYPE_COMPATIBILITY_ERROR = 7,
     TYPE_INFERENCE_ERROR = 8,
     OTHER_SEMANTIC_ERROR = 9,
@@ -57,6 +57,7 @@ typedef struct
 {
     Name name;
     bool isConstant;
+    bool isInitialized;
     DataType type;
 } Identifier;
 
@@ -66,6 +67,8 @@ typedef struct
 void addBuildInFunctions();
 
 void analysisStart();
+
+void defineVariable(Name varName, DataType type, bool isConstant, bool isInitialized);
 
 void storeOrCheckFunction(Name funcName, DataType returnType, ParamVector params, bool definition);
 
@@ -84,6 +87,10 @@ symData *getVariableDataFromSymstack(Name name);
 symData *getDataFromSymstack(Name name);
 
 symtable* createAndPushSymtable();
+
+bool isOptionalType(DataType type);
+
+DataType convertToNonOptionalType(DataType type);
 
 void errorHandle(ErrorCodes ErrorType, const char *functionName);
 

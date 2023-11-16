@@ -154,7 +154,7 @@ symData* symtableGetData(symtable* table, Name symbol){
  * @return false at least one symbol in table was not defined
  */
 bool symtableAllDefined(symtable* table){
-    return symtTreeAllDefined(table->root, true, false);
+    return symtTreeCheckIsDefined(table->root, true, false);
 }
 
 /**
@@ -167,7 +167,7 @@ bool symtableAllDefined(symtable* table){
  * @return false at least one function symbol was not defined 
  */
 bool symtableAllFuncDefined(symtable* table){
-    return symtTreeAllDefined(table->root, false, true);
+    return symtTreeCheckIsDefined(table->root, false, true);
 }
 
 /**
@@ -180,7 +180,7 @@ bool symtableAllFuncDefined(symtable* table){
  * @return false at least one variable symbol was not defined 
  */
 bool symtableAllVarDefined(symtable* table){
-    return symtTreeAllDefined(table->root, false, false);
+    return symtTreeCheckIsDefined(table->root, false, false);
 }
 
 /**
@@ -196,7 +196,7 @@ bool symtableAllVarDefined(symtable* table){
  * @return false at least one symbol of choose type is not defined at the time of search
  */
 bool symtTreeCheckIsDefined(symtTreeElementPtr root, bool all, bool isFunction){
-    if(root = NULL){
+    if(root == NULL){
         return true;
     }
 
@@ -206,10 +206,10 @@ bool symtTreeCheckIsDefined(symtTreeElementPtr root, bool all, bool isFunction){
         }
     }
 
-    if(!symtTreeAllDefined(root->leftElement, all, isFunction)){
+    if(!symtTreeCheckIsDefined(root->leftElement, all, isFunction)){
         return false;
     }
-    else if(!symtTreeAllDefined(root->rightElement, all, isFunction)){
+    else if(!symtTreeCheckIsDefined(root->rightElement, all, isFunction)){
         return false;
     }
     return true;
