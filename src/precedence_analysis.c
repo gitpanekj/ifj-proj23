@@ -30,7 +30,8 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
     ExpressionStack stack;
     expression_stack_init(&stack); 
 
-
+    symData* sym_data;
+    Name id_name;
     ExpressionStackItem next;
     ExpressionStackItem *top;
     int top_idx;
@@ -42,12 +43,21 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
 
     // check whether identifier is defined
     if (next.type == IDENTIFIER){
-        // TODO: check whether identifier is defined
-        next.data.term.data_type = INT_UNCONVERTABLE;
-        if (false){
+        id_name.nameStart = next.data.term.literal;
+        id_name.literal_len = next.data.term.literal_len;
+        sym_data = getVariableDataFromSymstack(id_name);
+
+        // variable not defined
+        if (sym_data == NULL){
             expression_stack_dispose(&stack);
             *err = UNDEFINED_VARIABLE;
             return false; // undeclared, undefined variable
+        }
+
+        if (!sym_data->isInitialized){
+            expression_stack_dispose(&stack);
+            *err = UNDEFINED_VARIABLE;
+            return false;
         }
     }
 
@@ -93,12 +103,21 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
 
                 // check whether identifier is defined
                 if (next.type == IDENTIFIER){
-                    // TODO: check whether identifier is defined
-                    next.data.term.data_type = INT_UNCONVERTABLE;
-                    if (false){
+                    id_name.nameStart = next.data.term.literal;
+                    id_name.literal_len = next.data.term.literal_len;
+                    sym_data = getVariableDataFromSymstack(id_name);
+
+                    // variable not defined
+                    if (sym_data == NULL){
                         expression_stack_dispose(&stack);
                         *err = UNDEFINED_VARIABLE;
                         return false; // undeclared, undefined variable
+                    }
+
+                    if (!sym_data->isInitialized){
+                        expression_stack_dispose(&stack);
+                        *err = UNDEFINED_VARIABLE;
+                        return false;
                     }
                 }
 
@@ -126,7 +145,7 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
 
                 valid = RULES[rule_number](&stack);
 
-                //
+                // no matching rule found
                 if (!valid){
                     fprintf(stderr, "Error occured during expression parsing: Semantic error.\n");
                     expression_stack_dispose(&stack);
@@ -159,12 +178,21 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
 
                 // check whether identifier is defined
                 if (next.type == IDENTIFIER){
-                    // TODO: check whether identifier is defined
-                    next.data.term.data_type = INT_UNCONVERTABLE;
-                    if (false){
+                    id_name.nameStart = next.data.term.literal;
+                    id_name.literal_len = next.data.term.literal_len;
+                    sym_data = getVariableDataFromSymstack(id_name);
+
+                    // variable not defined
+                    if (sym_data == NULL){
                         expression_stack_dispose(&stack);
                         *err = UNDEFINED_VARIABLE;
                         return false; // undeclared, undefined variable
+                    }
+
+                    if (!sym_data->isInitialized){
+                        expression_stack_dispose(&stack);
+                        *err = UNDEFINED_VARIABLE;
+                        return false;
                     }
                 }
 
