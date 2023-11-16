@@ -18,6 +18,8 @@ typedef struct
     int paramCount;
 } ParamVector;
 
+void paramInit(Parameter *param);
+
 void paramVectorInit(ParamVector *vector);
 
 bool paramVectorPush(ParamVector *vector, Parameter param);

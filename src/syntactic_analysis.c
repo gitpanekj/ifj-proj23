@@ -25,11 +25,10 @@ Name currentFunctionName;
 DataType currentFunctionReturnType = UNDEFINED; // type for return type check
 DataType statementValueType;                    // type returned from statement value rule
 
-Parameter currentParameter; // currently being processed function parameter/argument
-ParamVector parameterVector;
-Identifier leftSideIdentifier; // current variable on left side of statement (for example a in this statement: var a = 5 + 6 ...)
+Parameter currentFunctionParameter; // currently being processed function parameter/argument - in func call or definition
+ParamVector paramVector;            // vector of currentFunctionParameters
+Identifier leftSideIdentifier;      // current variable on left side of statement (for example a in this statement: var a = 5 + 6 ...)
 
-// TODO add symtable - global for functions and variables
 symtable *globalSymtable; // table with global variables and functions
 // symtable currentSymtable; // symtable of current scope
 symStack symtableStack; // stack of scoped symtables
@@ -37,6 +36,12 @@ symStack symtableStack; // stack of scoped symtables
 
 void addBuildInFunctions()
 {
+
+    // paramInit(&currentFunctionParameter);
+
+    // storeOrCheckFunction()
+    // todo need push data to LV
+
     // todo add buildin functions to global symtable
 }
 
@@ -47,7 +52,7 @@ void analysisStart()
     scaner_init(&scanner, &literalVector);
     symStackInit(&symtableStack);
     if (!symtableInit(&globalSymtable))
-        error(INTERAL_COMPILER_ERROR);
+        error(INTERNAL_COMPILER_ERROR);
     symStackPush(&symtableStack, globalSymtable);
     //! mess for symTable and symstack testing
     // char *pointerToStart = "esxample";
@@ -60,12 +65,11 @@ void analysisStart()
     // symData *varData = getDataFromSymstack((Name){.nameStart = pointerTsoStart, .literal_len = 6});
     //     symStackPopAndDispose(&symtableStack);
     //  if (!symtableInit(&globalSymtable))
-    //     error(INTERAL_COMPILER_ERROR);
+    //     error(INTERNAL_COMPILER_ERROR);
     //     symStackPush(&symtableStack,globalSymtable);
     //     symtableInsertVar(globalSymtable, (Name){.nameStart = pointerToStart, .literal_len = 6}, INT, true, false, false);
     //     varData = symtableGetData(symStackTop(&symtableStack), (Name){.nameStart = pointerToStart, .literal_len = 6});
     //     printf("%d", varData->type);
-
     getNextToken();
     rule_prog();
 
@@ -115,25 +119,23 @@ void rule_func_decl()
     assertToken(TOKEN_FUNC);
     getNextToken();
     assertToken(TOKEN_IDENTIFIER);
-    // currentFunctionName.literal_len = token.literal_len;
-    // currentFunctionName.nameStart = token.start_ptr;
     Name funcName = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
     getNextToken();
     assertToken(TOKEN_L_PAR);
     getNextToken();
 
     currentFunctionSymtable = createAndPushSymtable();
-    paramVectorInit(&parameterVector);
+    paramVectorInit(&paramVector);
     rule_param_first();
     assertToken(TOKEN_R_PAR);
 
     getNextToken();
     currentFunctionReturnType = UNDEFINED;
     rule_return_type();
-    storeOrCheckFunctionSymtable(funcName, currentFunctionReturnType, parameterVector, true);
-    // todo function definicion (with def to true)
+    storeOrCheckFunction(funcName, currentFunctionReturnType, paramVector, true);
     bool haveReturn = rule_func_body();
-    // todo check if should have return type
+    // todo check for func type with currentfunctionReturnType
+    //  todo check if should have return type
 }
 
 void rule_param_first()
@@ -174,10 +176,16 @@ void rule_param()
     assertToken(TOKEN_COLON);
     getNextToken();
     DataType type = rule_type();
+    // paramName and paramID cant be same
+    if (symtTreeNameCmp(paramId, currentFunctionParameter.name) == 0)
+    {
+        error(FUNCTION_CALL_ERROR);
+    }
     // todo add paramid to local symtable
-    // todo store data type in param and add it to param vector
-    currentParameter.type = type;
-    paramVectorPush(&parameterVector, currentParameter);
+
+    currentFunctionParameter.type = type;
+    if (!paramVectorPush(&paramVector, currentFunctionParameter))
+        error(INTERNAL_COMPILER_ERROR);
 }
 
 void rule_param_name()
@@ -188,8 +196,8 @@ void rule_param_name()
     }
 
     // todo add param name to param vector
-    currentParameter.name.literal_len = token.literal_len;
-    currentParameter.name.nameStart = token.start_ptr;
+    currentFunctionParameter.name.literal_len = token.literal_len;
+    currentFunctionParameter.name.nameStart = token.start_ptr;
 }
 //? if storing current function as node of symtable, make from void datatype and return it to local variable in rule_func_decl
 void rule_return_type()
@@ -264,7 +272,7 @@ bool rule_statement_func()
     {
         getNextToken();
         rule_return_value();
-        // todo compare return type with function data type using statementValueType and global returnType or return type in currentFunctionNode
+        // todo compare return type with function data type using statementValueType and global currentFunctionReturnType
         return true;
     }
     else if (tokenIs(TOKEN_IF))
@@ -306,19 +314,30 @@ bool rule_statement_func()
     else if (tokenIs(TOKEN_IDENTIFIER))
     {
         getNextToken();
-        // todo in statement_action store it as var or us it as function call - get it from token history
-        // than get data of it from symtable or add it to symtable using leftSideIdentifier and statement value
         rule_statement_action();
     }
     else if (tokenIs(TOKEN_VAR, TOKEN_LET)) // variable declaration
     {
+        // todo code generation - first and than check of symtable or in one time
         leftSideIdentifier.type = UNDEFINED;
         statementValueType = UNDEFINED;
         rule_id_decl();
         getNextToken();
         rule_decl_opt();
-        // TODO compare leftSideIdentifier and statementValueType
-        // TODO if data type is undefined and statementValueType defined or vice versa - set it in var table. Else return semantic error
+        if (leftSideIdentifier.type == UNDEFINED && (statementValueType == UNDEFINED || statementValueType == NIL))
+        {
+            error(TYPE_INFERENCE_ERROR);
+        }
+        else if (leftSideIdentifier.type != UNDEFINED && statementValueType != UNDEFINED)
+        {
+            if (!compareDataTypeCompatibility(leftSideIdentifier.type, statementValueType))
+                error(TYPE_COMPATIBILITY_ERROR);
+        }
+        else if (leftSideIdentifier.type == UNDEFINED)
+        {
+            leftSideIdentifier.type = statementValueType;
+        }
+        // todo store to symtable using variableDefFunction
     }
     else
     {
@@ -401,8 +420,6 @@ void rule_statement()
     else if (tokenIs(TOKEN_IDENTIFIER))
     {
         getNextToken();
-        // todo in statement_action store it as var or us it as function call - get it from token history
-        // than get data of it from symtable or add it to symtable using leftSideIdentifier and statement value
         rule_statement_action();
     }
     else if (tokenIs(TOKEN_VAR, TOKEN_LET)) // variable declaration
@@ -445,9 +462,9 @@ void rule_if_cond()
 void rule_id_decl()
 {
     if (tokenIs(TOKEN_VAR))
-        leftSideIdentifier.isConvertable = true;
+        leftSideIdentifier.isConstant = false;
     else
-        leftSideIdentifier.isConvertable = false;
+        leftSideIdentifier.isConstant = true;
     getNextToken();
     assertToken(TOKEN_IDENTIFIER);
     leftSideIdentifier.name.literal_len = token.literal_len;
@@ -486,21 +503,35 @@ void rule_statement_action()
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
         getNextToken(); // get token after (
-        // todo in arg rules store data to params vector - structure for it defined in symtable - will be global. after each push to vector clear it
+        paramVectorInit(&paramVector);
         rule_first_arg();
         assertToken(TOKEN_R_PAR);
+        storeOrCheckFunction(callingFuncName, UNDEFINED, paramVector, false);
+        // need to leave same token as precedence
         getNextToken();
-
-        // todo add function semantic actions
     }
-    else if (tokenIs(TOKEN_EQUAL)) // assigment to variable
+    else if (tokenIs(TOKEN_EQUAL)) // assigment to variable - without variable definition
     {
         // left side ID is one token back
         leftSideIdentifier.name.nameStart = tokenHistory[0].start_ptr;
         leftSideIdentifier.name.literal_len = tokenHistory[0].literal_len;
+        symData *variableData = getVariableDataFromSymstack(leftSideIdentifier.name);
+        // left side identifier/variable must be defined
+        if (variableData == NULL)
+            error(UNDEFINED_VARIABLE);
+        else if (variableData->isConstant && variableData->isInitialized)
+        {
+            error(OTHER_SEMANTIC_ERROR); //! ask to error code
+        }
+        leftSideIdentifier.type = variableData->type;
         getNextToken(); // get token after =
-        // todo find in symtable and check types or add to global symtable and store type from assignment (cant be undefined funciton)
         rule_statement_value();
+
+        if (!compareDataTypeCompatibility(leftSideIdentifier.type, statementValueType))
+        {
+            error(TYPE_COMPATIBILITY_ERROR);
+        }
+        variableData->isInitialized = true;
     }
     else
     {
@@ -510,13 +541,12 @@ void rule_statement_action()
 
 void rule_first_arg()
 {
-    // todo in arg rules store data to params vector - structure for it defined in symtable - will be global. after each push to vector clear it
     if (tokenIs(TOKEN_R_PAR))
         return;
-
+    paramInit(&currentFunctionParameter);
     rule_arg();
-
-    // todo push param/arg structure to vector
+    if (!paramVectorPush(&paramVector, currentFunctionParameter))
+        error(INTERNAL_COMPILER_ERROR);
     rule_arg_n();
 }
 
@@ -527,9 +557,10 @@ void rule_arg_n()
 
     assertToken(TOKEN_COMMA);
     getNextToken();
+    paramInit(&currentFunctionParameter);
     rule_arg();
-
-    // todo push param/arg structure to vector
+    if (!paramVectorPush(&paramVector, currentFunctionParameter))
+        error(INTERNAL_COMPILER_ERROR);
     rule_arg_n();
 }
 
@@ -537,9 +568,7 @@ void rule_arg()
 {
     if (tokenIs(TOKEN_INTEGER, TOKEN_DOUBLE, TOKEN_STRING, TOKEN_NIL))
     {
-        // todo store type returned from rule_literal to param/arg struct
-        // todo store param as NULL (should be default)
-        rule_literal();
+        currentFunctionParameter.type = rule_literal();
         getNextToken();
         return;
     }
@@ -554,19 +583,22 @@ void rule_arg_opt()
     // previous token (identifier) is paramID
     if (tokenIs(TOKEN_R_PAR, TOKEN_COMMA))
     {
-        // paramID is one token back
-        // todo store type to param/arg struct - arg token (token of ID - cant be literal) is in history[0] , use function get_type_from_var
-        // todo store param name as NULL (should be default)
+        // paramID is one token back - store type
+        symData *data = getVariableDataFromSymstack((Name){.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr});
+        if (data == NULL || !data->isInitialized)
+        {
+            error(UNDEFINED_VARIABLE);
+        }
+        currentFunctionParameter.type = data->type;
         return;
     }
     // previous token is paramName
     assertToken(TOKEN_COLON);
-    // param name is one token back
-    // todo store param name - is in token history[0] (token of ID)
-    // todo store returned data type from term as param datatype
+    // paramName is one token back - store it
+    currentFunctionParameter.name.literal_len = tokenHistory[0].literal_len;
+    currentFunctionParameter.name.nameStart = tokenHistory[0].start_ptr;
     getNextToken();
-    rule_term();
-
+    currentFunctionParameter.type = rule_term();
     getNextToken();
 }
 
@@ -580,11 +612,8 @@ void rule_statement_value()
     else
     {
         getNextToken();
-        // todo call precedence        check bool and store type to statementValueType
-
-        DataType exprType;
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+        if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
         {
             error(exprErrCode);
         }
@@ -593,25 +622,24 @@ void rule_statement_value()
 
 void rule_arg_expr()
 {
-    if (tokenIs(TOKEN_L_PAR))
+    if (tokenIs(TOKEN_L_PAR)) // call function with assigment
     {
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
         getNextToken(); // get token after (
-        // todo in arg rules store data to params vector - structure for it defined in symtable - will be global. after each push to vector clear it
+        paramVectorInit(&paramVector);
         rule_first_arg();
         assertToken(TOKEN_R_PAR);
+        storeOrCheckFunction(callingFuncName, leftSideIdentifier.type, paramVector, false); //! leftSideType will never be UNDEFINED (except situation where function is defined and leftside is definition)
+        statementValueType = getFunctionDataFromSymstack(callingFuncName)->type;
+
+        // need to leave same token position as precedence
         getNextToken();
-        // todo add function semantic actions
-        // todo store function return type to statementValueType
     }
     else
     {
-        // todo call precedence check bool and store type to statementValueType
-
-        DataType exprType;
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+        if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
         {
             error(exprErrCode);
         }
@@ -625,8 +653,12 @@ DataType rule_term()
         return rule_literal();
     }
     assertToken(TOKEN_IDENTIFIER);
-    // todo find token in sym table and return type of that token
-    return 0;
+    symData *data = getDataFromSymstack((Name){.literal_len = token.literal_len, .nameStart = token.start_ptr});
+    if (data == NULL || !data->isInitialized)
+    {
+        error(UNDEFINED_VARIABLE);
+    }
+    return data->type;
 }
 
 DataType rule_literal()
@@ -654,7 +686,12 @@ DataType rule_literal()
 
 //-------------- functions for semantic checks --------------------------
 
-void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVector params, bool definition)
+// void defineVariable(Name varName)
+// {
+// todo check if var is not defined in current scope - use symstackTop
+// }
+
+void storeOrCheckFunction(Name funcName, DataType returnType, ParamVector params, bool definition)
 {
 
     symData *data = getDataFromSymstack(funcName);
@@ -664,8 +701,8 @@ void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVecto
         return;
     }
     else if (!data->isFunction)
-    {                            // funcName is like variable in scoped symtables
-        error(DEFINITION_ERROR); //! ask to error code
+    {                                // funcName is like variable in scoped symtables
+        error(OTHER_SEMANTIC_ERROR); //! ask to error code
     }
     else
     {
@@ -692,8 +729,8 @@ void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVecto
         {
             if (returnType != UNDEFINED &&
                 !compareDataTypeCompatibility(returnType, data->type))
-            {                               // type of current function call is not undefined (assigment with function) =>
-                error(FUNCTION_CALL_ERROR); // => types must be compatible
+            {                                    // type of current function call is not undefined (assigment with function) =>
+                error(TYPE_COMPATIBILITY_ERROR); // => types must be compatible
             }
         }
         else
@@ -703,7 +740,7 @@ void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVecto
                 if (data->type != UNDEFINED &&
                     !compareDataTypeCompatibility(data->type, returnType))
                 { // stored type is not undefine (was used to assigment) => types must be compatible - stored type is derivate from left side
-                    error(FUNCTION_CALL_ERROR);
+                    error(TYPE_COMPATIBILITY_ERROR);
                 }
                 data->type = returnType;
                 data->isDefined = true;
@@ -714,7 +751,7 @@ void storeOrCheckFunctionSymtable(Name funcName, DataType returnType, ParamVecto
                 {
                     if (!compareDataTypeCompatibility(data->type, returnType) && !compareDataTypeCompatibility(returnType, data->type))
                     {
-                        error(FUNCTION_CALL_ERROR);
+                        error(TYPE_COMPATIBILITY_ERROR);
                     }
                     data->type = deriveDataType(data->type, returnType, false); // derive less general data type
                 }
@@ -898,6 +935,30 @@ bool compareParamsAndDerive(Parameter *storedParams, Parameter *currentParams, i
     return true;
 }
 
+symData *getFunctionDataFromSymstack(Name name)
+{
+    symData *data = getDataFromSymstack(name);
+    if (data == NULL)
+    {
+        return NULL;
+    }
+    else if (!data->isFunction)
+        error(OTHER_SEMANTIC_ERROR);
+    return data;
+}
+
+symData *getVariableDataFromSymstack(Name name)
+{
+    symData *data = getDataFromSymstack(name);
+    if (data == NULL)
+    {
+        return NULL;
+    }
+    else if (data->isFunction)
+        error(OTHER_SEMANTIC_ERROR);
+    return data;
+}
+
 /**
  * @brief Find and return data of variable or function given by name in symstack
  * This function finds the first occurrence of a name in symtables stored on symstack and returns a pointer to its data.
@@ -930,7 +991,7 @@ symtable *createAndPushSymtable()
 {
     symtable *table;
     if (!symtableInit(&table) || symStackPush(&symtableStack, table) == NULL)
-        error(INTERAL_COMPILER_ERROR);
+        error(INTERNAL_COMPILER_ERROR);
     return table;
 }
 
@@ -972,7 +1033,7 @@ void errorHandle(ErrorCodes ErrorType, const char *functionName)
         case OTHER_SEMANTIC_ERROR:
             fprintf(stderr, "Other semantic errors.\n");
             break;
-        case INTERAL_COMPILER_ERROR:
+        case INTERNAL_COMPILER_ERROR:
             fprintf(stderr, "Internal compiler error\n");
             break;
         default:
@@ -1020,5 +1081,3 @@ void getNextToken()
         error(LEXICAL_ERROR);
     }
 }
-// todo function for convert variable (ID) to data type - by finding in sym table - if not find return error
-// todo make function for working with param vector, after push restart param struct to default values
