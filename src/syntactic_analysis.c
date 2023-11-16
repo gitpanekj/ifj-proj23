@@ -381,9 +381,7 @@ void rule_return_value()
         { // check if the function is not supposed to return a value but the return is followed by an expression
             error(FUNCTION_RETURN_ERROR);
         }
-        //! grammar change? should by only expression - precedence
-        //! kontrola jestli teda folání funkce v non return je error a v return není - zeptat se co to udělá v generování kódu
-        // kdyžtak přidat jen volání precedenční - co udělá když dostane id ( -
+        //! grammar change should by only expression - precedence
         rule_statement_value();
     }
 }
@@ -438,7 +436,7 @@ void rule_statement()
         getNextToken();
         DataType exprType;
         ErrorCodes exprErrCode;
-        // todo check bool type
+        // todo check bool type - boollean 
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
         {
             error(exprErrCode);
@@ -464,6 +462,7 @@ void rule_statement()
         rule_id_decl();
         getNextToken();
         rule_decl_opt();
+        
         if (leftSideIdentifier.type == UNDEFINED && (statementValueType == UNDEFINED || statementValueType == NIL))
         {
             error(TYPE_INFERENCE_ERROR);
@@ -503,7 +502,7 @@ void rule_if_cond()
         if (data == NULL)
             error(UNDEFINED_VARIABLE);
         else if (!data->isConstant || !isOptionalType(data->type))
-            error(TYPE_COMPATIBILITY_ERROR); //! ask to error codes
+            error(OTHER_SEMANTIC_ERROR);
         defineVariable(varName, convertToNonOptionalType(data->type), true, true);
         getNextToken(); // need same end state as precedence analysis
         return;
@@ -580,7 +579,7 @@ void rule_statement_action()
             error(UNDEFINED_VARIABLE);
         else if (variableData->isConstant && variableData->isInitialized)
         {
-            error(OTHER_SEMANTIC_ERROR); //! ask to error code
+            error(OTHER_SEMANTIC_ERROR); 
         }
         leftSideIdentifier.type = variableData->type;
         getNextToken(); // get token after =
@@ -770,12 +769,12 @@ void storeOrCheckFunction(Name funcName, DataType returnType, ParamVector params
     }
     else if (!data->isFunction)
     {                                // funcName is like variable in scoped symtables
-        error(OTHER_SEMANTIC_ERROR); //! ask to error code
+        error(DEFINITION_ERROR);
     }
     else
     {
         if (data->isDefined && definition) // function redefinition => error
-            error(DEFINITION_ERROR);       //! ask to error code
+            error(DEFINITION_ERROR);      
 
         FunctionStatus status;
         if (data->isDefined)
@@ -1011,7 +1010,7 @@ symData *getFunctionDataFromSymstack(Name name)
         return NULL;
     }
     else if (!data->isFunction)
-        error(OTHER_SEMANTIC_ERROR);
+        error(DEFINITION_ERROR);
     return data;
 }
 
