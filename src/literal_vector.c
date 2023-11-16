@@ -1,6 +1,27 @@
+/**
+ * @file literal_vector.c
+ * @author Jan Pánek (xpanek11@stud.fit.vut.cz)
+ * @brief Literal vector used to buffer and store digit, string and identifier literals.
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #include "literal_vector.h"
 #include <string.h>
 
+
+/**
+ * @brief Initialize literal vector
+ *  Set capacity of literal array to LV_BASE_SIZE.
+ *  Set capacity of literal buffer to BUFFER_BASE_SIZE.
+ *  Allocate memmory blocks. 
+ * 
+ *  Returns pointer to the allocated array on succes, otherwise NULL.
+ * 
+ * @param vec pointer to literal vector structure
+ * @return void*
+ */
 void* LV_init(LiteralVector* vec){
 
     // Allocate space for pointers to literals
@@ -25,6 +46,11 @@ void* LV_init(LiteralVector* vec){
 }
 
 
+/**
+ * @brief Free memory resources of literal array.
+ * 
+ * @param vec 
+ */
 void LV_free(LiteralVector *vec){
     // free literal buffer
     free(vec->literal_buffer);
@@ -42,6 +68,17 @@ void LV_free(LiteralVector *vec){
 }
 
 
+/**
+ * @brief Add character at the end of literal vector.
+ * 
+ * Double capacity of literal vector if forming_size reaches buffer capacity.
+ * Return pointer to last added element of vector array on succes.
+ * Return NULL if reallocation fails.
+ * 
+ * @param vec pointer to literal vector
+ * @param c element to append
+ * @return void*
+ */
 void* LV_add(LiteralVector* vec, char c){
     if (vec->forming_size >= vec->buffer_capacity){ // grow size
         size_t new_cap = vec->buffer_capacity*2;
@@ -61,6 +98,15 @@ void* LV_add(LiteralVector* vec, char c){
 }
 
 
+/**
+ * @brief Discard all characters in literal buffer.
+ * 
+ * Set forming_size to 0 and set literal buffer size to BUFFER_BASE_SIZE.
+ * Returns NULL if reallocation fails
+ *         otherwise pointer to the first element of literal buffer.
+ * 
+ * @param vec pointer to literal vector
+ */
 void* LV_restore(LiteralVector *vec){
     void* tmp_ptr = realloc(vec->literal_buffer, BUFFER_BASE_SIZE*sizeof(char));
     if (tmp_ptr == NULL) return NULL;
@@ -74,6 +120,18 @@ void* LV_restore(LiteralVector *vec){
 }
 
 
+/**
+ * @brief Add buffered literal to the literal array.
+ * 
+ * Allocate memmory for buffered literal and add it to the literal array.
+ * Buffer is cleard afterward with LV_restore.
+ * If capacity of literal array is not sufficient, double its size.
+ * 
+ * Returns pointer to the created literal item on success, NULL otherwise.
+ * 
+ * @param vec pointer to literal vector
+ * @return char* 
+ */
 char* LV_submit(LiteralVector *vec, size_t *literal_len){
 
     // return of literal len
@@ -99,7 +157,7 @@ char* LV_submit(LiteralVector *vec, size_t *literal_len){
     // append literal string at the end of literal vector
     vec->items[vec->n_items++] = literal;
 
-
+    LV_restore(vec);
     return literal;
 }
 

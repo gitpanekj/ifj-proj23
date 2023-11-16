@@ -1,7 +1,6 @@
 /**
  * @file precedence_analysis.h
  * @author Jan Pánek (xpanek11@stud.fit.vutbr.cz)
- * @brief
  * 
  * @copyright Copyright (c) 2023
  * 
@@ -17,9 +16,22 @@
 #include "expression_stack.h"
 #include "syntactic_analysis.h"
 
-
+//< Precedence table types
 typedef enum {ERROR, OPEN, CLOSE, EQ} PRECEDENCE;
 
+
+/**
+ * @brief Precedence table
+ * 
+ * For each pair of (top, next_expression_member) determines next action.
+ * OPEN  - new subexpression starts after top
+ * CLOSE - top is the last expression member of forming subexpression
+ * ERROR - next_expression_member cannot follow top.
+ * EQ    - push next_expression_member to the stack
+ * 
+ * top - most top expression member on expression stack
+ * 
+ */
 static const PRECEDENCE PRECEDENCE_TABLE[16][16] = {
   // SEP  | TERM |   (  |   )  |   +  |   -  |   *  |   /  |  ==  |  !=  |  <=  |  >=  |   >  |   <  |   !  |   ??  
     {ERROR, OPEN , OPEN , CLOSE, OPEN , OPEN , OPEN , OPEN , OPEN , OPEN , OPEN , OPEN , OPEN , OPEN , OPEN , OPEN }, // SEP
@@ -93,8 +105,10 @@ bool rule_14(ExpressionStack*);
 
 bool rule_15(ExpressionStack*);
 
+//< Rule type
 typedef bool (*rule)(ExpressionStack*);
 
+//< LUT mapping rule number to corresponding function implementing that rule
 static rule RULES[16] = {
   rule_0,
   rule_1,
@@ -113,7 +127,6 @@ static rule RULES[16] = {
   rule_14,
   rule_15
 };
-
 
 bool parse_expression(Token[2], DataType*, ErrorCodes*);
 

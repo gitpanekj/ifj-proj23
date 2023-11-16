@@ -1,7 +1,6 @@
 /**
  * @file expression_stack.c
  * @author Jan Pánek (xpanek11@stud.fit.vutbr.cz)
- * @brief
  * 
  * @copyright Copyright (c) 2023
  * 
@@ -13,7 +12,16 @@
 
 /******************* ExpressionStackItem  ****************************/
 
-
+/**
+ * @brief Convert token to expression member
+ * 
+ * Type of expression stack item is determined based on TOKEN_TO_MEMBER_TYPE.
+ * If token type does not match any expression member type, separator type is
+ * assigned which stays for end of expression.
+ * 
+ * @param t Token to be converted
+ * @param item pointer to result expression stack item
+ */
 void token_to_expr_member(Token t, ExpressionStackItem* item){
 
     switch (TOKEN_TO_MEMBER_TYPE[t.type]){
@@ -38,6 +46,12 @@ void token_to_expr_member(Token t, ExpressionStackItem* item){
 }
 
 
+/**
+ * @brief Initialize literal term
+ * 
+ * @param item pointer to result expression stack item
+ * @param t Token to be converted
+ */
 void init_literal_term(ExpressionStackItem *item, Token *t){
     item->type = LITERAL;
     item->data.term.data_type =   t->type == TOKEN_INTEGER  ? INT_UNCONVERTABLE 
@@ -51,6 +65,12 @@ void init_literal_term(ExpressionStackItem *item, Token *t){
 }
 
 
+/**
+ * @brief Initialize identifier term
+ * 
+ * @param item pointer to result expression stack item
+ * @param t Token to be converted
+ */
 void init_identifier_term(ExpressionStackItem *item, Token *t){
     item->type = IDENTIFIER;
     item->data.term.literal = t->start_ptr;
@@ -61,35 +81,73 @@ void init_identifier_term(ExpressionStackItem *item, Token *t){
 }
 
 
-void init_terminal(ExpressionStackItem *item, ExpressionMemberType type){
+/**
+ * @brief Initialize terminal
+ * 
+ * @param item pointer to result expression stack item
+ * @param type type of terminal
+ */
+void init_terminal(ExpressionStackItem *item, ExpressionTerminalType type){
     item->type = TERMINAL;
     item->data.terminal.type = type;
     item->data.terminal.start_of_expr = false;
 }
 
 
+/**
+ * @brief Initialize expression
+ * 
+ * @param item pointer to result expression stack item
+ * @param dtype data type of expression
+ */
 void init_expression(ExpressionStackItem *item, DataType dtype){
     item->type = EXPRESSION;
     item->data.expr.data_type = dtype;
 }
 
 
+/**
+ * @brief Determines whether expression stack item is of type expression
+ * 
+ * @param item pointer to result expression stack item
+ * @return true 
+ * @return false 
+ */
 bool is_expression(ExpressionStackItem *item){
     return item->type == EXPRESSION;
 }
 
 
-bool is_terminal(ExpressionStackItem *item, ExpressionMemberType type){
+/**
+ * @brief Determines whether expression stack item is of type terminal
+ * 
+ * @param item pointer to result expression stack item
+ * @return true 
+ * @return false 
+ */
+bool is_terminal(ExpressionStackItem *item, ExpressionTerminalType type){
     return item->type == TERMINAL && item->data.terminal.type == type;
 }
 
 
+/**
+ * @brief Determines whether expression stack item is of type term
+ * 
+ * @param item pointer to result expression stack item
+ * @return true 
+ * @return false 
+ */
 bool is_term(ExpressionStackItem *item){
     return item->type == IDENTIFIER || item->type == LITERAL;
 }
 
 
-void ExpressionMember_print(ExpressionStackItem *item){
+/**
+ * @brief Print expression stack item
+ * 
+ * @param item pointer to result expression stack item
+ */
+void expression_member_print(ExpressionStackItem *item){
     //printf("[%s ", ITEMS[item->type]);
     if (item->type == TERMINAL){
         printf("%s ", TYPE_CHAR[item->data.terminal.type]);
@@ -115,7 +173,20 @@ void ExpressionMember_print(ExpressionStackItem *item){
 
 /******************* ExpressionStack interface *******************************/
 
-void* ExpressionStack_init(ExpressionStack *stack){
+/**
+ * @brief Initialize expression stack
+ * 
+ * @param stack a pointer to the stack structure
+ * 
+ * Allocate memmory for stack and push SEPARATOR terminal.
+ * This terminal is used to detect the whole expression
+ * on stack was reduce.
+ * 
+ * Retruns NULL if memmory allocation fails
+ * 
+ * @return void* 
+ */
+void* expression_stack_init(ExpressionStack *stack){
     void *tmp_ptr = malloc(sizeof(ExpressionStackItem)*8);
     if (tmp_ptr == NULL) return NULL;
 
@@ -133,7 +204,12 @@ void* ExpressionStack_init(ExpressionStack *stack){
 }
 
 
-void ExpressionStack_dispose(ExpressionStack *stack){
+/**
+ * @brief Dispose expression stack
+ * 
+ * @param stack a pointer to the stack structure
+ */
+void expression_stack_dispose(ExpressionStack *stack){
     if (stack->items != NULL){
         free(stack->items);
     }
@@ -142,7 +218,17 @@ void ExpressionStack_dispose(ExpressionStack *stack){
 }
 
 
-void* ExpressionStack_push(ExpressionStack *stack, ExpressionStackItem item){
+/**
+ * @brief Push item to the stack
+ * 
+ * Double its size of capacity is exceeded.
+ * Returns pointer to the pushed item on success, NULL on.
+ * 
+ * @param stack a pointer to the stack structure
+ * @param item pushed item
+ * @return void* 
+ */
+void* expression_stack_push(ExpressionStack *stack, ExpressionStackItem item){
     if (stack->size >= stack->capacity){
         void *tmp_ptr = realloc(stack->items, sizeof(ExpressionStackItem)*stack->capacity*2);
         if (tmp_ptr == NULL) return NULL;
@@ -157,7 +243,16 @@ void* ExpressionStack_push(ExpressionStack *stack, ExpressionStackItem item){
 }
 
 
-int ExpressionStack_top(ExpressionStack *stack){
+/**
+ * @brief Returns index of first non-expression item on stack.
+ * 
+ * Returns index of non-expression item or 0 when bottom of the stack is reached.
+ * Bottom of the stack is represented by SEPARATOR item and is always present.
+ * 
+ * @param stack a pointer to the stack structure
+ * @return int
+ */
+int expression_stack_top(ExpressionStack *stack){
     int top_idx = stack->size-1;
     while (stack->items[top_idx].type != TERMINAL &&
            stack->items[top_idx].type != LITERAL &&
@@ -169,26 +264,58 @@ int ExpressionStack_top(ExpressionStack *stack){
 }
 
 
-bool ExpressionStack_empty(ExpressionStack *stack){
-    int top_idx = ExpressionStack_top(stack);
+/**
+ * @brief Return whether bottom of the stack was reached.
+ * 
+ * Bottom of the stack is represented by SEPARATOR item
+ * 
+ * @param stack a pointer to the stack structure
+ * @return true 
+ * @return false 
+ */
+bool expression_stack_empty(ExpressionStack *stack){
+    int top_idx = expression_stack_top(stack);
     return top_idx == 0;
 }
 
+
+/**
+ * @brief Mark item on index 'top_idx' as start of expr.
+ * 
+ * @param stack a pointer to the stack structure
+ * @param top_idx index of marked item
+ */
 void mark_start_of_expr(ExpressionStack* stack, int top_idx){
     stack->top_most_expr_start = top_idx;
     stack->items[top_idx].data.terminal.start_of_expr = true;
 }
 
 
-void ExpressionStack_print(ExpressionStack *stack){
+/**
+ * @brief Print expression stack
+ * 
+ * @param stack a pointer to the stack structure
+ */
+void expression_stack_print(ExpressionStack *stack){
     printf("Stack [%d/%d] [", stack->size, stack->capacity);
     for (int i=0;i<stack->size;i++){
-        ExpressionMember_print(&(stack->items[i]));
+        expression_member_print(&(stack->items[i]));
     }
     printf(" ] END\n");
 }
 
 
+/**
+ * @brief Get the rule number based on the expression on the top of the stack.
+ * 
+ * Determines whether the top most subexpression  has valid
+ * syntax and return corresponding syntax rule number.
+ * Return -1 if syntax is invalid.
+ * 
+ * 
+ * @param stack a pointer to the stack structure
+ * @return int rule number or -1 on error
+ */
 int get_rule_number(ExpressionStack *stack){
     // find start of expression
     int expression_start = stack->top_most_expr_start;
@@ -315,7 +442,17 @@ int get_rule_number(ExpressionStack *stack){
 }
 
 
+/**
+ * @brief Remove top most subexpression from the stack
+ * 
+ * Member of the top most subexpression are removed from stack
+ * and starting index of top most expression is passed to the next lower
+ * terminal with set 'start_of_expr' flag.
+ * 
+ * @param stack 
+ */
 void reduce_rule(ExpressionStack* stack){
+    // Prepare slot for expression produced by reduction rule
     stack->size = stack->top_most_expr_start + 1;
     stack->items[stack->top_most_expr_start].data.terminal.start_of_expr = false;
 

@@ -1,7 +1,6 @@
 /**
  * @file utils.c
- * @author Jan Pánek (xpanek11@fit.vutbr.cz)
- * @brief
+ * @author Jan Pánek (xpanek11@stud.fit.vut.cz)
  * 
  * @copyright Copyright (c) 2023
  * 
@@ -16,10 +15,24 @@
 #include "lexical_analyzer.h"
 
 
+/**
+ * @brief Determines whether given character is a decimal digit character.
+ * 
+ * @return true if given character is a decimal digit character
+ * @return false otherwise
+ */
 bool is_digit(char c){
     return (( c >= '0') && (c <= '9'));
 }
 
+
+/**
+ * @brief Determines whether given character is either decimal digit, letter or underscore
+ * 
+ * @param c 
+ * @return true if given character is decimal digit, letter or underscore
+ * @return false otherwise
+ */
 bool is_alphanum_or_underscore(char c){
     return ((c=='_')               ||
             ((c<='9') && (c>='0')) ||
@@ -27,15 +40,35 @@ bool is_alphanum_or_underscore(char c){
             ((c<='z') && (c>='a')));
 }
 
+
+/**
+ * @brief Determines whether given character is a letter
+ * 
+ * @return true if given character is a letter
+ * @return false otherwise
+ */
 bool is_alpha(char c){
     return (((c<='Z') && (c>='A')) ||
             ((c<='z') && (c>='a')));
 }
 
+
+/**
+ * @brief Determines whether given character is a hexadecimal digit
+ * 
+ * @return true if given character is 0...9, a...f, A...F
+ * @return false otherwise
+ */
 bool is_hex_digit(char c){
     return ((( c >= '0') && (c <= '9')) || ((c>='a') && (c<='f')) || ((c>='A') && (c<='F')));
 }
 
+
+/**
+ * @brief Converts hexadecimal number to decimal
+ * 
+ * @return char 
+ */
 char hex_to_dec(char c){
     if (is_digit(c)) return c-'0';
 
@@ -47,6 +80,11 @@ char hex_to_dec(char c){
 }
 
 
+/**
+ * @brief Determines whether identifier at the endof literal vector is keyword.
+ * 
+ * @return TokenType Keyword type or TOKEN_INDETIFIER
+ */
 TokenType is_kw(LiteralVector *vec){
     size_t len = vec->forming_size;
     char * literal = vec->literal_buffer;
