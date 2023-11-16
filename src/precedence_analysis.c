@@ -59,6 +59,8 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
             *err = UNDEFINED_VARIABLE;
             return false;
         }
+
+        next.data.term.data_type = sym_data->type;
     }
 
     if (next.type == END_OF_EXPR){
@@ -120,6 +122,8 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
                         *err = UNDEFINED_VARIABLE;
                         return false;
                     }
+
+                    next.data.term.data_type = sym_data->type;
                 }
 
                 if (next.type == END_OF_EXPR){
@@ -195,6 +199,8 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
                         *err = UNDEFINED_VARIABLE;
                         return false;
                     }
+
+                    next.data.term.data_type = sym_data->type;
                 }
 
                 if (next.type == END_OF_EXPR){
