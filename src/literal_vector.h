@@ -48,5 +48,7 @@ char* LV_submit(LiteralVector*, size_t*);
 
 void* LV_restore(LiteralVector*);
 
+char* LV_add_string(LiteralVector*, char*);
+
 #endif
 /*** End of file ***/

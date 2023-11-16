@@ -162,4 +162,36 @@ char* LV_submit(LiteralVector *vec, size_t *literal_len){
 }
 
 
+/**
+ * @brief Directly add string to the literal vector
+ * 
+ * @param vec pointer to literal vector
+ * @param string a pointer to the string
+ * @return char* 
+ */
+char* LV_add_string(LiteralVector* vec, char* string){
+
+    // allocating space for string
+    void *tmp_ptr = malloc(sizeof(char)*(strlen(string)+1)); // reserving 1 position for '\0'
+    if (tmp_ptr == NULL) return NULL;
+    char *literal = (char*) tmp_ptr;
+
+    // copying data
+    memcpy(literal, string, strlen(string)+1);
+
+
+    // grow literal vector if needed
+    if (vec->n_items >= vec->capacity){
+        void *tmp_ptr = realloc(vec->items, sizeof(char)*vec->capacity*2);
+        if (tmp_ptr == NULL) return NULL;
+
+        vec->items = (char**) tmp_ptr;
+    }
+
+    // append literal string at the end of literal vector
+    vec->items[vec->n_items++] = literal;
+
+    return literal;
+}
+
 /*** End of file ***/
