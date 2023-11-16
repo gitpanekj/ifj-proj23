@@ -80,7 +80,7 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
                 fprintf(stderr, "Error occured during expression parsing: invalid order.\n");
                 expression_stack_dispose(&stack);
                 getNextToken(); // consume token which caused error
-                next.data.terminal.type = SEP;
+                 *err = SYNTACTIC_ERROR;
                 return false;
 
             case OPEN:
