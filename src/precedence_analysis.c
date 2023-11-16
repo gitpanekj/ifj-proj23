@@ -178,7 +178,14 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
         }
     }
 
-    *result_dtype = stack.items[1].data.expr.data_type;
+    if ((stack.items[1].data.expr.data_type == INT_CONVERTABLE) ||
+        (stack.items[1].data.expr.data_type == INT_UNCONVERTABLE))
+    {
+        *result_dtype = INT;
+    }
+    else {
+        *result_dtype = stack.items[1].data.expr.data_type;
+    }
 
     return true;
 }
