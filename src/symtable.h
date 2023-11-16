@@ -115,6 +115,14 @@ bool symtableDelete(symtable* table, Name symbol);
 
 symData *symtableGetData(symtable* table, Name symbol);
 
+bool symtableAllDefined(symtable* table);
+
+bool symtableAllFuncDefined(symtable* table);
+
+bool symtableAllVarDefined(symtable* table);
+
+bool symtTreeAllDefined(symtTreeElementPtr root, bool all, bool isFunction);
+
 symtTreeElementPtr symtTreeSearch(symtTreeElementPtr root, Name key);
 
 symtTreeElementPtr symtTreeRotateLeft(symtTreeElementPtr root);
