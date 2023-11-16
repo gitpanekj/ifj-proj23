@@ -36,9 +36,10 @@ symStack symtableStack; // stack of scoped symtables
 
 void addBuildInFunctions()
 {
-
+    // Name funcName;
     // paramInit(&currentFunctionParameter);
-
+    // funcName.nameStart = LV_add_string(&literalVector, "write");
+    // funcName.literal_len = 5;
     // storeOrCheckFunction()
     // todo need push data to LV
 
@@ -74,7 +75,14 @@ void analysisStart()
     rule_prog();
 
     // todo add check if all variables and function was defined and inizialized
-
+    if (!symtableAllFuncDefined(globalSymtable))
+    {
+        error(DEFINITION_ERROR);
+    }
+    else if (symtableAllVarDefined(globalSymtable))
+    {
+        error(UNDEFINED_VARIABLE);
+    }
     symStackDispose(&symtableStack);
     LV_free(&literalVector);
 }
@@ -128,14 +136,19 @@ void rule_func_decl()
     paramVectorInit(&paramVector);
     rule_param_first();
     assertToken(TOKEN_R_PAR);
-
+    // need to create double scope 1 for params and second for body
+    createAndPushSymtable();
     getNextToken();
     currentFunctionReturnType = UNDEFINED;
     rule_return_type();
     storeOrCheckFunction(funcName, currentFunctionReturnType, paramVector, true);
     bool haveReturn = rule_func_body();
-    // todo check for func type with currentfunctionReturnType
-    //  todo check if should have return type
+    if (currentFunctionReturnType != UNDEFINED && !haveReturn)
+    {
+        error(FUNCTION_RETURN_ERROR);
+    }
+    symStackPopAndDispose(&symtableStack);
+    symStackPopAndDispose(&symtableStack);
 }
 
 void rule_param_first()
@@ -171,18 +184,18 @@ void rule_param()
     assertToken(TOKEN_IDENTIFIER);
     // sore name for adding to symtable after getting data type, isDefined = true, isConstant = true
     Name paramId = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
-    // semantic rules code gen or make variableVector for storing variable for code generate after processing all params (mostly for function call)
-    getNextToken();
-    assertToken(TOKEN_COLON);
-    getNextToken();
-    DataType type = rule_type();
     // paramName and paramID cant be same
     if (symtTreeNameCmp(paramId, currentFunctionParameter.name) == 0)
     {
         error(FUNCTION_CALL_ERROR);
     }
-    // todo add paramid to local symtable
-
+    // semantic rules code gen or make variableVector for storing variable for code generate after processing all params (mostly for function call)
+    getNextToken();
+    assertToken(TOKEN_COLON);
+    getNextToken();
+    DataType type = rule_type();
+    // parameter is always constant and defined
+    defineVariable(paramId, type, true, true);
     currentFunctionParameter.type = type;
     if (!paramVectorPush(&paramVector, currentFunctionParameter))
         error(INTERNAL_COMPILER_ERROR);
@@ -194,8 +207,6 @@ void rule_param_name()
     {
         error(SYNTACTIC_ERROR);
     }
-
-    // todo add param name to param vector
     currentFunctionParameter.name.literal_len = token.literal_len;
     currentFunctionParameter.name.nameStart = token.start_ptr;
 }
@@ -270,24 +281,33 @@ bool rule_statement_func()
 {
     if (tokenIs(TOKEN_RETURN))
     {
+        // todo generate return code
         getNextToken();
+        statementValueType = UNDEFINED;
+        leftSideIdentifier.type = currentFunctionReturnType;
         rule_return_value();
-        // todo compare return type with function data type using statementValueType and global currentFunctionReturnType
+        // function should have a return type but does not.
+        if (currentFunctionReturnType != UNDEFINED && statementValueType == UNDEFINED)
+            error(FUNCTION_RETURN_ERROR);
+        if (!compareDataTypeCompatibility(currentFunctionReturnType, statementValueType))
+            error(FUNCTION_CALL_ERROR);
         return true;
     }
     else if (tokenIs(TOKEN_IF))
     {
         getNextToken();
+        createAndPushSymtable();
         rule_if_cond(); // rule_if_cond will leave { in token
-
-        // todo create scoped symtable
+        createAndPushSymtable();
         bool ifBodyHaveReturn = rule_func_body();
-
+        symStackPopAndDispose(&symtableStack);
+        symStackPopAndDispose(&symtableStack);
         getNextToken();
         assertToken(TOKEN_ELSE);
         getNextToken();
-        // todo create scoped symtable
+        createAndPushSymtable();
         bool elseBodyHaveReturn = rule_func_body();
+        symStackPopAndDispose(&symtableStack);
 
         // Token is } of ELSE - need to skip to prevent ending whole function.
         getNextToken();
@@ -297,16 +317,17 @@ bool rule_statement_func()
     {
         getNextToken();
         getNextToken();
-        // todo create sym table
+        // todo generate while code
         DataType exprType;
         ErrorCodes exprErrCode;
-        // todo add calling precedence analys
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
         {
             error(exprErrCode);
         }
+        createAndPushSymtable();
         // precedenc should leave { for me in token variable
         rule_func_body();
+        symStackPopAndDispose(&symtableStack);
 
         // Token is } of while - need to skip to prevent ending whole function.
         getNextToken();
@@ -320,6 +341,7 @@ bool rule_statement_func()
     {
         // todo code generation - first and than check of symtable or in one time
         leftSideIdentifier.type = UNDEFINED;
+        leftSideIdentifier.isInitialized = false;
         statementValueType = UNDEFINED;
         rule_id_decl();
         getNextToken();
@@ -328,16 +350,18 @@ bool rule_statement_func()
         {
             error(TYPE_INFERENCE_ERROR);
         }
-        else if (leftSideIdentifier.type != UNDEFINED && statementValueType != UNDEFINED)
+        else if (leftSideIdentifier.type != UNDEFINED && statementValueType != UNDEFINED) // definition with assignment
         {
             if (!compareDataTypeCompatibility(leftSideIdentifier.type, statementValueType))
                 error(TYPE_COMPATIBILITY_ERROR);
+            leftSideIdentifier.isInitialized = true;
         }
-        else if (leftSideIdentifier.type == UNDEFINED)
+        else if (leftSideIdentifier.type == UNDEFINED) // type derivation from assigment
         {
             leftSideIdentifier.type = statementValueType;
-        }
-        // todo store to symtable using variableDefFunction
+            leftSideIdentifier.isInitialized = true;
+        } // else definition withou assigment
+        defineVariable(leftSideIdentifier.name, leftSideIdentifier.type, leftSideIdentifier.isConstant, leftSideIdentifier.isInitialized);
     }
     else
     {
@@ -353,6 +377,13 @@ void rule_return_value()
         return;
     else
     {
+        if (currentFunctionReturnType == UNDEFINED)
+        { // check if the function is not supposed to return a value but the return is followed by an expression
+            error(FUNCTION_RETURN_ERROR);
+        }
+        //! grammar change? should by only expression - precedence
+        //! kontrola jestli teda folání funkce v non return je error a v return není - zeptat se co to udělá v generování kódu
+        // kdyžtak přidat jen volání precedenční - co udělá když dostane id ( -
         rule_statement_value();
     }
 }
@@ -383,18 +414,21 @@ void rule_statement()
 {
     if (tokenIs(TOKEN_IF))
     {
+        createAndPushSymtable();
         getNextToken();
         rule_if_cond(); // rule_if_cond will leave { in token
+        createAndPushSymtable();
 
-        // todo create scoped symtable
         rule_body();
-
+        symStackPopAndDispose(&symtableStack);
+        symStackPopAndDispose(&symtableStack);
         getNextToken();
+
         assertToken(TOKEN_ELSE);
         getNextToken();
-        // todo create scoped symtable
+        createAndPushSymtable();
         rule_body();
-
+        symStackPopAndDispose(&symtableStack);
         // Token is } of ELSE - need to skip to prevent ending whole function.
         getNextToken();
     }
@@ -402,17 +436,17 @@ void rule_statement()
     {
         getNextToken();
         getNextToken();
-        // todo create sym table
-        // todo add calling precedence analys
         DataType exprType;
         ErrorCodes exprErrCode;
+        // todo check bool type
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
         {
             error(exprErrCode);
         }
-        // pre
+        createAndPushSymtable();
         // precedenc should leave { for me in token variable
         rule_body();
+        symStackPopAndDispose(&symtableStack);
 
         // Token is } of while - need to skip to prevent ending whole function.
         getNextToken();
@@ -425,12 +459,32 @@ void rule_statement()
     else if (tokenIs(TOKEN_VAR, TOKEN_LET)) // variable declaration
     {
         leftSideIdentifier.type = UNDEFINED;
+        leftSideIdentifier.isInitialized = false;
         statementValueType = UNDEFINED;
         rule_id_decl();
         getNextToken();
         rule_decl_opt();
-        // TODO compare leftSideIdentifier and statementValueType
-        // TODO if data type is undefined and statementValueType defined or vice versa - set it in var table. Else return semantic error
+        if (leftSideIdentifier.type == UNDEFINED && (statementValueType == UNDEFINED || statementValueType == NIL))
+        {
+            error(TYPE_INFERENCE_ERROR);
+        }
+        else if (leftSideIdentifier.type != UNDEFINED && statementValueType != UNDEFINED) // definition with assignment
+        {
+            if (!compareDataTypeCompatibility(leftSideIdentifier.type, statementValueType))
+                error(TYPE_COMPATIBILITY_ERROR);
+            leftSideIdentifier.isInitialized = true; // init from assigment
+        }
+        else if (leftSideIdentifier.type == UNDEFINED) // type derivation from assigment
+        {
+            leftSideIdentifier.type = statementValueType;
+            leftSideIdentifier.isInitialized = true; // init from assigment
+        }
+        else if (isOptionalType(leftSideIdentifier.type))
+        {
+            leftSideIdentifier.isInitialized = true; // default init to nil
+        }
+        // else definition withou assigment and - not initialized
+        defineVariable(leftSideIdentifier.name, leftSideIdentifier.type, leftSideIdentifier.isConstant, leftSideIdentifier.isInitialized);
     }
     else
     {
@@ -444,13 +498,18 @@ void rule_if_cond()
     {
         getNextToken();
         assertToken(TOKEN_IDENTIFIER);
-        // todo check if token exist in some scope
-        // todo add ID to scope without nill type, scope is defined and is store id stack on top
+        Name varName = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
+        symData *data = getDataFromSymstack(varName);
+        if (data == NULL)
+            error(UNDEFINED_VARIABLE);
+        else if (!data->isConstant || !isOptionalType(data->type))
+            error(TYPE_COMPATIBILITY_ERROR); //! ask to error codes
+        defineVariable(varName, convertToNonOptionalType(data->type), true, true);
         getNextToken(); // need same end state as precedence analysis
         return;
     }
     getNextToken();
-    // todo call preceden analysis and check bool type
+    // todo check precedence bool type
     DataType exprType;
     ErrorCodes exprErrCode;
     if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
@@ -686,10 +745,19 @@ DataType rule_literal()
 
 //-------------- functions for semantic checks --------------------------
 
-// void defineVariable(Name varName)
-// {
-// todo check if var is not defined in current scope - use symstackTop
-// }
+void defineVariable(Name varName, DataType type, bool isConstant, bool isInitialized)
+{
+    symtable *symtableOnTop = symStackTop(&symtableStack);
+    symData *data = symtableGetData(symtableOnTop, varName);
+    if (data == NULL)
+    {
+        symtableInsertVar(symtableOnTop, varName, type, isConstant, true, isInitialized);
+    }
+    else
+    {
+        error(DEFINITION_ERROR);
+    }
+}
 
 void storeOrCheckFunction(Name funcName, DataType returnType, ParamVector params, bool definition)
 {
@@ -995,20 +1063,48 @@ symtable *createAndPushSymtable()
     return table;
 }
 
+bool isOptionalType(DataType type)
+{
+    if (type == INT_NIL || type == DOUBLE_NIL || type == STRING_NIL)
+        return true;
+    else
+        return false;
+}
+
+DataType convertToNonOptionalType(DataType type)
+{
+    switch (type)
+    {
+    case INT_NIL:
+        return INT;
+        break;
+    case DOUBLE_NIL:
+        return DOUBLE;
+        break;
+    case STRING_NIL:
+        return STRING;
+        break;
+    default:
+        return type;
+        break;
+    }
+}
+
 void errorHandle(ErrorCodes ErrorType, const char *functionName)
 {
     // todo free memory
-
+    symStackDispose(&symtableStack);
+    // paramVectorDispose(&paramVector);
     switch (ErrorType)
     {
     case LEXICAL_ERROR:
-        fprintf(stderr, "Lexical error at line %d, column %d: Invalid token.\n", scanner.line, 0);
+        fprintf(stderr, "Lexical error at line %d: Invalid token.\n", scanner.line);
         break;
     case SYNTACTIC_ERROR:
-        fprintf(stderr, "[Error call from function: %s]. Syntactic error at line %d, column %d: Unexpected token.\n", functionName, scanner.line, 0);
+        fprintf(stderr, "[Error call from function: %s]. Syntactic error at line %d: Unexpected token.\n", functionName, scanner.line);
         break;
     default:
-        fprintf(stderr, "[Error call from function: %s]. Semantic error at line %d, column %d:", functionName, scanner.line, 0);
+        fprintf(stderr, "[Error call from function: %s]. Semantic error at line %d: ", functionName, scanner.line);
         // write message for different sematic errors
         switch (ErrorType)
         {
@@ -1021,7 +1117,7 @@ void errorHandle(ErrorCodes ErrorType, const char *functionName)
         case UNDEFINED_VARIABLE:
             fprintf(stderr, "Undefined or uninitialized variable.\n");
             break;
-        case FUNCTIN_RETURN_ERROR:
+        case FUNCTION_RETURN_ERROR:
             fprintf(stderr, "Missing/extra expression in return statement.\n");
             break;
         case TYPE_COMPATIBILITY_ERROR:
