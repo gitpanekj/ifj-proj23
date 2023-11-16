@@ -22,7 +22,8 @@ typedef enum DataType
     STRING_NIL,
     NIL,
     INT_CONVERTABLE,
-    INT_UNCONVERTABLE
+    INT_UNCONVERTABLE,
+    BOOLEAN
 } DataType;
 
 /**
