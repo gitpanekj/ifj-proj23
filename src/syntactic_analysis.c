@@ -20,7 +20,7 @@ Token token;
 
 //? name like this or pointer node of function with all data (symtTreeElementPtr) or symtData
 symtable *currentFunctionSymtable; // pointer to data of current function - if processing function
-Name currentFunctionName;
+Name currentDefFunctionName = {.literal_len = 0, .nameStart = NULL};
 
 DataType currentFunctionReturnType = UNDEFINED; // type for return type check
 DataType statementValueType;                    // type returned from statement value rule
@@ -34,18 +34,7 @@ symtable *globalSymtable; // table with global variables and functions
 symStack symtableStack; // stack of scoped symtables
 
 // todo create global counter of while count soped and add it to while calling
-
-void addBuildInFunctions()
-{
-    // Name funcName;
-    // paramInit(&currentFunctionParameter);
-    // funcName.nameStart = LV_add_string(&literalVector, "write");
-    // funcName.literal_len = 5;
-    // storeOrCheckFunction()
-    // todo need push data to LV
-
-    // todo add buildin functions to global symtable
-}
+unsigned levelOfWhileScope = 0;
 
 void analysisStart()
 {
@@ -56,22 +45,8 @@ void analysisStart()
     if (!symtableInit(&globalSymtable))
         error(INTERNAL_COMPILER_ERROR);
     symStackPush(&symtableStack, globalSymtable);
-    //! mess for symTable and symstack testing
-    // char *pointerToStart = "esxample";
-    // symtable *tab = createAndPushSymtable();
-    // symtableInsertVar(tab, (Name){.nameStart = pointerToStart, .literal_len = 6}, STRING_NIL, true, false, false);
-    // createAndPushSymtable();
-    //     char *pointerTsoStart = "asd";
+    addBuildInFunctions();
 
-    // createAndPushSymtable();
-    // symData *varData = getDataFromSymstack((Name){.nameStart = pointerTsoStart, .literal_len = 6});
-    //     symStackPopAndDispose(&symtableStack);
-    //  if (!symtableInit(&globalSymtable))
-    //     error(INTERNAL_COMPILER_ERROR);
-    //     symStackPush(&symtableStack,globalSymtable);
-    //     symtableInsertVar(globalSymtable, (Name){.nameStart = pointerToStart, .literal_len = 6}, INT, true, false, false);
-    //     varData = symtableGetData(symStackTop(&symtableStack), (Name){.nameStart = pointerToStart, .literal_len = 6});
-    //     printf("%d", varData->type);
     getNextToken();
     rule_prog();
 
@@ -80,10 +55,10 @@ void analysisStart()
     {
         error(DEFINITION_ERROR);
     }
-    else if (symtableAllVarDefined(globalSymtable))
-    {
-        error(UNDEFINED_VARIABLE);
-    }
+    // else if (!symtableAllVarDefined(globalSymtable))
+    // {
+    //     error(UNDEFINED_VARIABLE);
+    // }
     symStackDispose(&symtableStack);
     LV_free(&literalVector);
 }
@@ -128,7 +103,8 @@ void rule_func_decl()
     assertToken(TOKEN_FUNC);
     getNextToken();
     assertToken(TOKEN_IDENTIFIER);
-    Name funcName = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
+    currentDefFunctionName.literal_len = token.literal_len;
+    currentDefFunctionName.nameStart = token.start_ptr;
     getNextToken();
     assertToken(TOKEN_L_PAR);
     getNextToken();
@@ -142,12 +118,14 @@ void rule_func_decl()
     getNextToken();
     currentFunctionReturnType = UNDEFINED;
     rule_return_type();
-    storeOrCheckFunction(funcName, currentFunctionReturnType, paramVector, true);
+    storeOrCheckFunction(currentDefFunctionName, currentFunctionReturnType, paramVector, true);
     bool haveReturn = rule_func_body();
     if (currentFunctionReturnType != UNDEFINED && !haveReturn)
     {
         error(FUNCTION_RETURN_ERROR);
     }
+    currentDefFunctionName.literal_len = 0;
+    currentDefFunctionName.nameStart = NULL;
     symStackPopAndDispose(&symtableStack);
     symStackPopAndDispose(&symtableStack);
 }
@@ -230,10 +208,10 @@ DataType rule_type()
     switch (token.type)
     {
     case TOKEN_INTEGER_T:
-        return INT;
+        return INT_UNCONVERTABLE;
         break;
     case TOKEN_INTEGER_NIL_T:
-        return INT_NIL;
+        return INT_UNCONVERTABLE_NIL;
         break;
     case TOKEN_DOUBLE_T:
         return DOUBLE;
@@ -311,19 +289,22 @@ bool rule_statement_func()
     }
     else if (tokenIs(TOKEN_WHILE))
     {
+        levelOfWhileScope++;
         getNextToken();
         getNextToken();
         // todo generate while code
         DataType exprType;
         ErrorCodes exprErrCode;
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        else if (exprType != BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
+
         createAndPushSymtable();
         // precedenc should leave { for me in token variable
         rule_func_body();
         symStackPopAndDispose(&symtableStack);
+        levelOfWhileScope--;
 
         // Token is } of while - need to skip to prevent ending whole function.
         getNextToken();
@@ -370,7 +351,11 @@ bool rule_statement_func()
 void rule_return_value()
 {
     if (tokenIs(TOKEN_R_BRACE, TOKEN_LET, TOKEN_VAR, TOKEN_IF, TOKEN_WHILE, TOKEN_RETURN))
+    {
+        if (currentFunctionReturnType != UNDEFINED)
+            error(FUNCTION_RETURN_ERROR);
         return;
+    }
     else
     {
         // check if function is not supposed to return a value but the return is followed by an expression
@@ -381,10 +366,12 @@ void rule_return_value()
         ErrorCodes exprErrCode;
         DataType returnType = UNDEFINED;
         getNextToken();
+
         if (!parse_expression(tokenHistory, &returnType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        else if (returnType == BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
+
         // check if function should have a return type but does not
         if (currentFunctionReturnType != UNDEFINED && returnType == UNDEFINED)
             error(FUNCTION_RETURN_ERROR);
@@ -440,19 +427,22 @@ void rule_statement()
     }
     else if (tokenIs(TOKEN_WHILE))
     {
+        levelOfWhileScope++;
         getNextToken();
         getNextToken();
         DataType exprType;
         ErrorCodes exprErrCode;
         // todo check bool type - boollean
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        else if (exprType != BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
+
         createAndPushSymtable();
         // precedenc should leave { for me in token variable
         rule_body();
         symStackPopAndDispose(&symtableStack);
+        levelOfWhileScope--;
 
         // Token is } of while - need to skip to prevent ending whole function.
         getNextToken();
@@ -478,7 +468,9 @@ void rule_statement()
         else if (leftSideIdentifier.type != UNDEFINED && statementValueType != UNDEFINED) // definition with assignment
         {
             if (!compareDataTypeCompatibility(leftSideIdentifier.type, statementValueType))
+            {
                 error(TYPE_COMPATIBILITY_ERROR);
+            }
             leftSideIdentifier.isInitialized = true; // init from assigment
         }
         else if (leftSideIdentifier.type == UNDEFINED) // type derivation from assigment
@@ -519,10 +511,11 @@ void rule_if_cond()
     // todo check precedence bool type
     DataType exprType;
     ErrorCodes exprErrCode;
+
     if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
-    {
         error(exprErrCode);
-    }
+    else if (exprType != BOOLEAN)
+        error(TYPE_COMPATIBILITY_ERROR);
 }
 
 void rule_id_decl()
@@ -568,6 +561,7 @@ void rule_statement_action()
     {
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
+        // todo add compare is write set and unset it
         getNextToken(); // get token after (
         paramVectorInit(&paramVector);
         rule_first_arg();
@@ -593,7 +587,7 @@ void rule_statement_action()
         getNextToken(); // get token after =
         rule_statement_value();
 
-        if (!compareDataTypeCompatibility(leftSideIdentifier.type, statementValueType))
+        if (!compareDataTypeCompatibility(variableData->type, statementValueType))
         {
             error(TYPE_COMPATIBILITY_ERROR);
         }
@@ -634,11 +628,11 @@ void rule_arg()
 {
     if (tokenIs(TOKEN_INTEGER, TOKEN_DOUBLE, TOKEN_STRING, TOKEN_NIL))
     {
+        // todo add to token array
         currentFunctionParameter.type = rule_literal();
         getNextToken();
         return;
     }
-    // still dont know if ID is paramName or paramId
     assertToken(TOKEN_IDENTIFIER);
     getNextToken();
     rule_arg_opt();
@@ -650,6 +644,7 @@ void rule_arg_opt()
     if (tokenIs(TOKEN_R_PAR, TOKEN_COMMA))
     {
         // paramID is one token back - store type
+        // todo add to token array
         symData *data = getVariableDataFromSymstack((Name){.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr});
         if (data == NULL || !data->isInitialized)
         {
@@ -664,6 +659,8 @@ void rule_arg_opt()
     currentFunctionParameter.name.literal_len = tokenHistory[0].literal_len;
     currentFunctionParameter.name.nameStart = tokenHistory[0].start_ptr;
     getNextToken();
+    // current token is paramID
+    // todo add to token array
     currentFunctionParameter.type = rule_term();
     getNextToken();
 }
@@ -680,9 +677,9 @@ void rule_statement_value()
         getNextToken();
         ErrorCodes exprErrCode;
         if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        if (statementValueType == BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
     }
 }
 
@@ -692,6 +689,7 @@ void rule_arg_expr()
     {
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
+        // todo add compare is write set and unset it
         getNextToken(); // get token after (
         paramVectorInit(&paramVector);
         rule_first_arg();
@@ -706,9 +704,9 @@ void rule_arg_expr()
     {
         ErrorCodes exprErrCode;
         if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        if (statementValueType == BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
     }
 }
 
@@ -732,7 +730,7 @@ DataType rule_literal()
     switch (token.type)
     {
     case TOKEN_INTEGER:
-        return INT;
+        return INT_CONVERTABLE;
         break;
     case TOKEN_DOUBLE:
         return DOUBLE;
@@ -750,7 +748,91 @@ DataType rule_literal()
     return 0;
 }
 
-//-------------- functions for semantic checks --------------------------
+Name createName(char *nameToCreate)
+{
+    Name name = {.literal_len = 0, .nameStart = NULL};
+    if (strlen(nameToCreate) != 0)
+    {
+        name.nameStart = LV_add_string(&literalVector, nameToCreate);
+        name.literal_len = strlen(nameToCreate);
+        return name;
+    }
+    else
+    {
+        return name;
+    }
+}
+
+Parameter createParam(DataType type, char *paramName)
+{
+    Parameter param;
+    paramInit(&param);
+    param.type = type;
+    if (strlen(paramName) != 0)
+    {
+        param.name = createName(paramName);
+    }
+    return param;
+}
+
+//-------------- functions for semantic checks -------------------------
+void addBuildInFunctions()
+{
+    Name funcName;
+    Parameter funcParam;
+    //---------------readString-----------------
+    funcName = createName("readString");
+    storeOrCheckFunction(funcName, STRING_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
+    //---------------readInt-----------------
+    funcName = createName("readInt");
+    storeOrCheckFunction(funcName, INT_UNCONVERTABLE_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
+    //---------------readDouble-----------------
+    funcName = createName("readDouble");
+    storeOrCheckFunction(funcName, DOUBLE_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
+    //---------------write-----------------
+    funcName = createName("write");
+    storeOrCheckFunction(funcName, UNDEFINED, (ParamVector){.data = NULL, .paramCount = -1}, true);
+    //---------------Int2Double-----------------
+    funcName = createName("Int2Double");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(INT_UNCONVERTABLE, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, DOUBLE, paramVector, true);
+    //---------------Double2Int-----------------
+    funcName = createName("Double2Int");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(DOUBLE, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, INT_UNCONVERTABLE, paramVector, true);
+    //---------------length-----------------
+    funcName = createName("length");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(STRING, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, INT_UNCONVERTABLE, paramVector, true);
+    //---------------substring-----------------
+    funcName = createName("substring");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(STRING, "of");
+    paramVectorPush(&paramVector, funcParam);
+    funcParam = createParam(INT_UNCONVERTABLE, "startingAt");
+    paramVectorPush(&paramVector, funcParam);
+    funcParam = createParam(INT_UNCONVERTABLE, "endingBefore");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, STRING_NIL, paramVector, true);
+    //---------------ord-----------------
+    funcName = createName("ord");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(STRING, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, INT_UNCONVERTABLE, paramVector, true);
+    //---------------chr-----------------
+    funcName = createName("chr");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(INT_UNCONVERTABLE, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, STRING, paramVector, true);
+}
 
 void defineVariable(Name varName, DataType type, bool isConstant, bool isInitialized)
 {
@@ -758,6 +840,7 @@ void defineVariable(Name varName, DataType type, bool isConstant, bool isInitial
     symData *data = symtableGetData(symtableOnTop, varName);
     if (data == NULL)
     {
+        type = convertToNonConvertableType(type);
         symtableInsertVar(symtableOnTop, varName, type, isConstant, true, isInitialized);
     }
     else
@@ -797,6 +880,16 @@ void storeOrCheckFunction(Name funcName, DataType returnType, ParamVector params
             // check param names and count
             if (params.paramCount != data->paramCount || !compareParamsAndDerive(data->params, params.data, params.paramCount, status))
                 error(FUNCTION_CALL_ERROR);
+        }
+        else // parameters of function with any parameters number can't have paramName
+        {
+            for (int i = 0; i < params.paramCount; i++)
+            {
+                if (params.data[i].name.literal_len != 0)
+                {
+                    error(FUNCTION_CALL_ERROR);
+                }
+            }
         }
 
         // need to check undefined type due to a function call without assignment
@@ -843,25 +936,36 @@ bool compareDataTypeCompatibility(DataType assignTo, DataType assignFrom)
 {
     switch (assignTo)
     {
-    case UNDEFINED: // only case in variable in 1 pass SA
+    case UNDEFINED:
         return true;
         break;
-    case NIL: // only case in function parameter in 1 pass SA
+    case NIL:
         return true;
-    case INT:
-        if (assignFrom == INT)
+    case INT_UNCONVERTABLE:
+        if (assignFrom == INT_UNCONVERTABLE || assignFrom == INT_CONVERTABLE)
             return true;
         break;
-    case INT_NIL:
-        if (assignFrom == INT || assignFrom == INT_NIL || assignFrom == NIL)
+    case INT_UNCONVERTABLE_NIL:
+        if (assignFrom == INT_UNCONVERTABLE || assignFrom == INT_UNCONVERTABLE_NIL || assignFrom == INT_CONVERTABLE ||
+            assignFrom == INT_CONVERTABLE_NIL || assignFrom == NIL)
+            return true;
+        break;
+    case INT_CONVERTABLE:
+        if (assignFrom == INT_CONVERTABLE || assignFrom == INT_UNCONVERTABLE || assignFrom == DOUBLE)
+            return true;
+        break;
+    case INT_CONVERTABLE_NIL:
+        if (assignFrom == INT_CONVERTABLE || assignFrom == INT_CONVERTABLE_NIL || assignFrom == INT_UNCONVERTABLE ||
+            assignFrom == INT_UNCONVERTABLE_NIL || assignFrom == DOUBLE || assignFrom == DOUBLE_NIL || assignFrom == NIL)
             return true;
         break;
     case DOUBLE:
-        if (assignFrom == DOUBLE)
+        if (assignFrom == DOUBLE || assignFrom == INT_CONVERTABLE)
             return true;
         break;
     case DOUBLE_NIL:
-        if (assignFrom == DOUBLE || assignFrom == DOUBLE_NIL || assignFrom == NIL)
+        if (assignFrom == DOUBLE || assignFrom == DOUBLE_NIL || assignFrom == INT_CONVERTABLE ||
+            assignFrom == INT_CONVERTABLE_NIL || assignFrom == NIL)
             return true;
         break;
     case STRING:
@@ -880,33 +984,75 @@ bool compareDataTypeCompatibility(DataType assignTo, DataType assignFrom)
 }
 
 // type1 and type2 must be compatible - check by compareDataTypeCompatibility
-DataType deriveDataType(DataType type1, DataType type2, bool moreGenreal)
+DataType deriveDataType(DataType type1, DataType type2, bool moreGeneral)
 {
-    if (moreGenreal)
+    if (moreGeneral)
     {
-        // more general data type from type1 and type2
+        // more general (by nil) data type from type1 and type2
         switch (type1)
         {
         case NIL:
-            if (type2 == INT)
-                return INT_NIL;
-            else if (type2 == DOUBLE)
+            switch (type2)
+            {
+            case INT_UNCONVERTABLE:
+                return INT_UNCONVERTABLE_NIL;
+                break;
+            case INT_CONVERTABLE:
+                return INT_CONVERTABLE_NIL;
+                break;
+            case DOUBLE:
                 return DOUBLE_NIL;
-            else if (type2 == STRING)
+                break;
+            case STRING:
                 return STRING_NIL;
-            return type2; // nill or type with nill
+                break;
+            default:
+                return type2;
+                break;
+            }
             break;
-        case INT:
-            if (type2 == INT_NIL || type2 == NIL)
-                return INT_NIL;
+        case INT_UNCONVERTABLE:
+            if (type2 == INT_UNCONVERTABLE_NIL || type2 == INT_CONVERTABLE_NIL || type2 == NIL)
+                return INT_UNCONVERTABLE_NIL;
             else
-                return INT;
+                return INT_UNCONVERTABLE;
             break;
-        case INT_NIL:
-            return INT_NIL;
+        case INT_UNCONVERTABLE_NIL:
+            return INT_UNCONVERTABLE_NIL;
+            break;
+        case INT_CONVERTABLE:
+            switch (type2)
+            {
+            case NIL:
+            case INT_CONVERTABLE_NIL:
+                return INT_CONVERTABLE_NIL;
+                break;
+            case INT_UNCONVERTABLE:
+                return INT_UNCONVERTABLE;
+                break;
+            case INT_UNCONVERTABLE_NIL:
+                return INT_UNCONVERTABLE_NIL;
+                break;
+            case DOUBLE: // conversion
+                return DOUBLE;
+                break;
+            case DOUBLE_NIL: // conversion
+                return DOUBLE_NIL;
+                break;
+            default:
+                return INT_CONVERTABLE;
+                break;
+            }
+            break;
+        case INT_CONVERTABLE_NIL:
+            if (type2 == INT_UNCONVERTABLE || type2 == INT_UNCONVERTABLE_NIL)
+                return INT_UNCONVERTABLE_NIL;
+            else if (type2 == DOUBLE || type2 == DOUBLE_NIL) // conversion
+                return DOUBLE_NIL;
+            return INT_CONVERTABLE_NIL;
             break;
         case DOUBLE:
-            if (type2 == DOUBLE_NIL || type2 == NIL)
+            if (type2 == DOUBLE_NIL || type2 == INT_CONVERTABLE_NIL || type2 == NIL)
                 return DOUBLE_NIL;
             else
                 return DOUBLE;
@@ -939,19 +1085,27 @@ DataType deriveDataType(DataType type1, DataType type2, bool moreGenreal)
         case NIL:
             return type2;
             break;
-        case INT:
-            return INT;
+        case INT_UNCONVERTABLE:
+            return INT_UNCONVERTABLE;
             break;
-        case INT_NIL:
+        case INT_UNCONVERTABLE_NIL:
+            if (type2 == NIL || type2 == INT_CONVERTABLE_NIL || type2 == UNDEFINED)
+                return INT_UNCONVERTABLE_NIL;
+            return type2;
+            break;
+        case INT_CONVERTABLE:
+            return type2;
+            break;
+        case INT_CONVERTABLE_NIL:
             if (type2 == NIL || type2 == UNDEFINED)
-                return INT_NIL;
+                return INT_CONVERTABLE_NIL;
             return type2;
             break;
         case DOUBLE:
             return DOUBLE;
             break;
         case DOUBLE_NIL:
-            if (type2 == NIL || type2 == UNDEFINED)
+            if (type2 == NIL || type2 == INT_CONVERTABLE_NIL || type2 == UNDEFINED)
                 return DOUBLE_NIL;
             return type2;
             break;
@@ -986,9 +1140,13 @@ bool compareFunctionParamTypesAndDerive(DataType *storedParam, DataType *current
         *storedParam = *currentParam; // store param from real definition
         break;
     case UNDEFINED_FUNCTION:
+
         if (!compareDataTypeCompatibility(*currentParam, *storedParam) && !compareDataTypeCompatibility(*storedParam, *currentParam)) // don't know which is assigned to which
+        {
             return false;
+        }
         *storedParam = deriveDataType(*storedParam, *currentParam, true); // store more general params derived from storedParam and currentParam
+
         break;
     default:
         return false;
@@ -1003,9 +1161,7 @@ bool compareParamsAndDerive(Parameter *storedParams, Parameter *currentParams, i
     {
         if (symtTreeNameCmp(storedParams[i].name, currentParams[i].name) != 0 ||
             !compareFunctionParamTypesAndDerive(&storedParams[i].type, &currentParams[i].type, status))
-        {
             return false;
-        }
     }
     return true;
 }
@@ -1072,7 +1228,7 @@ symtable *createAndPushSymtable()
 
 bool isOptionalType(DataType type)
 {
-    if (type == INT_NIL || type == DOUBLE_NIL || type == STRING_NIL)
+    if (type == INT_UNCONVERTABLE_NIL || type == INT_CONVERTABLE_NIL || type == DOUBLE_NIL || type == STRING_NIL)
         return true;
     else
         return false;
@@ -1082,14 +1238,33 @@ DataType convertToNonOptionalType(DataType type)
 {
     switch (type)
     {
-    case INT_NIL:
-        return INT;
+    case INT_UNCONVERTABLE_NIL:
+        return INT_UNCONVERTABLE;
+        break;
+    case INT_CONVERTABLE_NIL:
+        return INT_CONVERTABLE;
         break;
     case DOUBLE_NIL:
         return DOUBLE;
         break;
     case STRING_NIL:
         return STRING;
+        break;
+    default:
+        return type;
+        break;
+    }
+}
+
+DataType convertToNonConvertableType(DataType type)
+{
+    switch (type)
+    {
+    case INT_CONVERTABLE:
+        return INT_UNCONVERTABLE;
+        break;
+    case INT_CONVERTABLE_NIL:
+        return INT_UNCONVERTABLE_NIL;
         break;
     default:
         return type;

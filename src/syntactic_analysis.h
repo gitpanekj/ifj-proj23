@@ -61,12 +61,14 @@ typedef struct
     DataType type;
 } Identifier;
 
-
 //-------------------functions-----------------
+void analysisStart();
+
+Name createName(char *nameToCreate);
+
+Parameter createParam(DataType type, char *paramName);
 
 void addBuildInFunctions();
-
-void analysisStart();
 
 void defineVariable(Name varName, DataType type, bool isConstant, bool isInitialized);
 
@@ -86,11 +88,13 @@ symData *getVariableDataFromSymstack(Name name);
 
 symData *getDataFromSymstack(Name name);
 
-symtable* createAndPushSymtable();
+symtable *createAndPushSymtable();
 
 bool isOptionalType(DataType type);
 
 DataType convertToNonOptionalType(DataType type);
+
+DataType convertToNonConvertableType(DataType type);
 
 void errorHandle(ErrorCodes ErrorType, const char *functionName);
 

@@ -61,7 +61,7 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
         }
 
 
-        next.data.term.data_type = sym_data->type == INT ? INT_UNCONVERTABLE : sym_data->type;
+        next.data.term.data_type = sym_data->type;// == INT ? INT_UNCONVERTABLE : sym_data->type;
     }
 
     if (next.type == END_OF_EXPR){
@@ -124,7 +124,7 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
                         return false;
                     }
 
-                    next.data.term.data_type = sym_data->type == INT ? INT_UNCONVERTABLE : sym_data->type;
+                    next.data.term.data_type = sym_data->type;// == INT ? INT_UNCONVERTABLE : sym_data->type;
                 }
 
                 if (next.type == END_OF_EXPR){
@@ -201,7 +201,7 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
                         return false;
                     }
 
-                    next.data.term.data_type = sym_data->type == INT ? INT_UNCONVERTABLE : sym_data->type;
+                    next.data.term.data_type = sym_data->type; //== INT ? INT_UNCONVERTABLE : sym_data->type;
                 }
 
                 if (next.type == END_OF_EXPR){
@@ -214,14 +214,13 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
         }
     }
 
-    if ((stack.items[1].data.expr.data_type == INT_CONVERTABLE) ||
-        (stack.items[1].data.expr.data_type == INT_UNCONVERTABLE))
-    {
-        *result_dtype = INT;
-    }
-    else {
+    // if (stack.items[1].data.expr.data_type == INT_UNCONVERTABLE)
+    // {
+    //     *result_dtype = INT;
+    // }
+    // else {
         *result_dtype = stack.items[1].data.expr.data_type;
-    }
+   //}
 
     return true;
 }
@@ -268,7 +267,7 @@ bool rule_2(ExpressionStack* stack){
         fprintf(stderr, "Unsupported operand unary - for type nil\n");
         return false;
     }
-    else if ( dtype == INT_NIL || dtype == DOUBLE_NIL){
+    else if ( dtype == INT_UNCONVERTABLE_NIL || dtype == DOUBLE_NIL){
         fprintf(stderr, "Value of Int? or Double? must be unwrapped to value of type 'Int'/'Double'\n");
         return false;
     }
@@ -293,13 +292,13 @@ bool rule_2(ExpressionStack* stack){
 bool rule_3(ExpressionStack* stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 1]);
     
-    // postfix '!' is valid only for DOUBLE_NIL, INT_NIL, STRING_NIL
+    // postfix '!' is valid only for DOUBLE_NIL, INT_UNCONVERTABLE_NIL, STRING_NIL
     DataType dtype = op->data.expr.data_type;
     switch (dtype){
         case DOUBLE_NIL:
             dtype = DOUBLE;
             break;
-        case INT_NIL:
+        case INT_UNCONVERTABLE_NIL:
             dtype = INT_UNCONVERTABLE;
             break;
         case STRING_NIL:
@@ -335,11 +334,11 @@ bool rule_4(ExpressionStack* stack){
     DataType op2_dtype = op2->data.expr.data_type;
     DataType result_dtype;
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL))
     {
@@ -402,11 +401,11 @@ bool rule_5(ExpressionStack *stack){
     DataType op2_dtype = op2->data.expr.data_type;
     DataType result_dtype;
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL)  ||
         (op2_dtype == STRING))
@@ -467,11 +466,11 @@ bool rule_6(ExpressionStack *stack){
     DataType op2_dtype = op2->data.expr.data_type;
     DataType result_dtype;
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL)  ||
         (op2_dtype == STRING))
@@ -532,11 +531,11 @@ bool rule_7(ExpressionStack *stack){
     DataType op2_dtype = op2->data.expr.data_type;
     DataType result_dtype;
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL)  ||
         (op2_dtype == STRING))
@@ -598,7 +597,7 @@ bool rule_8(ExpressionStack *stack){
     DataType op2_dtype = op2->data.expr.data_type;
     DataType result_dtype;
 
-    if ((op1_dtype == INT_NIL) && (op2_dtype == INT_CONVERTABLE || op2_dtype == INT_UNCONVERTABLE)){
+    if ((op1_dtype == INT_UNCONVERTABLE_NIL) && (op2_dtype == INT_CONVERTABLE || op2_dtype == INT_UNCONVERTABLE)){
         result_dtype = INT_UNCONVERTABLE;
     }
     else if ((op1_dtype == DOUBLE_NIL) && (op2_dtype == DOUBLE || op2_dtype == INT_CONVERTABLE)){
@@ -614,7 +613,7 @@ bool rule_8(ExpressionStack *stack){
         // TODO: code generation
     }
     else if ((op1_dtype == NIL) &&
-             (op2_dtype != INT_NIL) &&
+             (op2_dtype != INT_UNCONVERTABLE_NIL) &&
              (op2_dtype != DOUBLE_NIL) &&
              (op2_dtype != STRING_NIL) &&
              (op2_dtype != NIL))
@@ -649,11 +648,11 @@ bool rule_9(ExpressionStack *stack){
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL))
     {
@@ -694,11 +693,11 @@ bool rule_10(ExpressionStack *stack){
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL))
     {
@@ -737,11 +736,11 @@ bool rule_11(ExpressionStack *stack){
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL))
     {
@@ -780,11 +779,11 @@ bool rule_12(ExpressionStack *stack){
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL))
     {
@@ -826,11 +825,11 @@ bool rule_13(ExpressionStack *stack){
 
 
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL))
     {
@@ -871,11 +870,11 @@ bool rule_14(ExpressionStack *stack){
 
 
     if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_NIL)     || 
+        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
         (op2_dtype == NIL)         || 
-        (op2_dtype == INT_NIL)     || 
+        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
         (op2_dtype == STRING_NIL))
     {

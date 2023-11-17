@@ -35,7 +35,7 @@ bool paramVectorPush(ParamVector *vector, Parameter param)
 }
 void paramVectorPrint(ParamVector *vector)
 {
-    for (unsigned i = 0; i < vector->paramCount; i++)
+    for (int i = 0; i < vector->paramCount; i++)
     {
         if (vector->data[i].name.nameStart == NULL)
         {
