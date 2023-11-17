@@ -148,7 +148,7 @@ char* LV_submit(LiteralVector *vec, size_t *literal_len){
 
     // grow literal vector if needed
     if (vec->n_items >= vec->capacity){
-        void *tmp_ptr = realloc(vec->items, sizeof(char)*vec->capacity*2);
+        void *tmp_ptr = realloc(vec->items, sizeof(char*)*vec->capacity*2);
         if (tmp_ptr == NULL) return NULL;
 
         vec->items = (char**) tmp_ptr;
@@ -182,7 +182,7 @@ char* LV_add_string(LiteralVector* vec, char* string){
 
     // grow literal vector if needed
     if (vec->n_items >= vec->capacity){
-        void *tmp_ptr = realloc(vec->items, sizeof(char)*vec->capacity*2);
+        void *tmp_ptr = realloc(vec->items, sizeof(char*)*vec->capacity*2);
         if (tmp_ptr == NULL) return NULL;
 
         vec->items = (char**) tmp_ptr;
