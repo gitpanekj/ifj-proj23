@@ -208,10 +208,10 @@ DataType rule_type()
     switch (token.type)
     {
     case TOKEN_INTEGER_T:
-        return INT;
+        return INT_UNCONVERTABLE;
         break;
     case TOKEN_INTEGER_NIL_T:
-        return INT_NIL;
+        return INT_UNCONVERTABLE_NIL;
         break;
     case TOKEN_DOUBLE_T:
         return DOUBLE;
@@ -351,7 +351,11 @@ bool rule_statement_func()
 void rule_return_value()
 {
     if (tokenIs(TOKEN_R_BRACE, TOKEN_LET, TOKEN_VAR, TOKEN_IF, TOKEN_WHILE, TOKEN_RETURN))
+    {
+        if (currentFunctionReturnType != UNDEFINED)
+            error(FUNCTION_RETURN_ERROR);
         return;
+    }
     else
     {
         // check if function is not supposed to return a value but the return is followed by an expression
@@ -362,6 +366,7 @@ void rule_return_value()
         ErrorCodes exprErrCode;
         DataType returnType = UNDEFINED;
         getNextToken();
+
         if (!parse_expression(tokenHistory, &returnType, &exprErrCode))
             error(exprErrCode);
         else if (returnType == BOOLEAN)
@@ -463,7 +468,9 @@ void rule_statement()
         else if (leftSideIdentifier.type != UNDEFINED && statementValueType != UNDEFINED) // definition with assignment
         {
             if (!compareDataTypeCompatibility(leftSideIdentifier.type, statementValueType))
+            {
                 error(TYPE_COMPATIBILITY_ERROR);
+            }
             leftSideIdentifier.isInitialized = true; // init from assigment
         }
         else if (leftSideIdentifier.type == UNDEFINED) // type derivation from assigment
@@ -504,6 +511,7 @@ void rule_if_cond()
     // todo check precedence bool type
     DataType exprType;
     ErrorCodes exprErrCode;
+
     if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
         error(exprErrCode);
     else if (exprType != BOOLEAN)
@@ -579,7 +587,7 @@ void rule_statement_action()
         getNextToken(); // get token after =
         rule_statement_value();
 
-        if (!compareDataTypeCompatibility(leftSideIdentifier.type, statementValueType))
+        if (!compareDataTypeCompatibility(variableData->type, statementValueType))
         {
             error(TYPE_COMPATIBILITY_ERROR);
         }
@@ -722,7 +730,7 @@ DataType rule_literal()
     switch (token.type)
     {
     case TOKEN_INTEGER:
-        return INT;
+        return INT_CONVERTABLE;
         break;
     case TOKEN_DOUBLE:
         return DOUBLE;
@@ -777,7 +785,7 @@ void addBuildInFunctions()
     storeOrCheckFunction(funcName, STRING_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
     //---------------readInt-----------------
     funcName = createName("readInt");
-    storeOrCheckFunction(funcName, INT_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
+    storeOrCheckFunction(funcName, INT_UNCONVERTABLE_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
     //---------------readDouble-----------------
     funcName = createName("readDouble");
     storeOrCheckFunction(funcName, DOUBLE_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
@@ -787,7 +795,7 @@ void addBuildInFunctions()
     //---------------Int2Double-----------------
     funcName = createName("Int2Double");
     paramVectorInit(&paramVector);
-    funcParam = createParam(INT, "");
+    funcParam = createParam(INT_UNCONVERTABLE, "");
     paramVectorPush(&paramVector, funcParam);
     storeOrCheckFunction(funcName, DOUBLE, paramVector, true);
     //---------------Double2Int-----------------
@@ -795,21 +803,21 @@ void addBuildInFunctions()
     paramVectorInit(&paramVector);
     funcParam = createParam(DOUBLE, "");
     paramVectorPush(&paramVector, funcParam);
-    storeOrCheckFunction(funcName, INT, paramVector, true);
+    storeOrCheckFunction(funcName, INT_UNCONVERTABLE, paramVector, true);
     //---------------length-----------------
     funcName = createName("length");
     paramVectorInit(&paramVector);
     funcParam = createParam(STRING, "");
     paramVectorPush(&paramVector, funcParam);
-    storeOrCheckFunction(funcName, INT, paramVector, true);
+    storeOrCheckFunction(funcName, INT_UNCONVERTABLE, paramVector, true);
     //---------------substring-----------------
     funcName = createName("substring");
     paramVectorInit(&paramVector);
     funcParam = createParam(STRING, "of");
     paramVectorPush(&paramVector, funcParam);
-    funcParam = createParam(INT, "startingAt");
+    funcParam = createParam(INT_UNCONVERTABLE, "startingAt");
     paramVectorPush(&paramVector, funcParam);
-    funcParam = createParam(INT, "endingBefore");
+    funcParam = createParam(INT_UNCONVERTABLE, "endingBefore");
     paramVectorPush(&paramVector, funcParam);
     storeOrCheckFunction(funcName, STRING_NIL, paramVector, true);
     //---------------ord-----------------
@@ -817,11 +825,11 @@ void addBuildInFunctions()
     paramVectorInit(&paramVector);
     funcParam = createParam(STRING, "");
     paramVectorPush(&paramVector, funcParam);
-    storeOrCheckFunction(funcName, INT, paramVector, true);
+    storeOrCheckFunction(funcName, INT_UNCONVERTABLE, paramVector, true);
     //---------------chr-----------------
     funcName = createName("chr");
     paramVectorInit(&paramVector);
-    funcParam = createParam(INT, "");
+    funcParam = createParam(INT_UNCONVERTABLE, "");
     paramVectorPush(&paramVector, funcParam);
     storeOrCheckFunction(funcName, STRING, paramVector, true);
 }
@@ -832,6 +840,7 @@ void defineVariable(Name varName, DataType type, bool isConstant, bool isInitial
     symData *data = symtableGetData(symtableOnTop, varName);
     if (data == NULL)
     {
+        type = convertToNonConvertableType(type);
         symtableInsertVar(symtableOnTop, varName, type, isConstant, true, isInitialized);
     }
     else
@@ -927,25 +936,36 @@ bool compareDataTypeCompatibility(DataType assignTo, DataType assignFrom)
 {
     switch (assignTo)
     {
-    case UNDEFINED: // only case in variable in 1 pass SA
+    case UNDEFINED:
         return true;
         break;
-    case NIL: // only case in function parameter in 1 pass SA
+    case NIL:
         return true;
-    case INT:
-        if (assignFrom == INT)
+    case INT_UNCONVERTABLE:
+        if (assignFrom == INT_UNCONVERTABLE || assignFrom == INT_CONVERTABLE)
             return true;
         break;
-    case INT_NIL:
-        if (assignFrom == INT || assignFrom == INT_NIL || assignFrom == NIL)
+    case INT_UNCONVERTABLE_NIL:
+        if (assignFrom == INT_UNCONVERTABLE || assignFrom == INT_UNCONVERTABLE_NIL || assignFrom == INT_CONVERTABLE ||
+            assignFrom == INT_CONVERTABLE_NIL || assignFrom == NIL)
+            return true;
+        break;
+    case INT_CONVERTABLE:
+        if (assignFrom == INT_CONVERTABLE || assignFrom == INT_UNCONVERTABLE || assignFrom == DOUBLE)
+            return true;
+        break;
+    case INT_CONVERTABLE_NIL:
+        if (assignFrom == INT_CONVERTABLE || assignFrom == INT_CONVERTABLE_NIL || assignFrom == INT_UNCONVERTABLE ||
+            assignFrom == INT_UNCONVERTABLE_NIL || assignFrom == DOUBLE || assignFrom == DOUBLE_NIL || assignFrom == NIL)
             return true;
         break;
     case DOUBLE:
-        if (assignFrom == DOUBLE)
+        if (assignFrom == DOUBLE || assignFrom == INT_CONVERTABLE)
             return true;
         break;
     case DOUBLE_NIL:
-        if (assignFrom == DOUBLE || assignFrom == DOUBLE_NIL || assignFrom == NIL)
+        if (assignFrom == DOUBLE || assignFrom == DOUBLE_NIL || assignFrom == INT_CONVERTABLE ||
+            assignFrom == INT_CONVERTABLE_NIL || assignFrom == NIL)
             return true;
         break;
     case STRING:
@@ -964,33 +984,75 @@ bool compareDataTypeCompatibility(DataType assignTo, DataType assignFrom)
 }
 
 // type1 and type2 must be compatible - check by compareDataTypeCompatibility
-DataType deriveDataType(DataType type1, DataType type2, bool moreGenreal)
+DataType deriveDataType(DataType type1, DataType type2, bool moreGeneral)
 {
-    if (moreGenreal)
+    if (moreGeneral)
     {
-        // more general data type from type1 and type2
+        // more general (by nil) data type from type1 and type2
         switch (type1)
         {
         case NIL:
-            if (type2 == INT)
-                return INT_NIL;
-            else if (type2 == DOUBLE)
+            switch (type2)
+            {
+            case INT_UNCONVERTABLE:
+                return INT_UNCONVERTABLE_NIL;
+                break;
+            case INT_CONVERTABLE:
+                return INT_CONVERTABLE_NIL;
+                break;
+            case DOUBLE:
                 return DOUBLE_NIL;
-            else if (type2 == STRING)
+                break;
+            case STRING:
                 return STRING_NIL;
-            return type2; // nill or type with nill
+                break;
+            default:
+                return type2;
+                break;
+            }
             break;
-        case INT:
-            if (type2 == INT_NIL || type2 == NIL)
-                return INT_NIL;
+        case INT_UNCONVERTABLE:
+            if (type2 == INT_UNCONVERTABLE_NIL || type2 == INT_CONVERTABLE_NIL || type2 == NIL)
+                return INT_UNCONVERTABLE_NIL;
             else
-                return INT;
+                return INT_UNCONVERTABLE;
             break;
-        case INT_NIL:
-            return INT_NIL;
+        case INT_UNCONVERTABLE_NIL:
+            return INT_UNCONVERTABLE_NIL;
+            break;
+        case INT_CONVERTABLE:
+            switch (type2)
+            {
+            case NIL:
+            case INT_CONVERTABLE_NIL:
+                return INT_CONVERTABLE_NIL;
+                break;
+            case INT_UNCONVERTABLE:
+                return INT_UNCONVERTABLE;
+                break;
+            case INT_UNCONVERTABLE_NIL:
+                return INT_UNCONVERTABLE_NIL;
+                break;
+            case DOUBLE: // conversion
+                return DOUBLE;
+                break;
+            case DOUBLE_NIL: // conversion
+                return DOUBLE_NIL;
+                break;
+            default:
+                return INT_CONVERTABLE;
+                break;
+            }
+            break;
+        case INT_CONVERTABLE_NIL:
+            if (type2 == INT_UNCONVERTABLE || type2 == INT_UNCONVERTABLE_NIL)
+                return INT_UNCONVERTABLE_NIL;
+            else if (type2 == DOUBLE || type2 == DOUBLE_NIL) // conversion
+                return DOUBLE_NIL;
+            return INT_CONVERTABLE_NIL;
             break;
         case DOUBLE:
-            if (type2 == DOUBLE_NIL || type2 == NIL)
+            if (type2 == DOUBLE_NIL || type2 == INT_CONVERTABLE_NIL || type2 == NIL)
                 return DOUBLE_NIL;
             else
                 return DOUBLE;
@@ -1023,19 +1085,27 @@ DataType deriveDataType(DataType type1, DataType type2, bool moreGenreal)
         case NIL:
             return type2;
             break;
-        case INT:
-            return INT;
+        case INT_UNCONVERTABLE:
+            return INT_UNCONVERTABLE;
             break;
-        case INT_NIL:
+        case INT_UNCONVERTABLE_NIL:
+            if (type2 == NIL || type2 == INT_CONVERTABLE_NIL || type2 == UNDEFINED)
+                return INT_UNCONVERTABLE_NIL;
+            return type2;
+            break;
+        case INT_CONVERTABLE:
+            return type2;
+            break;
+        case INT_CONVERTABLE_NIL:
             if (type2 == NIL || type2 == UNDEFINED)
-                return INT_NIL;
+                return INT_CONVERTABLE_NIL;
             return type2;
             break;
         case DOUBLE:
             return DOUBLE;
             break;
         case DOUBLE_NIL:
-            if (type2 == NIL || type2 == UNDEFINED)
+            if (type2 == NIL || type2 == INT_CONVERTABLE_NIL || type2 == UNDEFINED)
                 return DOUBLE_NIL;
             return type2;
             break;
@@ -1070,9 +1140,13 @@ bool compareFunctionParamTypesAndDerive(DataType *storedParam, DataType *current
         *storedParam = *currentParam; // store param from real definition
         break;
     case UNDEFINED_FUNCTION:
+
         if (!compareDataTypeCompatibility(*currentParam, *storedParam) && !compareDataTypeCompatibility(*storedParam, *currentParam)) // don't know which is assigned to which
+        {
             return false;
+        }
         *storedParam = deriveDataType(*storedParam, *currentParam, true); // store more general params derived from storedParam and currentParam
+
         break;
     default:
         return false;
@@ -1087,9 +1161,7 @@ bool compareParamsAndDerive(Parameter *storedParams, Parameter *currentParams, i
     {
         if (symtTreeNameCmp(storedParams[i].name, currentParams[i].name) != 0 ||
             !compareFunctionParamTypesAndDerive(&storedParams[i].type, &currentParams[i].type, status))
-        {
             return false;
-        }
     }
     return true;
 }
@@ -1156,7 +1228,7 @@ symtable *createAndPushSymtable()
 
 bool isOptionalType(DataType type)
 {
-    if (type == INT_NIL || type == DOUBLE_NIL || type == STRING_NIL)
+    if (type == INT_UNCONVERTABLE_NIL || type == INT_CONVERTABLE_NIL || type == DOUBLE_NIL || type == STRING_NIL)
         return true;
     else
         return false;
@@ -1166,14 +1238,33 @@ DataType convertToNonOptionalType(DataType type)
 {
     switch (type)
     {
-    case INT_NIL:
-        return INT;
+    case INT_UNCONVERTABLE_NIL:
+        return INT_UNCONVERTABLE;
+        break;
+    case INT_CONVERTABLE_NIL:
+        return INT_CONVERTABLE;
         break;
     case DOUBLE_NIL:
         return DOUBLE;
         break;
     case STRING_NIL:
         return STRING;
+        break;
+    default:
+        return type;
+        break;
+    }
+}
+
+DataType convertToNonConvertableType(DataType type)
+{
+    switch (type)
+    {
+    case INT_CONVERTABLE:
+        return INT_UNCONVERTABLE;
+        break;
+    case INT_CONVERTABLE_NIL:
+        return INT_UNCONVERTABLE_NIL;
         break;
     default:
         return type;

@@ -94,6 +94,8 @@ bool isOptionalType(DataType type);
 
 DataType convertToNonOptionalType(DataType type);
 
+DataType convertToNonConvertableType(DataType type);
+
 void errorHandle(ErrorCodes ErrorType, const char *functionName);
 
 void wasEndOfLine(const char *functionName);
