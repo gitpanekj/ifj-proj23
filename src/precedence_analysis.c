@@ -910,7 +910,7 @@ bool rule_15(ExpressionStack *stack){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 2]);
     
     ExpressionStackItem result;
-    init_expression(&result, BOOLEAN);
+    init_expression(&result, op->data.expr.data_type);
 
 
     reduce_rule(stack);
