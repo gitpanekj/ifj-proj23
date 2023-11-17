@@ -20,7 +20,7 @@ Token token;
 
 //? name like this or pointer node of function with all data (symtTreeElementPtr) or symtData
 symtable *currentFunctionSymtable; // pointer to data of current function - if processing function
-Name currentFunctionName;
+Name currentDefFunctionName = {.literal_len = 0, .nameStart = NULL};
 
 DataType currentFunctionReturnType = UNDEFINED; // type for return type check
 DataType statementValueType;                    // type returned from statement value rule
@@ -34,18 +34,7 @@ symtable *globalSymtable; // table with global variables and functions
 symStack symtableStack; // stack of scoped symtables
 
 // todo create global counter of while count soped and add it to while calling
-
-void addBuildInFunctions()
-{
-    // Name funcName;
-    // paramInit(&currentFunctionParameter);
-    // funcName.nameStart = LV_add_string(&literalVector, "write");
-    // funcName.literal_len = 5;
-    // storeOrCheckFunction()
-    // todo need push data to LV
-
-    // todo add buildin functions to global symtable
-}
+unsigned levelOfWhileScope = 0;
 
 void analysisStart()
 {
@@ -56,22 +45,8 @@ void analysisStart()
     if (!symtableInit(&globalSymtable))
         error(INTERNAL_COMPILER_ERROR);
     symStackPush(&symtableStack, globalSymtable);
-    //! mess for symTable and symstack testing
-    // char *pointerToStart = "esxample";
-    // symtable *tab = createAndPushSymtable();
-    // symtableInsertVar(tab, (Name){.nameStart = pointerToStart, .literal_len = 6}, STRING_NIL, true, false, false);
-    // createAndPushSymtable();
-    //     char *pointerTsoStart = "asd";
+    addBuildInFunctions();
 
-    // createAndPushSymtable();
-    // symData *varData = getDataFromSymstack((Name){.nameStart = pointerTsoStart, .literal_len = 6});
-    //     symStackPopAndDispose(&symtableStack);
-    //  if (!symtableInit(&globalSymtable))
-    //     error(INTERNAL_COMPILER_ERROR);
-    //     symStackPush(&symtableStack,globalSymtable);
-    //     symtableInsertVar(globalSymtable, (Name){.nameStart = pointerToStart, .literal_len = 6}, INT, true, false, false);
-    //     varData = symtableGetData(symStackTop(&symtableStack), (Name){.nameStart = pointerToStart, .literal_len = 6});
-    //     printf("%d", varData->type);
     getNextToken();
     rule_prog();
 
@@ -80,10 +55,10 @@ void analysisStart()
     {
         error(DEFINITION_ERROR);
     }
-    else if (symtableAllVarDefined(globalSymtable))
-    {
-        error(UNDEFINED_VARIABLE);
-    }
+    // else if (!symtableAllVarDefined(globalSymtable))
+    // {
+    //     error(UNDEFINED_VARIABLE);
+    // }
     symStackDispose(&symtableStack);
     LV_free(&literalVector);
 }
@@ -128,7 +103,8 @@ void rule_func_decl()
     assertToken(TOKEN_FUNC);
     getNextToken();
     assertToken(TOKEN_IDENTIFIER);
-    Name funcName = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
+    currentDefFunctionName.literal_len = token.literal_len;
+    currentDefFunctionName.nameStart = token.start_ptr;
     getNextToken();
     assertToken(TOKEN_L_PAR);
     getNextToken();
@@ -142,12 +118,14 @@ void rule_func_decl()
     getNextToken();
     currentFunctionReturnType = UNDEFINED;
     rule_return_type();
-    storeOrCheckFunction(funcName, currentFunctionReturnType, paramVector, true);
+    storeOrCheckFunction(currentDefFunctionName, currentFunctionReturnType, paramVector, true);
     bool haveReturn = rule_func_body();
     if (currentFunctionReturnType != UNDEFINED && !haveReturn)
     {
         error(FUNCTION_RETURN_ERROR);
     }
+    currentDefFunctionName.literal_len = 0;
+    currentDefFunctionName.nameStart = NULL;
     symStackPopAndDispose(&symtableStack);
     symStackPopAndDispose(&symtableStack);
 }
@@ -311,19 +289,22 @@ bool rule_statement_func()
     }
     else if (tokenIs(TOKEN_WHILE))
     {
+        levelOfWhileScope++;
         getNextToken();
         getNextToken();
         // todo generate while code
         DataType exprType;
         ErrorCodes exprErrCode;
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        else if (exprType != BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
+
         createAndPushSymtable();
         // precedenc should leave { for me in token variable
         rule_func_body();
         symStackPopAndDispose(&symtableStack);
+        levelOfWhileScope--;
 
         // Token is } of while - need to skip to prevent ending whole function.
         getNextToken();
@@ -382,9 +363,10 @@ void rule_return_value()
         DataType returnType = UNDEFINED;
         getNextToken();
         if (!parse_expression(tokenHistory, &returnType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        else if (returnType == BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
+
         // check if function should have a return type but does not
         if (currentFunctionReturnType != UNDEFINED && returnType == UNDEFINED)
             error(FUNCTION_RETURN_ERROR);
@@ -440,19 +422,22 @@ void rule_statement()
     }
     else if (tokenIs(TOKEN_WHILE))
     {
+        levelOfWhileScope++;
         getNextToken();
         getNextToken();
         DataType exprType;
         ErrorCodes exprErrCode;
         // todo check bool type - boollean
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        else if (exprType != BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
+
         createAndPushSymtable();
         // precedenc should leave { for me in token variable
         rule_body();
         symStackPopAndDispose(&symtableStack);
+        levelOfWhileScope--;
 
         // Token is } of while - need to skip to prevent ending whole function.
         getNextToken();
@@ -520,9 +505,9 @@ void rule_if_cond()
     DataType exprType;
     ErrorCodes exprErrCode;
     if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
-    {
         error(exprErrCode);
-    }
+    else if (exprType != BOOLEAN)
+        error(TYPE_COMPATIBILITY_ERROR);
 }
 
 void rule_id_decl()
@@ -568,6 +553,7 @@ void rule_statement_action()
     {
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
+        // todo add compare is write set and unset it
         getNextToken(); // get token after (
         paramVectorInit(&paramVector);
         rule_first_arg();
@@ -634,11 +620,11 @@ void rule_arg()
 {
     if (tokenIs(TOKEN_INTEGER, TOKEN_DOUBLE, TOKEN_STRING, TOKEN_NIL))
     {
+        // todo add to token array
         currentFunctionParameter.type = rule_literal();
         getNextToken();
         return;
     }
-    // still dont know if ID is paramName or paramId
     assertToken(TOKEN_IDENTIFIER);
     getNextToken();
     rule_arg_opt();
@@ -650,6 +636,7 @@ void rule_arg_opt()
     if (tokenIs(TOKEN_R_PAR, TOKEN_COMMA))
     {
         // paramID is one token back - store type
+        // todo add to token array
         symData *data = getVariableDataFromSymstack((Name){.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr});
         if (data == NULL || !data->isInitialized)
         {
@@ -664,6 +651,8 @@ void rule_arg_opt()
     currentFunctionParameter.name.literal_len = tokenHistory[0].literal_len;
     currentFunctionParameter.name.nameStart = tokenHistory[0].start_ptr;
     getNextToken();
+    // current token is paramID
+    // todo add to token array
     currentFunctionParameter.type = rule_term();
     getNextToken();
 }
@@ -680,9 +669,9 @@ void rule_statement_value()
         getNextToken();
         ErrorCodes exprErrCode;
         if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        if (statementValueType == BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
     }
 }
 
@@ -692,6 +681,7 @@ void rule_arg_expr()
     {
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
+        // todo add compare is write set and unset it
         getNextToken(); // get token after (
         paramVectorInit(&paramVector);
         rule_first_arg();
@@ -706,9 +696,9 @@ void rule_arg_expr()
     {
         ErrorCodes exprErrCode;
         if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
-        {
             error(exprErrCode);
-        }
+        if (statementValueType == BOOLEAN)
+            error(TYPE_COMPATIBILITY_ERROR);
     }
 }
 
@@ -750,7 +740,91 @@ DataType rule_literal()
     return 0;
 }
 
-//-------------- functions for semantic checks --------------------------
+Name createName(char *nameToCreate)
+{
+    Name name = {.literal_len = 0, .nameStart = NULL};
+    if (strlen(nameToCreate) != 0)
+    {
+        name.nameStart = LV_add_string(&literalVector, nameToCreate);
+        name.literal_len = strlen(nameToCreate);
+        return name;
+    }
+    else
+    {
+        return name;
+    }
+}
+
+Parameter createParam(DataType type, char *paramName)
+{
+    Parameter param;
+    paramInit(&param);
+    param.type = type;
+    if (strlen(paramName) != 0)
+    {
+        param.name = createName(paramName);
+    }
+    return param;
+}
+
+//-------------- functions for semantic checks -------------------------
+void addBuildInFunctions()
+{
+    Name funcName;
+    Parameter funcParam;
+    //---------------readString-----------------
+    funcName = createName("readString");
+    storeOrCheckFunction(funcName, STRING_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
+    //---------------readInt-----------------
+    funcName = createName("readInt");
+    storeOrCheckFunction(funcName, INT_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
+    //---------------readDouble-----------------
+    funcName = createName("readDouble");
+    storeOrCheckFunction(funcName, DOUBLE_NIL, (ParamVector){.data = NULL, .paramCount = 0}, true);
+    //---------------write-----------------
+    funcName = createName("write");
+    storeOrCheckFunction(funcName, UNDEFINED, (ParamVector){.data = NULL, .paramCount = -1}, true);
+    //---------------Int2Double-----------------
+    funcName = createName("Int2Double");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(INT, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, DOUBLE, paramVector, true);
+    //---------------Double2Int-----------------
+    funcName = createName("Double2Int");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(DOUBLE, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, INT, paramVector, true);
+    //---------------length-----------------
+    funcName = createName("length");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(STRING, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, INT, paramVector, true);
+    //---------------substring-----------------
+    funcName = createName("substring");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(STRING, "of");
+    paramVectorPush(&paramVector, funcParam);
+    funcParam = createParam(INT, "startingAt");
+    paramVectorPush(&paramVector, funcParam);
+    funcParam = createParam(INT, "endingBefore");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, STRING_NIL, paramVector, true);
+    //---------------ord-----------------
+    funcName = createName("ord");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(STRING, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, INT, paramVector, true);
+    //---------------chr-----------------
+    funcName = createName("chr");
+    paramVectorInit(&paramVector);
+    funcParam = createParam(INT, "");
+    paramVectorPush(&paramVector, funcParam);
+    storeOrCheckFunction(funcName, STRING, paramVector, true);
+}
 
 void defineVariable(Name varName, DataType type, bool isConstant, bool isInitialized)
 {
@@ -797,6 +871,16 @@ void storeOrCheckFunction(Name funcName, DataType returnType, ParamVector params
             // check param names and count
             if (params.paramCount != data->paramCount || !compareParamsAndDerive(data->params, params.data, params.paramCount, status))
                 error(FUNCTION_CALL_ERROR);
+        }
+        else // parameters of function with any parameters number can't have paramName
+        {
+            for (int i = 0; i < params.paramCount; i++)
+            {
+                if (params.data[i].name.literal_len != 0)
+                {
+                    error(FUNCTION_CALL_ERROR);
+                }
+            }
         }
 
         // need to check undefined type due to a function call without assignment

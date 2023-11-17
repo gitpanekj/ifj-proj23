@@ -1,13 +1,9 @@
 var y : Int = 10  // global variable in main body
 
 func foo(over x : Int) {  // void function (no return value)
-
-  let y = "hello" 
-
-
-
-  if ( "hello"  == "hello\n") {
-    let y = 42 + 6 // new local variable, scope only in this block
+  let y = "hello" + "\n"  // local variable, scope for entire function
+  if (y == "hello\n") {
+    let y = 42 // new local variable, scope only in this block
     write(y)        // prints 42
   } else {
     write(y)
