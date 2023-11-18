@@ -24,3 +24,6 @@ void start_function(char *label);
 void end_function();
 void createframe_before_function();
 void call_function(char *name);
+
+//add NIL-conseal instructions
+void nil_conseal_insturcts();

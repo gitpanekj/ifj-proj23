@@ -10,7 +10,7 @@
 #include "expression_stack.h"
 #include "syntactic_analysis.h"
 
-#include "codegen.c"
+#include "codegen.h"
 
 
 /**
@@ -402,7 +402,7 @@ bool rule_4(ExpressionStack* stack){
             printf("POPS TF@precedenceHelpFirst\n"); // load second value
 
             printf("CONCAT TF@precedenceHelpFirst TF@precedenceHelpFirst TF@precedenceHelpSecond\n"); // concat strings
-            printf("pushs TF@precedenceHelpFirst\n"); // push value
+            printf("PUSHS TF@precedenceHelpFirst\n"); // push value
 
             printf("POPFRAME\n");
 
@@ -632,18 +632,20 @@ bool rule_8(ExpressionStack *stack){
 
     if ((op1_dtype == INT_NIL) && (op2_dtype == INT_CONVERTABLE || op2_dtype == INT_UNCONVERTABLE)){
         result_dtype = INT_UNCONVERTABLE;
+        nil_conseal_insturcts();
+
     }
     else if ((op1_dtype == DOUBLE_NIL) && (op2_dtype == DOUBLE || op2_dtype == INT_CONVERTABLE)){
         if (op2_dtype == INT_CONVERTABLE){ // cast Int to Double
-
+            printf("INT2FLOATS\n");
         }
 
         result_dtype = DOUBLE;
-        // TODO: code generation
+        nil_conseal_insturcts();
     }
     else if ((op1_dtype == STRING_NIL) && (op2_dtype == STRING)){
         result_dtype = STRING;  
-        // TODO: code generation
+        nil_conseal_insturcts();
     }
     else if ((op1_dtype == NIL) &&
              (op2_dtype != INT_NIL) &&
@@ -652,7 +654,7 @@ bool rule_8(ExpressionStack *stack){
              (op2_dtype != NIL))
     {
         result_dtype = op2_dtype;
-        // TODO: code generation
+        nil_conseal_insturcts();
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '\?\?' operator\n");
@@ -667,7 +669,6 @@ bool rule_8(ExpressionStack *stack){
     reduce_rule(stack);
     // replace by E with resulting dtype - push
     expression_stack_push(stack, result);
-
 
     return true;
 }
@@ -696,7 +697,7 @@ bool rule_9(ExpressionStack *stack){
             ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
             ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("EQS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '==' operator\n");
@@ -741,7 +742,8 @@ bool rule_10(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("EQS\n");
+        printf("NOTS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '!=' operator\n");
@@ -784,7 +786,7 @@ bool rule_11(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("LTS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '<' operator\n");
@@ -827,7 +829,9 @@ bool rule_12(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("#Relation operator <=\n");
+        printf("GTS\n");
+        printf("NOTS!");
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '<=' operator\n");
@@ -873,7 +877,7 @@ bool rule_13(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("GTS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '>' operator\n");
@@ -918,7 +922,9 @@ bool rule_14(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("#Relation operator >=\n");
+        printf("LTS\n");
+        printf("NOTS!");
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '>=' operator\n");
