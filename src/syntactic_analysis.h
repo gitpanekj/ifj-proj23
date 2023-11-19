@@ -31,7 +31,11 @@ extern Token token;
 extern Scanner scanner;
 
 //-------------------structures-----------------
-
+/**
+ * @brief Error codes structure
+ * Structure for error code propagation 
+ * 
+ */
 typedef enum ErrorCodes
 {
     LEXICAL_ERROR = 1,
@@ -46,6 +50,10 @@ typedef enum ErrorCodes
     INTERNAL_COMPILER_ERROR = 99
 } ErrorCodes;
 
+/**
+ * @brief Function status structure
+ * Structure for determine current function status in function  
+ */
 typedef enum FunctionStatus
 {
     UNDEFINED_FUNCTION,
@@ -53,6 +61,10 @@ typedef enum FunctionStatus
     DEFINED_FUNCTION
 } FunctionStatus;
 
+/**
+ * @brief Identifier structure
+ * Structure for storing Identifier (variable) data
+ */
 typedef struct
 {
     Name name;
@@ -86,9 +98,9 @@ symData *getFunctionDataFromSymstack(Name name);
 
 symData *getVariableDataFromSymstack(Name name);
 
-symData *getVariableDataAndScopeFromSymstack(Name name, int *scope);
+symData *getVariableDataAndScopeFromSymstack(Name name, size_t *scope);
 
-symData *getDataFromSymstack(Name name, int *scope);
+symData *getDataFromSymstack(Name name, size_t *scope);
 
 symtable *createAndPushSymtable();
 
