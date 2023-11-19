@@ -699,6 +699,21 @@ bool rule_9(ExpressionStack *stack){
     {
         printf("EQS\n");
     }
+    else if((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)){
+        printf("INT2FLOATS\n");
+        printf("EQS\n");
+    }
+    else if((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)){
+        printf("#== between Int literal and Double\n");
+        printf("PUSHFRAME\n");
+        printf("CREATEFRAME\n");
+        printf("DEFVAR TF@!!tmpEQop2!!\n");
+        printf("POPS TF@!!tmpEQop2!!\n");
+        printf("INT2FLOATS\n");
+        ptintf("PUSHS TF@!!tmpEQop2!!\n");
+        printf("POPFRAME\n");
+        printf("EQS\n");
+    }
     else {
         fprintf(stderr, "Invalid combination of operands for '==' operator\n");
         return false;
@@ -742,6 +757,23 @@ bool rule_10(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
+        printf("EQS\n");
+        printf("NOTS\n");
+    }
+    else if((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)){
+        printf("INT2FLOATS\n");
+        printf("EQS\n");
+        printf("NOTS\n");
+    }
+    else if((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)){
+        printf("#!= between Int literal and Double\n");
+        printf("PUSHFRAME\n");
+        printf("CREATEFRAME\n");
+        printf("DEFVAR TF@!!tmpNEQop2!!\n");
+        printf("POPS TF@!!tmpNEQop2!!\n");
+        printf("INT2FLOATS\n");
+        ptintf("PUSHS TF@!!tmpNEQop2!!\n");
+        printf("POPFRAME\n");
         printf("EQS\n");
         printf("NOTS\n");
     }
