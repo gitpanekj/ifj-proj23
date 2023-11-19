@@ -1,3 +1,14 @@
+/**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
+ * @author Tibor Šimlaštík (xsimla00)
+ * @file symstack.h
+ * @brief Header file for implementaion of stack based on one way linked list for storing tables of symbols
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #ifndef SYMSTACK_H
 #define SYMSTACK_H
 
@@ -8,12 +19,14 @@
  * 
  * it stores:
  * pointer to heap allocated table,
- * next element of stack
+ * next element of stack,
+ * level of scoping
  * 
  */
 typedef struct symStackElement{
     symtable *symtable; //< pointer to table
     struct symStackElement *nextELement; //< next element of the stack
+    size_t scopeLevel; //<level scope of the table of symbols that is stored in this element
 }* symStackElementPtr;
 
 /**
@@ -40,6 +53,10 @@ void symStackPopAndDispose(symStack* stack);
 symtable *symStackTop(symStack* stack);
 
 symtable *symStackActive(symStack* stack);
+
+size_t symStackTopScopeLVL(symStack* stack);
+
+size_t symStackActiveScopeLVL(symStack* stack);
 
 void symStackActiveToTop(symStack* stack);
 

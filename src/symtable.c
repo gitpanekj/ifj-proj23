@@ -1,9 +1,9 @@
 /**
- * @file symtable.h
- * @author Tibor Simlastik (t.simlastik@gmail.com)
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
+ * @author Tibor Šimlaštík (xsimla00)
+ * @file symtable.c
  * @brief Imlementation of table of symbols based on AVL height balanced tree
- * @version 0.1
- * @date 2023-10-10
  * 
  * @copyright Copyright (c) 2023
  * 
