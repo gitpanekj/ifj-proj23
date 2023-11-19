@@ -1,7 +1,7 @@
 /**
  * Implementace překladače imperativního jazyka IFJ23.
  *
- * @author Lukáš Kotoun xkotou08
+ * @author Lukáš Kotoun (xkotou08)
  * @file syntactic_analysis.c
  *
  */
@@ -365,8 +365,8 @@ void rule_return_value()
         }
         ErrorCodes exprErrCode;
         DataType returnType = UNDEFINED;
-        getNextToken();
 
+        getNextToken();
         if (!parse_expression(tokenHistory, &returnType, &exprErrCode))
             error(exprErrCode);
         else if (returnType == BOOLEAN)
@@ -432,7 +432,6 @@ void rule_statement()
         getNextToken();
         DataType exprType;
         ErrorCodes exprErrCode;
-        // todo check bool type - boollean
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
             error(exprErrCode);
         else if (exprType != BOOLEAN)
@@ -498,7 +497,7 @@ void rule_if_cond()
         getNextToken();
         assertToken(TOKEN_IDENTIFIER);
         Name varName = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
-        symData *data = getDataFromSymstack(varName);
+        symData *data = getVariableDataFromSymstack(varName);
         if (data == NULL)
             error(UNDEFINED_VARIABLE);
         else if (!data->isConstant || !isOptionalType(data->type))
@@ -717,7 +716,7 @@ DataType rule_term()
         return rule_literal();
     }
     assertToken(TOKEN_IDENTIFIER);
-    symData *data = getDataFromSymstack((Name){.literal_len = token.literal_len, .nameStart = token.start_ptr});
+    symData *data = getVariableDataFromSymstack((Name){.literal_len = token.literal_len, .nameStart = token.start_ptr});
     if (data == NULL || !data->isInitialized)
     {
         error(UNDEFINED_VARIABLE);
@@ -748,12 +747,16 @@ DataType rule_literal()
     return 0;
 }
 
+//-------------- functions for semantic checks -------------------------
+
 Name createName(char *nameToCreate)
 {
     Name name = {.literal_len = 0, .nameStart = NULL};
     if (strlen(nameToCreate) != 0)
     {
         name.nameStart = LV_add_string(&literalVector, nameToCreate);
+        if (name.nameStart == NULL)
+            error(INTERNAL_COMPILER_ERROR);
         name.literal_len = strlen(nameToCreate);
         return name;
     }
@@ -775,7 +778,6 @@ Parameter createParam(DataType type, char *paramName)
     return param;
 }
 
-//-------------- functions for semantic checks -------------------------
 void addBuildInFunctions()
 {
     Name funcName;
@@ -852,15 +854,11 @@ void defineVariable(Name varName, DataType type, bool isConstant, bool isInitial
 void storeOrCheckFunction(Name funcName, DataType returnType, ParamVector params, bool definition)
 {
 
-    symData *data = getDataFromSymstack(funcName);
+    symData *data = getFunctionDataFromSymstack(funcName);
     if (data == NULL) // function is not in table - first call => do definition
     {
         symtableInsertFunc(globalSymtable, funcName, returnType, definition, params.data, params.paramCount);
         return;
-    }
-    else if (!data->isFunction)
-    { // funcName is variable in scoped symtables
-        error(DEFINITION_ERROR);
     }
     else
     {
@@ -1168,7 +1166,8 @@ bool compareParamsAndDerive(Parameter *storedParams, Parameter *currentParams, i
 
 symData *getFunctionDataFromSymstack(Name name)
 {
-    symData *data = getDataFromSymstack(name);
+    int scope;
+    symData *data = getDataFromSymstack(name, &scope);
     if (data == NULL)
     {
         return NULL;
@@ -1180,7 +1179,20 @@ symData *getFunctionDataFromSymstack(Name name)
 
 symData *getVariableDataFromSymstack(Name name)
 {
-    symData *data = getDataFromSymstack(name);
+    int scope;
+    symData *data = getDataFromSymstack(name, &scope);
+    if (data == NULL)
+    {
+        return NULL;
+    }
+    else if (data->isFunction)
+        error(OTHER_SEMANTIC_ERROR);
+    return data;
+}
+
+symData *getVariableDataAndScopeFromSymstack(Name name, int *scope)
+{
+    symData *data = getDataFromSymstack(name, scope);
     if (data == NULL)
     {
         return NULL;
@@ -1191,15 +1203,19 @@ symData *getVariableDataFromSymstack(Name name)
 }
 
 /**
- * @brief Find and return data of variable or function given by name in symstack
- * This function finds the first occurrence of a name in symtables stored on symstack and returns a pointer to its data.
- * And sets the active table on the symstack to the table where it found the data.
+ * @brief Find and return data of variable or function from symstack
+ * Finds the first occurrence of a name in symtables stored in symstack and returns a pointer to its data.
+ * Store scope of found varibale to 'scope' param.
+ * Sets the active table on the symstack to the table where it found the data.
  * @param name Name of variable or functionto be found
+ * @param scope Pointer to store scope number
  * @return symData* Pointer to data of var
  * @return if name was not found return null
  */
-symData *getDataFromSymstack(Name name)
-{
+symData *getDataFromSymstack(Name name, int *scope) //! for getting scope overload
+{                                                   //! or make new function to find that data
+    //todo add scope storing
+    *scope = 0;
     symData *data;
     symStackActiveToTop(&symtableStack);
     while (symStackIsActive(&symtableStack))

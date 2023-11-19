@@ -315,8 +315,6 @@ void symtTreeDestroy(symtTreeElementPtr root){
  * @return root if name of newly added symbol is in allready in table (only data is changed and in case there were params the are freed)
 */
 symtTreeElementPtr symtTreeInsert(symtTreeElementPtr root, symData data, bool* allocErrFlag){
-    size_t leftHeight;
-    size_t rightHeight;
     symtTreeElementPtr newElementPtr;
 
     if  (root == NULL){

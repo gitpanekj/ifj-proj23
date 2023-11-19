@@ -1,7 +1,7 @@
 /**
  * Implementace překladače imperativního jazyka IFJ23.
  *
- * @author Lukáš Kotoun xkotou08
+ * @author Lukáš Kotoun (xkotou08)
  * @file syntactic_analysis.h
  *
  */
@@ -86,7 +86,9 @@ symData *getFunctionDataFromSymstack(Name name);
 
 symData *getVariableDataFromSymstack(Name name);
 
-symData *getDataFromSymstack(Name name);
+symData *getVariableDataAndScopeFromSymstack(Name name, int *scope);
+
+symData *getDataFromSymstack(Name name, int *scope);
 
 symtable *createAndPushSymtable();
 
