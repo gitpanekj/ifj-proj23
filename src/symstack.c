@@ -1,3 +1,14 @@
+/**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
+ * @author Tibor Šimlaštík (xsimla00)
+ * @file symstack.c
+ * @brief Implementaion of stack based on one way linked list for storing tables of symbols
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include "symstack.h"
@@ -24,6 +35,13 @@ void* symStackPush(symStack* stack, symtable* table){
     newElementPtr->symtable = table;
     newElementPtr->nextELement = stack->topTable;
     stack->topTable = newElementPtr;
+
+    //element has no follower -> it's first in table =>global scope => scope level 0 
+    if(newElementPtr->nextELement == NULL){
+        newElementPtr->scopeLevel = 0;
+    }else{
+        newElementPtr->scopeLevel = newElementPtr->nextELement->scopeLevel + 1; //increment by one over previous level
+    }
 
     return newElementPtr;
 }
@@ -95,6 +113,26 @@ symtable* symStackActive(symStack* stack){
         return NULL;
     }
     return stack->activeTable->symtable;
+}
+
+/**
+ * @brief fuction for getting the level of scope of the current top table
+ * 
+ * @param stack pointer to symStack in which the top table is
+ * @return size_t level of scope of the top table of symbols in symStack
+ */
+size_t symStackTopScopeLVL(symStack* stack){
+    return stack->topTable->scopeLevel;
+}
+
+/**
+ * @brief fuction for getting the level of scope of the current active table
+ * 
+ * @param stack pointer to symStack in which the active table is
+ * @return size_t level of scope of the active table of symbols in symStack
+ */
+size_t symStackActiveScopeLVL(symStack* stack){
+    return stack->activeTable->scopeLevel;
 }
 
 /**
