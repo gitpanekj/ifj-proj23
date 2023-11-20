@@ -16,6 +16,7 @@
 void symStackInit(symStack* stack){
     stack->activeTable = NULL;
     stack->topTable = NULL;
+    stack->scopeCount = 0;
 }
 
 
@@ -36,12 +37,8 @@ void* symStackPush(symStack* stack, symtable* table){
     newElementPtr->nextELement = stack->topTable;
     stack->topTable = newElementPtr;
 
-    //element has no follower -> it's first in table =>global scope => scope level 0 
-    if(newElementPtr->nextELement == NULL){
-        newElementPtr->scopeLevel = 0;
-    }else{
-        newElementPtr->scopeLevel = newElementPtr->nextELement->scopeLevel + 1; //increment by one over previous level
-    }
+    //every element will have unique scope ID 
+    newElementPtr->scopeID = (stack->scopeCount)++;
 
     return newElementPtr;
 }
@@ -116,23 +113,23 @@ symtable* symStackActive(symStack* stack){
 }
 
 /**
- * @brief fuction for getting the level of scope of the current top table
+ * @brief fuction for getting the scope ID of the current top table
  * 
  * @param stack pointer to symStack in which the top table is
- * @return size_t level of scope of the top table of symbols in symStack
+ * @return size_t scope ID of the top table of symbols in symStack
  */
-size_t symStackTopScopeLVL(symStack* stack){
-    return stack->topTable->scopeLevel;
+size_t symStackTopScopeID(symStack* stack){
+    return stack->topTable->scopeID;
 }
 
 /**
- * @brief fuction for getting the level of scope of the current active table
+ * @brief fuction for getting the scope ID of the current active table
  * 
  * @param stack pointer to symStack in which the active table is
- * @return size_t level of scope of the active table of symbols in symStack
+ * @return size_t scope ID of the active table of symbols in symStack
  */
-size_t symStackActiveScopeLVL(symStack* stack){
-    return stack->activeTable->scopeLevel;
+size_t symStackActiveScopeID(symStack* stack){
+    return stack->activeTable->scopeID;
 }
 
 /**
