@@ -41,7 +41,7 @@ typedef struct symStackElement{
 typedef struct{
     symStackElementPtr topTable;//< pointer to top of the stack
     symStackElementPtr activeTable;//< pointer to active element
-    size_t scopeCount//<number of unique scopes
+    size_t scopeCount;//<number of unique scopes
 } symStack;
 
 void symStackInit(symStack* stack);

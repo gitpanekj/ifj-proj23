@@ -1341,7 +1341,7 @@ symData *getDataFromSymstack(Name name, size_t *scope)
         data = symtableGetData(symStackActive(&symtableStack), name);
         if (data != NULL)
         {
-            *scope = symStackActiveScopeLVL(&symtableStack);
+            *scope = symStackActiveScopeID(&symtableStack);
             return data;
         }
         else
