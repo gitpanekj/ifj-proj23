@@ -113,20 +113,20 @@ symtable* symStackActive(symStack* stack){
 }
 
 /**
- * @brief fuction for getting the level of scope of the current top table
+ * @brief fuction for getting the scope ID of the current top table
  * 
  * @param stack pointer to symStack in which the top table is
- * @return size_t level of scope of the top table of symbols in symStack
+ * @return size_t scope ID of the top table of symbols in symStack
  */
 size_t symStackTopScopeID(symStack* stack){
     return stack->topTable->scopeID;
 }
 
 /**
- * @brief fuction for getting the level of scope of the current active table
+ * @brief fuction for getting the scope ID of the current active table
  * 
  * @param stack pointer to symStack in which the active table is
- * @return size_t level of scope of the active table of symbols in symStack
+ * @return size_t scope ID of the active table of symbols in symStack
  */
 size_t symStackActiveScopeID(symStack* stack){
     return stack->activeTable->scopeID;
