@@ -34,22 +34,24 @@ void end_line(bool whileLayer);
 //declare variable
 void declare_global_variable(Name *name, int scope);
 void declare_local_variable(Name *name, int scope);
-void declare_variable_for_function(Name *name, int scope);
+void declare_variable_for_function(int parCount);
+
+void create_function_param(Name *name, int param);
 
 //move variable to function
-void move_value_to_variable(Name *name, bool isGlobal);
+void move_value_to_variable(Name *name, int scope);
 void move_int_to_fucntion_variable(Name *name, Name *value);
 void move_double_to_fucntion_variable(Name *name, char* value);
 void move_string_to_fucntion_variable(Name *name, char *value);
 void move_var_to_global_var(Name *name1, Name *name2, bool isGlobal);
 void move_var_to_local_var(Name *name1, Name *name2, bool isGlobal);
 
-
 //function
-void start_function(char *label);
+void start_function(Name *label);
 void end_function();
 void createframe_before_function();
 void call_function(Name *name);
+void function_return();
 
 //stack
 void stacksInit();

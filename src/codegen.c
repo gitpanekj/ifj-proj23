@@ -19,6 +19,8 @@ int whileLayer = 0;
 
 int funcCount = 0;
 
+bool inFunc = false;
+
 Stack ifStack; 
 Stack whileStack;
 
@@ -154,8 +156,25 @@ void end_line(bool whileLayer){
 }
 
 //////////// DECLARE VAR /////////////
+void declare_variable(Name *name, int scope){
+    if(!inFunc){
+        if(whileLayer){
+            sprintf(helpStr, "DEFVAR GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+            appendStringToBuffStart(&stringForStoring, helpStr);
+        } else {
+            printf("DEFVAR GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+        }
+    } else {
+        if(whileLayer){
+            sprintf(helpStr, "DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+            appendStringToBuffStart(&stringForStoring, helpStr);
+        } else {
+            printf("DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+        }
+    }
+}
+
 void declare_global_variable(Name *name, int scope){
-    //printf("%.*s", (int)length, name);
     if(whileLayer){
         sprintf(helpStr, "DEFVAR GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
         appendStringToBuffStart(&stringForStoring, helpStr);
@@ -181,22 +200,20 @@ void declare_variable_for_function(int parCount){
 
 ////////// MOVE VALUE TO VARIABLE ///////////////
 
-void move_value_to_variable(Name *name, bool isGlobal){
+void move_value_to_variable(Name *name, int scope){
     if(whileLayer){
-        if(isGlobal){
-            appendString(&stringForStoring, "POPS GF@", false);
-            appendStringFromPointer(&stringForStoring, (int)name->literal_len, name->nameStart, false);
-            end_line(true);
-        } else {
-            appendString(&stringForStoring, "POPS LF@", false);
-            appendStringFromPointer(&stringForStoring, (int)name->literal_len, name->nameStart, false);
-            end_line(true);
-        }
+        appendString(&stringForStoring, "POPS GF@", false);
+        appendStringFromPointer(&stringForStoring, (int)name->literal_len, name->nameStart, false);
+        sprintf(helpStr, "_%d", ifCount); // layer
+        appendStringFromPointer(&stringForStoring, (int)name->literal_len, helpStr, false);
+        end_line(false);
     } else {
-        if(isGlobal){
-        printf("POPS GF@%.*s", (int)name->literal_len, name->nameStart);
+        if(!inFunc){
+            printf("POPS GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+        } else if(scope > 0){
+            printf("POPS LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
         } else {
-            printf("POPS LF@%.*s", (int)name->literal_len, name->nameStart);
+            printf("POPS GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
         }
     }
 }
@@ -266,7 +283,7 @@ void move_var_to_local_var(Name *name1, Name *name2, bool isGlobal){
 }
 
 void create_function_param(Name *name, int param){
-    printf("MOVE LF@%.*s LF@_%d", name->literal_len, name->nameStart, param);
+    printf("MOVE LF@%.*s LF@_%d", (int)name->literal_len, name->nameStart, param);
 }
 
 /*
@@ -332,18 +349,20 @@ void move_temp_var_to_var(){
 
 void start_function(Name *label){
     funcCount++;
+    inFunc = true;
     printf("JUMP skipFunction%d\n", funcCount);
-    printf("LABEL %.*s\n", label->literal_len, label->nameStart);
+    printf("LABEL %.*s\n", (int)label->literal_len, label->nameStart);
     printf("PUSHFRAME\n");
     printf("DEFVAR LF@%s\n", "result");
 }
 
-void function_return(Name *name){
+void function_return(){
     printf("POPS LF@result\n");
     printf("JUMP endOfFunc%d\n", funcCount);
 }
 
 void end_function(){
+    inFunc = false;
     printf("LABEL endOfFunc%d\n", funcCount);
     printf("PUSHS LF@result\n");
     printf("POPFRAME\n");
