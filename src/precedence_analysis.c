@@ -12,6 +12,8 @@
 #include "expression_stack.h"
 #include "syntactic_analysis.h"
 
+#include "codegen.h"
+
 
 /**
  * @brief Parse expression
@@ -239,11 +241,57 @@ bool rule_1(ExpressionStack* stack){
     // Determine type of TERM
     DataType dtype = op->data.term.data_type;
 
+    if(op->type == IDENTIFIER){
 
-    // Code generation
+    } else {
+        switch (dtype)
+        {
+    
+        case INT:
+        case INT_NIL:
+        case INT_CONVERTABLE:
+        case INT_UNCONVERTABLE:
+
+            if(strcmp(op->data.term.literal, "nil") == 0){
+                printf("PUSHS nil@nil\n");
+            } else {
+                printf("PUSHS int@%s\n", op->data.term.literal);
+            }
+            
+            break;
+        case DOUBLE:
+        case DOUBLE_NIL:
+            if(strcmp(op->data.term.literal, "nil") == 0){
+                printf("PUSHS nil@nil\n");
+            } else {
+                printf("PUSHS");
+                Insert_double_literal(op->data.term.literal);
+                printf("\n");
+            }
+            break;
+        case STRING:
+        case STRING_NIL:
+            if(strcmp(op->data.term.literal, "nil") == 0){
+                printf("PUSHS nil@nil\n");
+            } else {
+                printf("PUSHS");
+                Insert_string_literal(op->data.term.literal,strlen(op->data.term.literal));
+                printf("\n");
+            }
+            break;
+
+        case NIL:
+            printf("PUSHS nil@nil\n");
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    
+
     // push to stack
-
-
     ExpressionStackItem result;
     init_expression(&result, dtype);
 
@@ -274,11 +322,9 @@ bool rule_2(ExpressionStack* stack){
         return false;
     }
 
-    // TODO: code generation
-
-
-
-
+    printf("PUSHS int@-1\n");
+    printf("MULS\n");
+    
     ExpressionStackItem result;
     init_expression(&result, dtype);
 
@@ -310,10 +356,6 @@ bool rule_3(ExpressionStack* stack){
             fprintf(stderr, "Cannot unwrap value of non-optional type\n");
             return false;
     }
-
-    // TODO: code generation
-
-
 
     ExpressionStackItem result;
     init_expression(&result, dtype); // TYPE_NILL follows TYPE in enum definition, hence -1
@@ -352,29 +394,38 @@ bool rule_4(ExpressionStack* stack){
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
         if (op1_dtype == STRING){
-            // TODO: code generation
-        }
-        else if(op1_dtype == DOUBLE){
-            // TODO: code generation
+
+            printf("PUSHFRAME\n");
+            printf("CREATEFRAME\n"); 
+
+            printf("DEFVAR TF@precedenceHelpFirst\n"); // create first temp variable
+            printf("DEFVAR TF@precedenceHelpSecond\n"); // create second temp variable
+
+            printf("POPS TF@precedenceHelpSecond\n"); // load first value
+            printf("POPS TF@precedenceHelpFirst\n"); // load second value
+
+            printf("CONCAT TF@precedenceHelpFirst TF@precedenceHelpFirst TF@precedenceHelpSecond\n"); // concat strings
+            printf("PUSHS TF@precedenceHelpFirst\n"); // push value
+
+            printf("POPFRAME\n");
 
         }
-        else { // Int convertable, Int unconvertable
-            // TODO: code generation
-
+        else {
+            printf("ADDS\n");
         }
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
              ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         result_dtype = INT_UNCONVERTABLE;
-        // TODO: code generation
+        printf("ADDS\n");
 
     }
     else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
              ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
     {
         result_dtype =  DOUBLE;
-        // TODO: code generation
+        printf("ADDS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '+' operand\n");
@@ -406,6 +457,7 @@ bool rule_5(ExpressionStack *stack){
         (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
+        (op1_dtype == STRING)      ||
         (op2_dtype == NIL)         || 
         (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
@@ -419,27 +471,21 @@ bool rule_5(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if(op1_dtype == DOUBLE){
-            // TODO: code generation
-
-        }
-        else { // Int convertable, Int unconvertable
-            // TODO: code generation
-
-        }
+        printf("SUBS\n");
+       
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
              ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         result_dtype = INT_UNCONVERTABLE;
-        // TODO: code generation
+        printf("SUBS\n");
 
     }
     else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
              ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
     {
         result_dtype =  DOUBLE;
-        // TODO: code generation
+        printf("SUBS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '-'\n");
@@ -471,6 +517,7 @@ bool rule_6(ExpressionStack *stack){
         (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
+        (op1_dtype == STRING)      ||
         (op2_dtype == NIL)         || 
         (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
@@ -484,27 +531,20 @@ bool rule_6(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if(op1_dtype == DOUBLE){
-            // TODO: code generation
-
-        }
-        else { // Int convertable, Int unconvertable
-            // TODO: code generation
-
-        }
+        printf("MULS\n");
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
              ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         result_dtype = INT_UNCONVERTABLE;
-        // TODO: code generation
+        printf("MULS\n");
 
     }
     else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
              ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
     {
         result_dtype =  DOUBLE;
-        // TODO: code generation
+        printf("MULS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '*'\n");
@@ -536,6 +576,7 @@ bool rule_7(ExpressionStack *stack){
         (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
         (op1_dtype == STRING_NIL)  ||
+        (op1_dtype == STRING)      ||
         (op2_dtype == NIL)         || 
         (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op2_dtype == DOUBLE_NIL)  ||
@@ -549,27 +590,20 @@ bool rule_7(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if(op1_dtype == DOUBLE){
-            // TODO: code generation
-
-        }
-        else { // Int convertable, Int unconvertable
-            // TODO: code generation
-
-        }
+        printf("DIVS\n");
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
              ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         result_dtype = INT_UNCONVERTABLE;
-        // TODO: code generation
+        printf("DIVS\n");
 
     }
     else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
              ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
     {
         result_dtype =  DOUBLE;
-        // TODO: code generation
+        printf("DIVS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '/'\n");
@@ -601,18 +635,20 @@ bool rule_8(ExpressionStack *stack){
 
     if ((op1_dtype == INT_UNCONVERTABLE_NIL) && (op2_dtype == INT_CONVERTABLE || op2_dtype == INT_UNCONVERTABLE)){
         result_dtype = INT_UNCONVERTABLE;
+        nil_conseal_insturcts();
+
     }
     else if ((op1_dtype == DOUBLE_NIL) && (op2_dtype == DOUBLE || op2_dtype == INT_CONVERTABLE)){
         if (op2_dtype == INT_CONVERTABLE){ // cast Int to Double
-
+            printf("INT2FLOATS\n");
         }
 
         result_dtype = DOUBLE;
-        // TODO: code generation
+        nil_conseal_insturcts();
     }
     else if ((op1_dtype == STRING_NIL) && (op2_dtype == STRING)){
         result_dtype = STRING;  
-        // TODO: code generation
+        nil_conseal_insturcts();
     }
     else if ((op1_dtype == NIL) &&
              (op2_dtype != INT_UNCONVERTABLE_NIL) &&
@@ -621,7 +657,7 @@ bool rule_8(ExpressionStack *stack){
              (op2_dtype != NIL))
     {
         result_dtype = op2_dtype;
-        // TODO: code generation
+        nil_conseal_insturcts();
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '\?\?' operator\n");
@@ -637,7 +673,6 @@ bool rule_8(ExpressionStack *stack){
     // replace by E with resulting dtype - push
     expression_stack_push(stack, result);
 
-
     return true;
 }
 
@@ -649,12 +684,12 @@ bool rule_9(ExpressionStack *stack){
     // Type check
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
+
     // Operands must be of the same type
     if (op1_dtype == op2_dtype ||
         ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
         ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE))){
-
-        // TODO: code generation for operands with equal types
+        printf("EQS\n");
     } else if (op1_dtype == NIL &&
                (op2_dtype == STRING_NIL || op2_dtype == INT_UNCONVERTABLE_NIL || op2_dtype == DOUBLE_NIL)){
        // TODO: code generation for operands where op1 = nill and op2 is optinal
@@ -662,10 +697,19 @@ bool rule_9(ExpressionStack *stack){
                (op1_dtype == STRING_NIL || op1_dtype == INT_UNCONVERTABLE_NIL || op1_dtype == DOUBLE_NIL)){
         // TODO: code generation for operands where op2 = nill and op1 is optinal
     } else if (op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) {
-        // TODO: conversion of int to double
+        printf("INT2FLOATS\n");
+        printf("EQS\n");
     }
     else if (op2_dtype == DOUBLE && op1_dtype == INT_CONVERTABLE) {
-        // TODO: conversion of int to double
+        printf("#== between Int literal and Double\n");
+        printf("PUSHFRAME\n");
+        printf("CREATEFRAME\n");
+        printf("DEFVAR TF@!!tmpEQop2!!\n");
+        printf("POPS TF@!!tmpEQop2!!\n");
+        printf("INT2FLOATS\n");
+        printf("PUSHS TF@!!tmpEQop2!!\n");
+        printf("POPFRAME\n");
+        printf("EQS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '==' operator\n");
@@ -694,12 +738,14 @@ bool rule_10(ExpressionStack *stack){
     // Type check
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
+
+
     // Operands must be of the same type
     if (op1_dtype == op2_dtype ||
         ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
         ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE))){
-
-        // TODO: code generation for operands with equal types
+        printf("EQS\n");
+        printf("NOTS\n");
     } else if (op1_dtype == NIL &&
                (op2_dtype == STRING_NIL || op2_dtype == INT_UNCONVERTABLE_NIL || op2_dtype == DOUBLE_NIL)){
        // TODO: code generation for operands where op1 = nill and op2 is optinal
@@ -707,10 +753,21 @@ bool rule_10(ExpressionStack *stack){
                (op1_dtype == STRING_NIL || op1_dtype == INT_UNCONVERTABLE_NIL || op1_dtype == DOUBLE_NIL)){
         // TODO: code generation for operands where op2 = nill and op1 is optinal
     } else if (op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) {
-        // TODO: conversion of int to double
+        printf("INT2FLOATS\n");
+        printf("EQS\n");
+        printf("NOTS\n");
     }
     else if (op2_dtype == DOUBLE && op1_dtype == INT_CONVERTABLE) {
-        // TODO: conversion of int to double
+        printf("#!= between Int literal and Double\n");
+        printf("PUSHFRAME\n");
+        printf("CREATEFRAME\n");
+        printf("DEFVAR TF@!!tmpNEQop2!!\n");
+        printf("POPS TF@!!tmpNEQop2!!\n");
+        printf("INT2FLOATS\n");
+        printf("PUSHS TF@!!tmpNEQop2!!\n");
+        printf("POPFRAME\n");
+        printf("EQS\n");
+        printf("NOTS\n");
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '==' operator\n");
@@ -755,7 +812,7 @@ bool rule_11(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("LTS\n");
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
              (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
@@ -803,7 +860,9 @@ bool rule_12(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("#Relation operator <=\n");
+        printf("GTS\n");
+        printf("NOTS!");
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
              (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
@@ -854,7 +913,7 @@ bool rule_13(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("GTS\n");
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
              (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
@@ -904,7 +963,9 @@ bool rule_14(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        // TODO: code generation
+        printf("#Relation operator >=\n");
+        printf("LTS\n");
+        printf("NOTS!");
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
              (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
