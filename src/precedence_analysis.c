@@ -232,48 +232,55 @@ bool rule_1(ExpressionStack* stack){
     // Determine type of TERM
     DataType dtype = op->data.term.data_type;
 
-    switch (dtype)
-    {
-    case INT:
-    case INT_NIL:
-    case INT_CONVERTABLE:
-    case INT_UNCONVERTABLE:
+    if(op->type == IDENTIFIER){
 
-        if(strcmp(op->data.term.literal, "nil") == 0){
-            printf("PUSHS nil@nil\n");
-        } else {
-            printf("PUSHS int@%s\n", op->data.term.literal);
-        }
-        
-        break;
-    case DOUBLE:
-    case DOUBLE_NIL:
-        if(strcmp(op->data.term.literal, "nil") == 0){
-            printf("PUSHS nil@nil\n");
-        } else {
-            printf("PUSHS");
-            Insert_double_literal(op->data.term.literal, false);
-            printf("\n");
-        }
-        break;
-    case STRING:
-    case STRING_NIL:
-        if(strcmp(op->data.term.literal, "nil") == 0){
-            printf("PUSHS nil@nil\n");
-        } else {
-            printf("PUSHS");
-            Insert_string_literal(op->data.term.literal,strlen(op->data.term.literal), false);
-            printf("\n");
-        }
-        break;
+    } else {
+        switch (dtype)
+        {
+    
+        case INT:
+        case INT_NIL:
+        case INT_CONVERTABLE:
+        case INT_UNCONVERTABLE:
 
-    case NIL:
-        printf("PUSHS nil@nil\n");
-        break;
+            if(strcmp(op->data.term.literal, "nil") == 0){
+                printf("PUSHS nil@nil\n");
+            } else {
+                printf("PUSHS int@%s\n", op->data.term.literal);
+            }
+            
+            break;
+        case DOUBLE:
+        case DOUBLE_NIL:
+            if(strcmp(op->data.term.literal, "nil") == 0){
+                printf("PUSHS nil@nil\n");
+            } else {
+                printf("PUSHS");
+                Insert_double_literal(op->data.term.literal, false);
+                printf("\n");
+            }
+            break;
+        case STRING:
+        case STRING_NIL:
+            if(strcmp(op->data.term.literal, "nil") == 0){
+                printf("PUSHS nil@nil\n");
+            } else {
+                printf("PUSHS");
+                Insert_string_literal(op->data.term.literal,strlen(op->data.term.literal), false);
+                printf("\n");
+            }
+            break;
 
-    default:
-        break;
+        case NIL:
+            printf("PUSHS nil@nil\n");
+            break;
+
+        default:
+            break;
+        }
     }
+
+    
 
     // push to stack
     ExpressionStackItem result;
