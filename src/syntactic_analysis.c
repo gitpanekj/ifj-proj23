@@ -1488,8 +1488,8 @@ void errorHandle(ErrorCodes ErrorType, const char *functionName)
 
 /**
  * @brief Function to check if before current token was end of line
- * If end of line wasn't before token cause SYNTACTIC_ERROR  
- * @param functionName Name of function that call this function 
+ * If end of line wasn't before token cause SYNTACTIC_ERROR
+ * @param functionName Name of function that call this function
  */
 void wasEndOfLine(const char *functionName)
 {
@@ -1501,9 +1501,9 @@ void wasEndOfLine(const char *functionName)
 
 /**
  * @brief Function to check if token type is same as type of 'mustBe'
- * If TokenType'mustBe' and current token type are not same cause SYNTACTIC_ERROR 
+ * If TokenType'mustBe' and current token type are not same cause SYNTACTIC_ERROR
  * @param mustBe TokenType to compare current token with
- * @param functionName ame of function that call this function 
+ * @param functionName ame of function that call this function
  */
 void tokenMustBe(TokenType mustBe, const char *functionName)
 {
@@ -1514,11 +1514,11 @@ void tokenMustBe(TokenType mustBe, const char *functionName)
 }
 
 /**
- * @brief Check if current token type is some of token types in tokenArr  
- * 
+ * @brief Check if current token type is some of token types in tokenArr
+ *
  * @param tokenArr Array of token types
- * @param lenght Lenght of token types array 
- * @return true If at least one token type in array is same as current token type 
+ * @param lenght Lenght of token types array
+ * @return true If at least one token type in array is same as current token type
  * @return false If non of the token types in array is same as current token type
  */
 bool tokenIsInArray(TokenType tokenArr[], unsigned lenght)
@@ -1532,7 +1532,7 @@ bool tokenIsInArray(TokenType tokenArr[], unsigned lenght)
 }
 /**
  * @brief Get next token from input using lexical analyzer
- * Get token using scanner and store it to token variable 
+ * Get token using scanner and store it to token variable
  * Shift 2 items token history
  * If token type is TOKEN_LA_ERROR cause LEXICAL_ERROR
  */
@@ -1545,5 +1545,9 @@ void getNextToken()
     if (token.type == TOKEN_LA_ERROR)
     {
         error(LEXICAL_ERROR);
+    }
+    else if (token.type == TOKEN_MEMMORY_ERROR)
+    {
+        error(INTERNAL_COMPILER_ERROR);
     }
 }
