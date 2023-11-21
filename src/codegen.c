@@ -468,6 +468,49 @@ void print_after_while(){
     initStringForStoring();
 }
 
+
+////////// ADD NIL-CONSEALMENT INSTRUCTSIONS ///////////////
+void nil_conseal_insturcts(){
+    static int nil_con_cnt; //static counter for generating unique identificators
+    //everytime this fuction was called
+    
+    printf("#NIL-consealing\n");
+    //making new temporal frame
+    printf("PUSHFRAME\n");
+    printf("CREATEFRAME\n");
+
+    //declaration for temporal variables 
+    printf("DEFVAR TF@!!tmpNILConsOP1!!\n");
+    printf("DEFVAR TF@!!tmpNILConsOP2!!\n");
+    printf("POPS TF@!!tmpNILConsOP2!!\n");
+    printf("POPS TF@!!tmpNILConsOP1!!\n");
+
+    //comparation of op1with NIL
+    printf("JUMPIFNEQ !!tmpNILConsPUSHSOP1$%d!! TF@!!tmpNILConsOP1!! nil@nil\n", nil_con_cnt);
+    //op1 was NIL => push op2 back to stack and jump to end label
+    printf("PUSHS TF@!!tmpNILConsOP2!!\n");
+    printf("JUMP !!tmpNILConsEND$%d!!\n", nil_con_cnt);
+    //op1 is not NIL => push op1 back to stack
+    printf("LABEL !!tmpNILConsPUSHSOP1$%d!!\n", nil_con_cnt);
+    printf("PUSHS TF@!!tmpNILConsOP2!!\n");
+    printf("LABEL !!tmpNILConsEND$%d!!\n", nil_con_cnt);
+
+    printf("POPFRAME\n");
+
+    //incrementing counter for next call so no label collision happends
+    nil_con_cnt++;
+
+}
+
+//pseudofunc for write
+/*void add_write(){
+    for(size_t param_Idx = 0; param_Idx ++){
+        printf("WRITE");
+        add_Var(param[param_Idx]);
+        end_line();
+    }
+}*/
+
 void initStringForStoring(){
     stringForStoring = (char *)malloc(1); // Initial memory allocation for an empty string
     stringForStoring[0] = '\0'; // Ensure the string is null-terminated
@@ -478,6 +521,7 @@ void initStringForStoring(){
 void start_main(){
     printf("LABEL main\n");
     printf("CREATEFRAME\n");
+
 
     printf("DEFVAR GF@tempIfVar");
 }

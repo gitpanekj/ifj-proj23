@@ -50,6 +50,12 @@ void move_var_to_local_var(Name *name1, Name *name2, bool isGlobal);
 void start_function(Name *label);
 void end_function();
 void createframe_before_function();
+
+void call_function(char *name);
+
+//add NIL-conseal instructions
+void nil_conseal_insturcts();
+
 void call_function(Name *name);
 void function_return();
 
@@ -72,3 +78,4 @@ void initStringForStoring();
 void start_main();
 
 #endif
+
