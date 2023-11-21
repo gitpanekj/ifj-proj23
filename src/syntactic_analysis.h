@@ -80,7 +80,7 @@ Name createName(char *nameToCreate);
 
 Parameter createParam(DataType type, char *paramName);
 
-void addBuildInFunctions();
+void addBuiltInFunctionsToSymtable();
 
 void defineVariable(Name varName, DataType type, bool isConstant, bool isInitialized);
 
@@ -109,6 +109,8 @@ bool isOptionalType(DataType type);
 DataType convertToNonOptionalType(DataType type);
 
 DataType convertToNonConvertableType(DataType type);
+
+void generateFunctionCallParam(Token token, int paramCount);
 
 void errorHandle(ErrorCodes ErrorType, const char *functionName);
 

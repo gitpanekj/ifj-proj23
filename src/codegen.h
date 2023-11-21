@@ -16,64 +16,76 @@
 #include "syntactic_analysis.h"
 #include "int_stack.h"
 
+extern char *stringForStoring;
+extern int whileLayer;
+
+void gen_init();
+void gen_dispose();
+
 //string for while
 bool appendStringToBuffStart(char **original, char *append);
 bool appendString(char **original, char *append, bool vypsat);
 bool appendStringFromPointer(char **original, size_t length, char *append, bool vypsat);
 
 //insert literal
-void Insert_string_literal(char* string_literal, size_t lenght);
-void Insert_double_literal(char *double_literal);
-void insert_int_literal(char *value);
-void insert_nil();
+void gen_Insert_string_literal(char* string_literal, size_t lenght);
+void gen_Insert_double_literal(char *double_literal);
+void gen_Insert_int_literal(char *value);
+void gen_Insert_nil();
 
 
 //endline
-void end_line(bool whileLayer);
+void gen_end_line(bool whileLayer);
 
 //declare variable
-void declare_global_variable(Name *name, int scope);
-void declare_local_variable(Name *name, int scope);
-void declare_variable_for_function(int parCount);
+void gen_declare_global_variable(Name *name, int scope);
+void gen_declare_local_variable(Name *name, int scope);
+void gen_declare_variable_for_function(int parCount);
 
-void create_function_param(Name *name, int param);
+void gen_declare_variable(Name *name, int scope);
+
+void gen_create_function_param(Name *name, int scope, int param);
 
 //move variable to function
-void move_value_to_variable(Name *name, int scope);
-void move_int_to_fucntion_variable(Name *name, Name *value);
-void move_double_to_fucntion_variable(Name *name, char* value);
-void move_string_to_fucntion_variable(Name *name, char *value);
-void move_var_to_global_var(Name *name1, Name *name2, bool isGlobal);
-void move_var_to_local_var(Name *name1, Name *name2, bool isGlobal);
+void gen_move_value_to_variable(Name *name, int scope);
+void gen_move_int_to_function_variable(int paramCount, Name *value);
+void gen_move_double_to_function_variable(int paramCount, Name *value);
+void gen_move_string_to_function_variable(int paramCount, Name *value);
+void gen_move_nil_to_function_variable(int paramCount);
+
+void gen_move_var_to_global_var(Name *name1, Name *name2, bool isGlobal);
+void gen_move_var_to_local_var(Name *name1, Name *name2, bool isGlobal);
 
 //function
-void start_function(Name *label);
-void end_function();
-void createframe_before_function();
+void gen_start_function(Name *label);
+void gen_function_return();
+void gen_function_empty_return();
+void gen_function_call_end_without_assignment();
+void gen_end_function();
+void gen_createframe_before_function();
+void gen_call_function(Name *name);
 
 //add NIL-conseal instructions
-void nil_conseal_insturcts();
-
-void call_function(Name *name);
-void function_return();
+void gen_nil_conseal_insturcts();
 
 //stack
-void stacksInit();
-void stacksDispose();
+void gen_stacksInit();
+void gen_stacksDispose();
 
 //if
-void start_if();
-void if_else_branch();
-void end_of_if();
+void gen_start_if();
+void gen_if_else_branch();
+void gen_end_of_if();
 
 //while
-void start_while();
-void end_while();
-void print_after_while();
-void initStringForStoring();
+void gen_start_while();
+void gen_start_while_conditon();
+void gen_end_while();
+void gen_print_after_while();
+void gen_initStringForStoring();
 
 //main
-void start_main();
+void gen_start_main();
 
 #endif
 

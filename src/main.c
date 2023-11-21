@@ -1,10 +1,9 @@
 /**
+ * Implementace překladače imperativního jazyka IFJ23.
+ *
+ * @author Lukáš Kotoun (xkotou08)
  * @file main.c
- * @author
- * @brief 
- * 
- * @copyright Copyright (c) 2023
- * 
+ *
  */
 
 #include "syntactic_analysis.h"

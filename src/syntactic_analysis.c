@@ -11,7 +11,8 @@
 #include "precedence_analysis.h"
 #include "symtable.h"
 #include "literal_vector.h"
-
+#include "codegen.h"
+#include "built-in_functions.h"
 // global variables define
 Scanner scanner;
 LiteralVector literalVector;
@@ -31,9 +32,7 @@ Identifier leftSideIdentifier;      // current variable on left side of statemen
 
 symtable *globalSymtable; // table with global variables and functions
 symStack symtableStack;   // stack of scoped symtables
-
-size_t levelOfWhileScope = 0;
-
+bool callingWriteFunc = false;
 /**
  * @brief Initilization of all necessary data for syntactic and semantic analysis
  * Initilize the global symTable and symStack, run grammar rules, and check that all functions have been defined.
@@ -41,14 +40,16 @@ size_t levelOfWhileScope = 0;
  */
 void analysisStart()
 {
+
     LV_init(&literalVector);
     scaner_init(&scanner, &literalVector);
     symStackInit(&symtableStack);
+    gen_init();
     if (!symtableInit(&globalSymtable))
         error(INTERNAL_COMPILER_ERROR);
     symStackPush(&symtableStack, globalSymtable);
-    addBuildInFunctions();
-
+    addBuiltInFunctionsToSymtable();
+    // add_built_in_functions();
     getNextToken();
     rule_prog();
 
@@ -62,6 +63,7 @@ void analysisStart()
     }
     symStackDispose(&symtableStack);
     LV_free(&literalVector);
+    gen_dispose();
 }
 
 //-------------- grammar rules --------------------------
@@ -104,11 +106,11 @@ void rule_func_decl()
     assertToken(TOKEN_IDENTIFIER);
     currentDefFunctionName.literal_len = token.literal_len;
     currentDefFunctionName.nameStart = token.start_ptr;
+    gen_start_function(&currentDefFunctionName);
+
     getNextToken();
     assertToken(TOKEN_L_PAR);
     getNextToken();
-
-    // currentFunctionSymtable = createAndPushSymtable();
     createAndPushSymtable();
     paramVectorInit(&paramVector);
     rule_param_first();
@@ -124,6 +126,7 @@ void rule_func_decl()
     {
         error(FUNCTION_RETURN_ERROR);
     }
+    gen_end_function();
     currentDefFunctionName.literal_len = 0;
     currentDefFunctionName.nameStart = NULL;
     symStackPopAndDispose(&symtableStack);
@@ -169,12 +172,20 @@ void rule_param()
         error(FUNCTION_CALL_ERROR);
     }
     // semantic rules code gen or make variableVector for storing variable for code generate after processing all params (mostly for function call)
+    // gen_create_function_param()
+
     getNextToken();
     assertToken(TOKEN_COLON);
     getNextToken();
     DataType type = rule_type();
     // parameter is always constant and defined
     defineVariable(paramId, type, true, true);
+
+    // todo merge to one gen function
+    //  generate function param
+    gen_declare_local_variable(&paramId, (int)symStackTopScopeID(&symtableStack));
+    gen_create_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+    //-------
     currentFunctionParameter.type = type;
     if (!paramVectorPush(&paramVector, currentFunctionParameter))
         error(INTERNAL_COMPILER_ERROR);
@@ -260,7 +271,6 @@ bool rule_statement_func()
 {
     if (tokenIs(TOKEN_RETURN))
     {
-        // todo generate return code
         getNextToken();
         statementValueType = UNDEFINED;
         leftSideIdentifier.type = currentFunctionReturnType;
@@ -271,6 +281,7 @@ bool rule_statement_func()
     {
         getNextToken();
         createAndPushSymtable();
+
         rule_if_cond(); // rule_if_cond will leave { in token
         createAndPushSymtable();
         bool ifBodyHaveReturn = rule_func_body();
@@ -278,10 +289,15 @@ bool rule_statement_func()
         symStackPopAndDispose(&symtableStack);
         getNextToken();
         assertToken(TOKEN_ELSE);
+
+        gen_if_else_branch();
+
         getNextToken();
         createAndPushSymtable();
         bool elseBodyHaveReturn = rule_func_body();
         symStackPopAndDispose(&symtableStack);
+
+        gen_end_of_if();
 
         // Token is } of ELSE - need to skip to prevent ending whole function.
         getNextToken();
@@ -289,10 +305,11 @@ bool rule_statement_func()
     }
     else if (tokenIs(TOKEN_WHILE))
     {
-        levelOfWhileScope++;
         getNextToken();
         getNextToken();
-        // todo generate while code
+
+        gen_start_while();
+
         DataType exprType;
         ErrorCodes exprErrCode;
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
@@ -300,12 +317,14 @@ bool rule_statement_func()
         else if (exprType != BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
 
+        gen_start_while_conditon();
+
         createAndPushSymtable();
         // precedenc should leave { for me in token variable
         rule_func_body();
         symStackPopAndDispose(&symtableStack);
-        levelOfWhileScope--;
 
+        gen_end_while();
         // Token is } of while - need to skip to prevent ending whole function.
         getNextToken();
     }
@@ -321,6 +340,9 @@ bool rule_statement_func()
         leftSideIdentifier.isInitialized = false;
         statementValueType = UNDEFINED;
         rule_id_decl();
+
+        gen_declare_variable(&leftSideIdentifier.name, (int)symStackTopScopeID(&symtableStack));
+
         getNextToken();
         rule_decl_opt();
         if (leftSideIdentifier.type == UNDEFINED && (statementValueType == UNDEFINED || statementValueType == NIL))
@@ -352,8 +374,10 @@ void rule_return_value()
 {
     if (tokenIs(TOKEN_R_BRACE, TOKEN_LET, TOKEN_VAR, TOKEN_IF, TOKEN_WHILE, TOKEN_RETURN))
     {
+
         if (currentFunctionReturnType != UNDEFINED)
             error(FUNCTION_RETURN_ERROR);
+        gen_function_empty_return();
         return;
     }
     else
@@ -371,6 +395,8 @@ void rule_return_value()
             error(exprErrCode);
         else if (returnType == BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
+
+        gen_function_return();
 
         // check if function should have a return type but does not
         if (currentFunctionReturnType != UNDEFINED && returnType == UNDEFINED)
@@ -409,27 +435,35 @@ void rule_statement()
     {
         createAndPushSymtable();
         getNextToken();
+
         rule_if_cond(); // rule_if_cond will leave { in token
         createAndPushSymtable();
-
         rule_body();
         symStackPopAndDispose(&symtableStack);
         symStackPopAndDispose(&symtableStack);
         getNextToken();
 
         assertToken(TOKEN_ELSE);
+
+        gen_if_else_branch();
+
         getNextToken();
         createAndPushSymtable();
         rule_body();
         symStackPopAndDispose(&symtableStack);
+
+        gen_end_of_if();
+
         // Token is } of ELSE - need to skip to prevent ending whole function.
         getNextToken();
     }
     else if (tokenIs(TOKEN_WHILE))
     {
-        levelOfWhileScope++;
         getNextToken();
         getNextToken();
+
+        gen_start_while();
+
         DataType exprType;
         ErrorCodes exprErrCode;
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
@@ -437,11 +471,14 @@ void rule_statement()
         else if (exprType != BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
 
+        gen_start_while_conditon();
+
         createAndPushSymtable();
         // precedenc should leave { for me in token variable
         rule_body();
         symStackPopAndDispose(&symtableStack);
-        levelOfWhileScope--;
+
+        gen_end_while();
 
         // Token is } of while - need to skip to prevent ending whole function.
         getNextToken();
@@ -458,6 +495,9 @@ void rule_statement()
         leftSideIdentifier.isInitialized = false;
         statementValueType = UNDEFINED;
         rule_id_decl();
+
+        gen_declare_variable(&leftSideIdentifier.name, (int)symStackTopScopeID(&symtableStack));
+
         getNextToken();
         rule_decl_opt();
 
@@ -498,12 +538,20 @@ void rule_if_cond()
         getNextToken();
         assertToken(TOKEN_IDENTIFIER);
         Name varName = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
-        symData *data = getVariableDataFromSymstack(varName);
+        size_t scope;
+        symData *data = getVariableDataAndScopeFromSymstack(varName, &scope);
         if (data == NULL)
             error(UNDEFINED_VARIABLE);
         else if (!data->isConstant || !isOptionalType(data->type))
             error(OTHER_SEMANTIC_ERROR);
-        // todo codegen for varibale definition
+
+        // todo codegen for varibale definition - gen_if_let_condition
+        /*
+            condition prom1 == nil else
+            mov prom2 prom1
+        */
+        // gen_if_let_condition(varName,scope,(int)symStackTopScopeID(&symStack))
+
         defineVariable(varName, convertToNonOptionalType(data->type), true, true);
         getNextToken(); // need same end state as precedence analysis
         return;
@@ -516,6 +564,9 @@ void rule_if_cond()
         error(exprErrCode);
     else if (exprType != BOOLEAN)
         error(TYPE_COMPATIBILITY_ERROR);
+    // gen
+    gen_start_if();
+    //--
 }
 
 void rule_id_decl()
@@ -537,6 +588,7 @@ void rule_decl_opt()
     {
         getNextToken();
         rule_statement_value();
+        gen_move_value_to_variable(&leftSideIdentifier.name, (int)symStackTopScopeID(&symtableStack));
         return;
     }
     assertToken(TOKEN_COLON);
@@ -552,6 +604,7 @@ void rule_assign()
     {
         getNextToken();
         rule_statement_value();
+        gen_move_value_to_variable(&leftSideIdentifier.name, (int)symStackTopScopeID(&symtableStack));
     }
 }
 
@@ -562,12 +615,24 @@ void rule_statement_action()
     {
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
-        // todo add compare is write set and unset it
+        if (symtTreeNameCmp(callingFuncName, (Name){.literal_len = 5, .nameStart = "write"}) == 0)
+            callingWriteFunc = true;
+        else
+            callingWriteFunc = false;
+        if (!callingWriteFunc)
+            gen_createframe_before_function();
+
         getNextToken(); // get token after (
         paramVectorInit(&paramVector);
         rule_first_arg();
         assertToken(TOKEN_R_PAR);
         storeOrCheckFunction(callingFuncName, UNDEFINED, paramVector, false);
+        if (!callingWriteFunc)
+        {
+            gen_call_function(&callingFuncName);
+            gen_function_call_end_without_assignment();
+        }
+        callingWriteFunc = false;
         // need to leave same token as precedence
         getNextToken();
     }
@@ -595,6 +660,7 @@ void rule_statement_action()
             error(TYPE_COMPATIBILITY_ERROR);
         }
         variableData->isInitialized = true;
+        gen_move_value_to_variable(&leftSideIdentifier.name, scope);
     }
     else
     {
@@ -631,7 +697,7 @@ void rule_arg()
 {
     if (tokenIs(TOKEN_INTEGER, TOKEN_DOUBLE, TOKEN_STRING, TOKEN_NIL))
     {
-        // todo add to token array
+        generateFunctionCallParam(token, paramVector.paramCount);
         currentFunctionParameter.type = rule_literal();
         getNextToken();
         return;
@@ -647,13 +713,13 @@ void rule_arg_opt()
     if (tokenIs(TOKEN_R_PAR, TOKEN_COMMA))
     {
         // paramID is one token back - store type
-        // todo add to token array
         symData *data = getVariableDataFromSymstack((Name){.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr});
         if (data == NULL || !data->isInitialized)
         {
             error(UNDEFINED_VARIABLE);
         }
         currentFunctionParameter.type = data->type;
+        generateFunctionCallParam(tokenHistory[0], paramVector.paramCount);
         return;
     }
     // previous token is paramName
@@ -663,7 +729,8 @@ void rule_arg_opt()
     currentFunctionParameter.name.nameStart = tokenHistory[0].start_ptr;
     getNextToken();
     // current token is paramID
-    // todo add to token array
+    generateFunctionCallParam(token, paramVector.paramCount);
+
     currentFunctionParameter.type = rule_term();
     getNextToken();
 }
@@ -692,14 +759,14 @@ void rule_arg_expr()
     {
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
-        // todo add compare is write set and unset it
+        callingWriteFunc = false;
+
         getNextToken(); // get token after (
         paramVectorInit(&paramVector);
         rule_first_arg();
         assertToken(TOKEN_R_PAR);
         storeOrCheckFunction(callingFuncName, leftSideIdentifier.type, paramVector, false);
         statementValueType = getFunctionDataFromSymstack(callingFuncName)->type;
-
         // need to leave same token position as precedence
         getNextToken();
     }
@@ -803,7 +870,7 @@ Parameter createParam(DataType type, char *paramName)
  * @brief Add all build in functions to global symtable
  *
  */
-void addBuildInFunctions()
+void addBuiltInFunctionsToSymtable()
 {
     Name funcName;
     Parameter funcParam;
@@ -1426,6 +1493,43 @@ DataType convertToNonConvertableType(DataType type)
     default:
         return type;
         break;
+    }
+}
+
+void generateFunctionCallParam(Token token, int paramCount)
+{
+    if (callingWriteFunc)
+    { // call write
+      // todo write gen
+    }
+    else
+    {
+        gen_declare_variable_for_function(paramCount);
+        Name name = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
+        size_t scope;
+        switch (token.type)
+        {
+        case TOKEN_IDENTIFIER:
+
+            getVariableDataAndScopeFromSymstack(name, &scope);
+            // todo add function variable param
+            break;
+        case TOKEN_INTEGER:
+            gen_move_int_to_function_variable(paramCount, &name);
+            break;
+        case TOKEN_DOUBLE:
+            gen_move_double_to_function_variable(paramCount, &name);
+            break;
+        case TOKEN_STRING:
+            gen_move_string_to_function_variable(paramCount, &name);
+            break;
+        case TOKEN_NIL:
+            gen_move_nil_to_function_variable(paramCount);
+            break;
+        default:
+            error(SYNTACTIC_ERROR);
+            break;
+        }
     }
 }
 

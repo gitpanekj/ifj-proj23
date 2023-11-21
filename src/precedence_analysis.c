@@ -244,40 +244,25 @@ bool rule_1(ExpressionStack* stack){
     if(op->type == IDENTIFIER){
 
     } else {
-        switch (dtype)
+         switch (dtype)
         {
-    
-        case INT:
-        case INT_NIL:
+
         case INT_CONVERTABLE:
         case INT_UNCONVERTABLE:
-
-            if(strcmp(op->data.term.literal, "nil") == 0){
-                printf("PUSHS nil@nil\n");
-            } else {
-                printf("PUSHS int@%s\n", op->data.term.literal);
-            }
-            
+            printf("PUSHS int@%s\n", op->data.term.literal);
             break;
         case DOUBLE:
-        case DOUBLE_NIL:
-            if(strcmp(op->data.term.literal, "nil") == 0){
-                printf("PUSHS nil@nil\n");
-            } else {
-                printf("PUSHS");
-                Insert_double_literal(op->data.term.literal);
-                printf("\n");
-            }
+
+            printf("PUSHS");
+            gen_Insert_double_literal(op->data.term.literal);
+            printf("\n");
+
             break;
         case STRING:
-        case STRING_NIL:
-            if(strcmp(op->data.term.literal, "nil") == 0){
-                printf("PUSHS nil@nil\n");
-            } else {
-                printf("PUSHS");
-                Insert_string_literal(op->data.term.literal,strlen(op->data.term.literal));
-                printf("\n");
-            }
+
+            printf("PUSHS");
+            gen_Insert_string_literal(op->data.term.literal, op->data.term.literal_len);
+            printf("\n");
             break;
 
         case NIL:
@@ -635,7 +620,7 @@ bool rule_8(ExpressionStack *stack){
 
     if ((op1_dtype == INT_UNCONVERTABLE_NIL) && (op2_dtype == INT_CONVERTABLE || op2_dtype == INT_UNCONVERTABLE)){
         result_dtype = INT_UNCONVERTABLE;
-        nil_conseal_insturcts();
+        gen_nil_conseal_insturcts();
 
     }
     else if ((op1_dtype == DOUBLE_NIL) && (op2_dtype == DOUBLE || op2_dtype == INT_CONVERTABLE)){
@@ -644,11 +629,11 @@ bool rule_8(ExpressionStack *stack){
         }
 
         result_dtype = DOUBLE;
-        nil_conseal_insturcts();
+        gen_nil_conseal_insturcts();
     }
     else if ((op1_dtype == STRING_NIL) && (op2_dtype == STRING)){
         result_dtype = STRING;  
-        nil_conseal_insturcts();
+        gen_nil_conseal_insturcts();
     }
     else if ((op1_dtype == NIL) &&
              (op2_dtype != INT_UNCONVERTABLE_NIL) &&
@@ -657,7 +642,7 @@ bool rule_8(ExpressionStack *stack){
              (op2_dtype != NIL))
     {
         result_dtype = op2_dtype;
-        nil_conseal_insturcts();
+        gen_nil_conseal_insturcts();
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '\?\?' operator\n");
