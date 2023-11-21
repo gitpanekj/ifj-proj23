@@ -1,0 +1,15 @@
+
+<TOKEN_STRING :: !$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~>
+<TOKEN_STRING :: "Hello,\032World"\010\009'this\032is\032mock\032test'>
+<TOKEN_STRING :: Ahoj\010"Sve'te\032\092">
+<TOKEN_STRING :: Next\032test:\032'\092u{61}'=a>
+<TOKEN_STRING :: Hello\032World>
+<TOKEN_STRING :: \035Test\035\032\010'"\092>
+
+======== Literal Vector ========
+0 :: !$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~
+1 :: "Hello,\032World"\010\009'this\032is\032mock\032test'
+2 :: Ahoj\010"Sve'te\032\092"
+3 :: Next\032test:\032'\092u{61}'=a
+4 :: Hello\032World
+5 :: \035Test\035\032\010'"\092
