@@ -162,11 +162,11 @@ void nil_conseal_insturcts(){
     //comparation of op1with NIL
     printf("JUMPIFNEQ !!tmpNILConsPUSHSOP1$%d!! TF@!!tmpNILConsOP1!! nil@nil\n", nil_con_cnt);
     //op1 was NIL => push op2 back to stack and jump to end label
-    printf("PUSHS TF@!!tmpNILConsOP2!!\n", nil_con_cnt);
+    printf("PUSHS TF@!!tmpNILConsOP2!!\n");
     printf("JUMP !!tmpNILConsEND$%d!!\n", nil_con_cnt);
     //op1 is not NIL => push op1 back to stack
     printf("LABEL !!tmpNILConsPUSHSOP1$%d!!\n", nil_con_cnt);
-    printf("PUSHS TF@!!tmpNILConsOP2!!\n", nil_con_cnt);
+    printf("PUSHS TF@!!tmpNILConsOP2!!\n");
     printf("LABEL !!tmpNILConsEND$%d!!\n", nil_con_cnt);
 
     printf("POPFRAME\n");
@@ -175,6 +175,15 @@ void nil_conseal_insturcts(){
     nil_con_cnt++;
 
 }
+
+//pseudofunc for write
+/*void add_write(){
+    for(size_t param_Idx = 0; param_Idx ++){
+        printf("WRITE");
+        add_Var(param[param_Idx]);
+        end_line();
+    }
+}*/
 
 void main(){
     move_value_to_variable_double("name", false, "2584985515698151955115159.5151951564151546");

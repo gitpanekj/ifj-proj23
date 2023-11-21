@@ -3,28 +3,6 @@
 #include <stdbool.h>
 #include "built-in_functions.h"
 
-//inline function need to be added in code and not in
-/*bool built_in_write(praparams, paramcount){
-    static int nil_cnt;
-    printf("#///////// Built-in Write //////////")
-    for(size_t i = 0; i < paramcount; i++){
-        if(nil || int_NIL,... ){
-            printf("JUMPNEQ !!PARAMNOTNIL$%d!!", nil_cnt);
-            addvar();
-            insert_nil();
-            end_line();
-            printf("WRITE string@\n");
-            printf("JUMP " )
-            printf("LABEL !!PARAMNOTNIL$%d!!")
-        }
-        else{
-            printf("WRITE");
-            add_var();
-            end_line();
-        }
-    }
-}*/
-
 void add_built_in_functions(){
     //the other lines cant be indetated because the spaces would count for the string literal
     const char* built_in_funcs = ".IFJcode23\n\
@@ -174,7 +152,9 @@ DEFVAR LF@result\n\
 INT2CHAR LF@result LF@_1\n\
 \n\
 POPFRAME\n\
-RETURN\n";
+RETURN\n\
+\n\
+LABEL main";
     printf("%s", built_in_funcs);
 }
 
