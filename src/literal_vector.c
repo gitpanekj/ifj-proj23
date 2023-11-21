@@ -1,6 +1,8 @@
 /**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
  * @file literal_vector.c
- * @author Jan Pánek (xpanek11@stud.fit.vut.cz)
+ * @author Jan Pánek (xpanek11)
  * @brief Literal vector used to buffer and store digit, string and identifier literals.
  * 
  * @copyright Copyright (c) 2023

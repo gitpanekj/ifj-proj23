@@ -1,6 +1,8 @@
 /**
+ *Implementace překladače imperativního jazyka IFJ23.
+ * 
  * @file precedence_analysis.h
- * @author Jan Pánek (xpanek11@stud.fit.vutbr.cz)
+ * @author Jan Pánek (xpanek11)
  * 
  * @copyright Copyright (c) 2023
  * 

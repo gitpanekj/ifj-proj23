@@ -1,6 +1,8 @@
 /**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
  * @file tokens.c
- * @author Jan Pánek (xpanek11@stud.fit.vut.cz)
+ * @author Jan Pánek (xpanek11)
  * @brief
  * 
  * @copyright Copyright (c) 2023
