@@ -7,6 +7,8 @@ PUSHFRAME
 DEFVAR LF@result
 READ LF@result string
 
+PUSHS LF@result
+
 POPFRAME
 RETURN
 
@@ -16,6 +18,8 @@ PUSHFRAME
 DEFVAR LF@result
 READ LF@result float
 
+PUSHS LF@result
+
 POPFRAME
 RETURN
 
@@ -24,6 +28,8 @@ PUSHFRAME
 
 DEFVAR LF@result
 READ LF@result int
+
+PUSHS LF@result
 
 POPFRAME
 RETURN
@@ -45,6 +51,8 @@ PUSHFRAME
 DEFVAR LF@result
 INT2FLOAT LF@result LF@_1
 
+PUSHS LF@result
+
 POPFRAME
 RETURN
 
@@ -53,6 +61,8 @@ PUSHFRAME
 
 DEFVAR LF@result
 FLOAT2INT LF@result LF@_1
+
+PUSHS LF@result
 
 POPFRAME
 RETURN
@@ -63,6 +73,8 @@ PUSHFRAME
 DEFVAR LF@result
 
 STRLEN LF@result LF@_1
+
+PUSHS LF@result
 
 POPFRAME
 RETURN
@@ -120,6 +132,8 @@ move LF@result nil@nil
 
 LABEL substringEnd
 
+PUSHS LF@result
+
 POPFRAME
 RETURN
 
@@ -145,6 +159,8 @@ MOVE LF@result int@0
 
 LABEL ordEnd
 
+PUSHS LF@result
+
 POPFRAME
 RETURN
 
@@ -153,6 +169,8 @@ PUSHFRAME
 
 DEFVAR LF@result
 INT2CHAR LF@result LF@_1
+
+PUSHS LF@result
 
 POPFRAME
 RETURN
@@ -181,23 +199,24 @@ RETURN
 LABEL main       #//////////////////////// MAIN ///////////////////////////
 CREATEFRAME
 
-
-
-
 CREATEFRAME
 CALL readDouble
 
 JUMPIFEQ endError TF@result nil@nil
 
 DEFVAR GF@text
-MOVE GF@text TF@result
+POPS GF@text
+
+#MOVE GF@text TF@result
+
 
 CREATEFRAME
 DEFVAR TF@_1
 MOVE TF@_1 GF@text 
 CALL double2Int
 
-MOVE GF@text TF@result
+#MOVE GF@text TF@result
+PUSHS GF@text
 
 CREATEFRAME
 DEFVAR TF@_1
@@ -208,6 +227,11 @@ CREATEFRAME
 DEFVAR TF@_1
 MOVE TF@_1 string@prvni
 CALL write
+
+
+
+
+
 
 
 

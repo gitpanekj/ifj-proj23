@@ -10,7 +10,7 @@
 #include "expression_stack.h"
 #include "syntactic_analysis.h"
 
-#include "codegen.c"
+#include "codegen.h"
 
 
 /**
@@ -252,7 +252,7 @@ bool rule_1(ExpressionStack* stack){
             printf("PUSHS nil@nil\n");
         } else {
             printf("PUSHS");
-            Insert_double_literal(op->data.term.literal);
+            Insert_double_literal(op->data.term.literal, false);
             printf("\n");
         }
         break;
@@ -262,7 +262,7 @@ bool rule_1(ExpressionStack* stack){
             printf("PUSHS nil@nil\n");
         } else {
             printf("PUSHS");
-            Insert_string_literal(op->data.term.literal,strlen(op->data.term.literal));
+            Insert_string_literal(op->data.term.literal,strlen(op->data.term.literal), false);
             printf("\n");
         }
         break;
@@ -286,19 +286,6 @@ bool rule_1(ExpressionStack* stack){
 
     
     return true;
-}
-
-void Insert_string_literal(char* string_literal, size_t lenght){
-	printf(" string@");
-	for(size_t idx = 0; idx < lenght; idx ++){
-		char current_char = string_literal[idx];
-		//comparing with ascii values
-		if((current_char >= 0 && current_char <= 32) || current_char == 35 || 		current_char == 92){
-			printf("\\%03d",current_char);
-        } else {
-            printf("%c", current_char);
-        }
-    }
 }
 
 bool rule_2(ExpressionStack* stack){
