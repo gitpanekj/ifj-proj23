@@ -649,23 +649,23 @@ bool rule_9(ExpressionStack *stack){
     // Type check
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
-    if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
-        (op1_dtype == DOUBLE_NIL)  ||
-        (op1_dtype == STRING_NIL)  ||
-        (op2_dtype == NIL)         || 
-        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
-        (op2_dtype == DOUBLE_NIL)  ||
-        (op2_dtype == STRING_NIL))
-    {
-        fprintf(stderr, "Invalid data type for '==' operator.\n");
-        return false;
+    // Operands must be of the same type
+    if (op1_dtype == op2_dtype ||
+        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE))){
+
+        // TODO: code generation for operands with equal types
+    } else if (op1_dtype == NIL &&
+               (op2_dtype == STRING_NIL || op2_dtype == INT_UNCONVERTABLE_NIL || op2_dtype == DOUBLE_NIL)){
+       // TODO: code generation for operands where op1 = nill and op2 is optinal
+    } else if (op2_dtype == NIL &&
+               (op1_dtype == STRING_NIL || op1_dtype == INT_UNCONVERTABLE_NIL || op1_dtype == DOUBLE_NIL)){
+        // TODO: code generation for operands where op2 = nill and op1 is optinal
+    } else if (op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) {
+        // TODO: conversion of int to double
     }
-    else if (op1_dtype == op2_dtype ||
-            ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
-            ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
-    {
-        // TODO: code generation
+    else if (op2_dtype == DOUBLE && op1_dtype == INT_CONVERTABLE) {
+        // TODO: conversion of int to double
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '==' operator\n");
@@ -694,26 +694,26 @@ bool rule_10(ExpressionStack *stack){
     // Type check
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
-    if ((op1_dtype == NIL)         || 
-        (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
-        (op1_dtype == DOUBLE_NIL)  ||
-        (op1_dtype == STRING_NIL)  ||
-        (op2_dtype == NIL)         || 
-        (op2_dtype == INT_UNCONVERTABLE_NIL)     || 
-        (op2_dtype == DOUBLE_NIL)  ||
-        (op2_dtype == STRING_NIL))
-    {
-        fprintf(stderr, "Invalid data type for '!=' operator.\n");
-        return false;
+    // Operands must be of the same type
+    if (op1_dtype == op2_dtype ||
+        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
+        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE))){
+
+        // TODO: code generation for operands with equal types
+    } else if (op1_dtype == NIL &&
+               (op2_dtype == STRING_NIL || op2_dtype == INT_UNCONVERTABLE_NIL || op2_dtype == DOUBLE_NIL)){
+       // TODO: code generation for operands where op1 = nill and op2 is optinal
+    } else if (op2_dtype == NIL &&
+               (op1_dtype == STRING_NIL || op1_dtype == INT_UNCONVERTABLE_NIL || op1_dtype == DOUBLE_NIL)){
+        // TODO: code generation for operands where op2 = nill and op1 is optinal
+    } else if (op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) {
+        // TODO: conversion of int to double
     }
-    else if (op1_dtype == op2_dtype ||
-       ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
-       ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
-    {
-        // TODO: code generation
+    else if (op2_dtype == DOUBLE && op1_dtype == INT_CONVERTABLE) {
+        // TODO: conversion of int to double
     }
     else {
-        fprintf(stderr, "Invalid combination of operands for '!=' operator\n");
+        fprintf(stderr, "Invalid combination of operands for '==' operator\n");
         return false;
     }
 
@@ -737,6 +737,8 @@ bool rule_11(ExpressionStack *stack){
     // Type check
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
+
+    // Cannot compare operands with optional type
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -749,11 +751,15 @@ bool rule_11(ExpressionStack *stack){
         fprintf(stderr, "Invalid data type for '<' operator.\n");
         return false;
     }
-    else if (op1_dtype == op2_dtype ||
+    else if (op1_dtype == op2_dtype || // same types
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         // TODO: code generation
+    }
+    else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
+             (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
+        // TODO: conversion from int to double
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '<' operator\n");
@@ -780,6 +786,7 @@ bool rule_12(ExpressionStack *stack){
     // Type check
     DataType op1_dtype = op1->data.expr.data_type;
     DataType op2_dtype = op2->data.expr.data_type;
+    // Cannot compare operands with optional type
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -792,11 +799,15 @@ bool rule_12(ExpressionStack *stack){
         fprintf(stderr, "Invalid data type for '<=' operator.\n");
         return false;
     }
-    else if (op1_dtype == op2_dtype ||
+    else if (op1_dtype == op2_dtype || // same types
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         // TODO: code generation
+    }
+    else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
+             (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
+        // TODO: conversion from int to double
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '<=' operator\n");
@@ -826,6 +837,7 @@ bool rule_13(ExpressionStack *stack){
     // Invalid types: nill and optional types
 
 
+   // Cannot compare operands with optional type
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -838,11 +850,15 @@ bool rule_13(ExpressionStack *stack){
         fprintf(stderr, "Invalid data type for '>' operator.\n");
         return false;
     }
-    else if (op1_dtype == op2_dtype ||
+    else if (op1_dtype == op2_dtype || // same types
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         // TODO: code generation
+    }
+    else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
+             (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
+        // TODO: conversion from int to double
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '>' operator\n");
@@ -871,6 +887,7 @@ bool rule_14(ExpressionStack *stack){
     // Invalid types: nill and optional types
 
 
+    // Cannot compare operands with optional type
     if ((op1_dtype == NIL)         || 
         (op1_dtype == INT_UNCONVERTABLE_NIL)     || 
         (op1_dtype == DOUBLE_NIL)  ||
@@ -883,11 +900,15 @@ bool rule_14(ExpressionStack *stack){
         fprintf(stderr, "Invalid data type for '>=' operator.\n");
         return false;
     }
-    else if (op1_dtype == op2_dtype ||
+    else if (op1_dtype == op2_dtype || // same types
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         // TODO: code generation
+    }
+    else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
+             (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
+        // TODO: conversion from int to double
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '>=' operator\n");
