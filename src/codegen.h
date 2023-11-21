@@ -51,8 +51,6 @@ void start_function(Name *label);
 void end_function();
 void createframe_before_function();
 
-void call_function(char *name);
-
 //add NIL-conseal instructions
 void nil_conseal_insturcts();
 

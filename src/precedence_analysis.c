@@ -256,7 +256,7 @@ bool rule_1(ExpressionStack* stack){
                 printf("PUSHS nil@nil\n");
             } else {
                 printf("PUSHS");
-                Insert_double_literal(op->data.term.literal, false);
+                Insert_double_literal(op->data.term.literal);
                 printf("\n");
             }
             break;
@@ -266,7 +266,7 @@ bool rule_1(ExpressionStack* stack){
                 printf("PUSHS nil@nil\n");
             } else {
                 printf("PUSHS");
-                Insert_string_literal(op->data.term.literal,strlen(op->data.term.literal), false);
+                Insert_string_literal(op->data.term.literal,strlen(op->data.term.literal));
                 printf("\n");
             }
             break;
@@ -704,7 +704,7 @@ bool rule_9(ExpressionStack *stack){
         printf("DEFVAR TF@!!tmpEQop2!!\n");
         printf("POPS TF@!!tmpEQop2!!\n");
         printf("INT2FLOATS\n");
-        ptintf("PUSHS TF@!!tmpEQop2!!\n");
+        printf("PUSHS TF@!!tmpEQop2!!\n");
         printf("POPFRAME\n");
         printf("EQS\n");
     }
@@ -766,7 +766,7 @@ bool rule_10(ExpressionStack *stack){
         printf("DEFVAR TF@!!tmpNEQop2!!\n");
         printf("POPS TF@!!tmpNEQop2!!\n");
         printf("INT2FLOATS\n");
-        ptintf("PUSHS TF@!!tmpNEQop2!!\n");
+        printf("PUSHS TF@!!tmpNEQop2!!\n");
         printf("POPFRAME\n");
         printf("EQS\n");
         printf("NOTS\n");
