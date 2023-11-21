@@ -804,7 +804,7 @@ bool rule_11(ExpressionStack *stack){
         printf("LTS\n");
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
-             (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
+             (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
         if(op1_dtype == INT_CONVERTABLE){
             printf("#< between Int literal and Double\n");
             printf("PUSHFRAME\n");
@@ -868,7 +868,7 @@ bool rule_12(ExpressionStack *stack){
         printf("NOTS!");
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
-             (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
+             (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
         if(op1_dtype == INT_CONVERTABLE){
             printf("<= between Int literal and Double\n");
             printf("PUSHFRAME\n");
@@ -934,7 +934,7 @@ bool rule_13(ExpressionStack *stack){
         printf("GTS\n");
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
-             (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
+             (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
         if(op1_dtype == INT_CONVERTABLE){
             printf("#> between Int literal and Double\n");
             printf("PUSHFRAME\n");
@@ -1000,7 +1000,7 @@ bool rule_14(ExpressionStack *stack){
         printf("NOTS\n");
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
-             (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE)){
+             (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
         if(op1_dtype == INT_CONVERTABLE){
             printf("#>= between Int literal and Double\n");
             printf("PUSHFRAME\n");
