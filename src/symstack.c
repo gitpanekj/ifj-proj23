@@ -1,3 +1,14 @@
+/**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
+ * @author Tibor Šimlaštík (xsimla00)
+ * @file symstack.c
+ * @brief Implementaion of stack based on one way linked list for storing tables of symbols
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include "symstack.h"
@@ -5,6 +16,7 @@
 void symStackInit(symStack* stack){
     stack->activeTable = NULL;
     stack->topTable = NULL;
+    stack->scopeCount = 0;
 }
 
 
@@ -24,6 +36,9 @@ void* symStackPush(symStack* stack, symtable* table){
     newElementPtr->symtable = table;
     newElementPtr->nextELement = stack->topTable;
     stack->topTable = newElementPtr;
+
+    //every element will have unique scope ID 
+    newElementPtr->scopeID = (stack->scopeCount)++;
 
     return newElementPtr;
 }
@@ -95,6 +110,26 @@ symtable* symStackActive(symStack* stack){
         return NULL;
     }
     return stack->activeTable->symtable;
+}
+
+/**
+ * @brief fuction for getting the scope ID of the current top table
+ * 
+ * @param stack pointer to symStack in which the top table is
+ * @return size_t scope ID of the top table of symbols in symStack
+ */
+size_t symStackTopScopeID(symStack* stack){
+    return stack->topTable->scopeID;
+}
+
+/**
+ * @brief fuction for getting the scope ID of the current active table
+ * 
+ * @param stack pointer to symStack in which the active table is
+ * @return size_t scope ID of the active table of symbols in symStack
+ */
+size_t symStackActiveScopeID(symStack* stack){
+    return stack->activeTable->scopeID;
 }
 
 /**

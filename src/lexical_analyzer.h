@@ -1,6 +1,8 @@
 /**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
  * @file lexical_analyzer.h
- * @author Jan Pánek (xpanek11@fit.vutbr.cz)
+ * @author Jan Pánek (xpanek11)
  * @brief Lexical analyzer implementation.
  * 
  * @copyright Copyright (c) 2023

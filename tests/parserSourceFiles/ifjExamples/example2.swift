@@ -19,7 +19,7 @@ func factorial(_ n : Int) -> Int {
 		let temp_result = factorial(decremented_n)
 		result = n * temp_result
 	}
-	return result
+	return result!
 }
 
 // pokracovani hlavniho tela programu

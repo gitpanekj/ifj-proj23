@@ -1,7 +1,7 @@
 /**
  * Implementace překladače imperativního jazyka IFJ23.
  *
- * @author Lukáš Kotoun xkotou08
+ * @author Lukáš Kotoun (xkotou08)
  * @file syntactic_analysis.h
  *
  */
@@ -31,7 +31,11 @@ extern Token token;
 extern Scanner scanner;
 
 //-------------------structures-----------------
-
+/**
+ * @brief Error codes structure
+ * Structure for error code propagation 
+ * 
+ */
 typedef enum ErrorCodes
 {
     LEXICAL_ERROR = 1,
@@ -46,6 +50,10 @@ typedef enum ErrorCodes
     INTERNAL_COMPILER_ERROR = 99
 } ErrorCodes;
 
+/**
+ * @brief Function status structure
+ * Structure for determine current function status in function  
+ */
 typedef enum FunctionStatus
 {
     UNDEFINED_FUNCTION,
@@ -53,6 +61,10 @@ typedef enum FunctionStatus
     DEFINED_FUNCTION
 } FunctionStatus;
 
+/**
+ * @brief Identifier structure
+ * Structure for storing Identifier (variable) data
+ */
 typedef struct
 {
     Name name;
@@ -61,12 +73,14 @@ typedef struct
     DataType type;
 } Identifier;
 
-
 //-------------------functions-----------------
+void analysisStart();
+
+Name createName(char *nameToCreate);
+
+Parameter createParam(DataType type, char *paramName);
 
 void addBuildInFunctions();
-
-void analysisStart();
 
 void defineVariable(Name varName, DataType type, bool isConstant, bool isInitialized);
 
@@ -84,13 +98,17 @@ symData *getFunctionDataFromSymstack(Name name);
 
 symData *getVariableDataFromSymstack(Name name);
 
-symData *getDataFromSymstack(Name name);
+symData *getVariableDataAndScopeFromSymstack(Name name, size_t *scope);
 
-symtable* createAndPushSymtable();
+symData *getDataFromSymstack(Name name, size_t *scope);
+
+symtable *createAndPushSymtable();
 
 bool isOptionalType(DataType type);
 
 DataType convertToNonOptionalType(DataType type);
+
+DataType convertToNonConvertableType(DataType type);
 
 void errorHandle(ErrorCodes ErrorType, const char *functionName);
 

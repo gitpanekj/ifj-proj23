@@ -1,0 +1,41 @@
+
+<TOKEN_IDENTIFIER :: a>
+<TOKEN_IDENTIFIER :: A>
+<TOKEN_IDENTIFIER :: ab>
+<TOKEN_IDENTIFIER :: AB>
+<TOKEN_IDENTIFIER :: aB>
+<TOKEN_IDENTIFIER :: Ab>
+<TOKEN_IDENTIFIER :: snake_case_test_123>
+<TOKEN_IDENTIFIER :: __snake_case_test_123>
+<TOKEN_IDENTIFIER :: CONSTANT_TEST_123>
+<TOKEN_IDENTIFIER :: __CONSTANT_TEST_123>
+<TOKEN_IDENTIFIER :: camelCaseTest123>
+<TOKEN_IDENTIFIER :: __camelCaseTest123>
+<TOKEN_IDENTIFIER :: PascalCaseTest123>
+<TOKEN_IDENTIFIER :: __PascalCaseTest123>
+<TOKEN_IDENTIFIER :: __dunder_test__>
+<TOKEN_IDENTIFIER :: __dender_test_123__>
+<TOKEN_IDENTIFIER :: __>
+<TOKEN_IDENTIFIER :: __9a>
+<TOKEN_IDENTIFIER :: _abc_>
+
+======== Literal Vector ========
+0 :: a
+1 :: A
+2 :: ab
+3 :: AB
+4 :: aB
+5 :: Ab
+6 :: snake_case_test_123
+7 :: __snake_case_test_123
+8 :: CONSTANT_TEST_123
+9 :: __CONSTANT_TEST_123
+10 :: camelCaseTest123
+11 :: __camelCaseTest123
+12 :: PascalCaseTest123
+13 :: __PascalCaseTest123
+14 :: __dunder_test__
+15 :: __dender_test_123__
+16 :: __
+17 :: __9a
+18 :: _abc_

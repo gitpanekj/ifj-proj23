@@ -4,23 +4,43 @@
 
 int main(){
 
-    DataType result_dtype = UNDEFINED;
-    ErrorCodes err;
     LiteralVector literals;
     LV_init(&literals);
 
     scaner_init(&scanner, &literals);
     getNextToken();
-    getNextToken();
 
+    while (token.type != TOKEN_EOF){
 
-    if (!parse_expression(tokenHistory, &result_dtype, &err)){
-        fprintf(stderr, "Error number: %d\n", err);
-        return err;
+        print_token(token);
+        getNextToken();
+        if (token.type == TOKEN_MEMMORY_ERROR){
+            LV_free(&literals);
+            exit(1);
+        }
     }
 
-    print_token(tokenHistory[0]);
-    print_token(tokenHistory[1]);
 
+    // dump content of literal vector
+    printf("\n\n======== Literal Vector ========\n");
+    int j = 0;
+    char c;
+    for (size_t i=0;i<literals.n_items;i++){
+        j=0;
+        printf("%ld :: ", i); 
+        while ((c = literals.items[i][j]) != '\0'){
+                if (c <= 32 || c == 35 || c == 92){
+                    printf("\\%.3d", c);
+                }
+                else{
+                    printf("%c", c);
+                }
+
+                j++;
+        }
+        printf("\n");
+    }
+
+    LV_free(&literals);
     return 0;
 }

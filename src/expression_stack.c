@@ -1,6 +1,8 @@
 /**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
  * @file expression_stack.c
- * @author Jan Pánek (xpanek11@stud.fit.vutbr.cz)
+ * @author Jan Pánek (xpanek11)
  * 
  * @copyright Copyright (c) 2023
  * 
@@ -54,7 +56,7 @@ void token_to_expr_member(Token t, ExpressionStackItem* item){
  */
 void init_literal_term(ExpressionStackItem *item, Token *t){
     item->type = LITERAL;
-    item->data.term.data_type =   t->type == TOKEN_INTEGER  ? INT_UNCONVERTABLE 
+    item->data.term.data_type =   t->type == TOKEN_INTEGER  ? INT_CONVERTABLE 
                                 : t->type == TOKEN_DOUBLE ? DOUBLE
                                 : t->type == TOKEN_NIL    ? NIL
                                 :                          STRING;

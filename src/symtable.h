@@ -1,3 +1,14 @@
+/**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
+ * @author Tibor Šimlaštík (xsimla00)
+ * @file symtable.h
+ * @brief Header file for implementation of table of symbols based on AVL tree
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #ifndef SYMTABLE_H
 #define SYMTABLE_H
 
@@ -14,15 +25,15 @@
 typedef enum DataType
 {
     UNDEFINED,
-    INT,
-    INT_NIL,
+    INT_CONVERTABLE,
+    INT_CONVERTABLE_NIL,
+    INT_UNCONVERTABLE,
+    INT_UNCONVERTABLE_NIL,
     DOUBLE,
     DOUBLE_NIL,
     STRING,
     STRING_NIL,
     NIL,
-    INT_CONVERTABLE,
-    INT_UNCONVERTABLE,
     BOOLEAN
 } DataType;
 

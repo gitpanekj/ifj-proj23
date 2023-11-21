@@ -1,7 +1,7 @@
 /**
  * Implementace překladače imperativního jazyka IFJ23.
  *
- * @author Lukáš Kotoun xkotou08
+ * @author Lukáš Kotoun (xkotou08)
  * @file param_vector.h
  *
  */
@@ -10,8 +10,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "symtable.h"
-// todo replace with struct from symtable
 
+/**
+ * @brief param vector structure 
+ * 'data' is pointer to allocated array that contains data of parameters
+ * 'paramCount' is number of items in array pointer by data 
+ */
 typedef struct
 {
     Parameter *data;
