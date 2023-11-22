@@ -181,10 +181,7 @@ void rule_param()
     // parameter is always constant and defined
     defineVariable(paramId, type, true, true);
 
-    // todo merge to one gen function
     //  generate function param
-    //gen_declare_local_variable(&paramId, (int)symStackTopScopeID(&symtableStack));
-    //gen_create_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
     gen_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
     //-------
     currentFunctionParameter.type = type;
@@ -336,7 +333,6 @@ bool rule_statement_func()
     }
     else if (tokenIs(TOKEN_VAR, TOKEN_LET)) // variable declaration
     {
-        // todo code generation - first and than check of symtable or in one time
         leftSideIdentifier.type = UNDEFINED;
         leftSideIdentifier.isInitialized = false;
         statementValueType = UNDEFINED;
@@ -363,7 +359,7 @@ bool rule_statement_func()
         }
         else if (isOptionalType(leftSideIdentifier.type))
         {
-           // leftSideIdentifier.isInitialized = true; // default init to nil
+            leftSideIdentifier.isInitialized = true; // default init to nil
             gen_move_nil_to_variable(&leftSideIdentifier.name, (int)symStackTopScopeID(&symtableStack));
         }
         defineVariable(leftSideIdentifier.name, leftSideIdentifier.type, leftSideIdentifier.isConstant, leftSideIdentifier.isInitialized);
@@ -496,7 +492,6 @@ void rule_statement()
     }
     else if (tokenIs(TOKEN_VAR, TOKEN_LET)) // variable declaration
     {
-        // todo code generation - first and than check of symtable or in one time
         leftSideIdentifier.type = UNDEFINED;
         leftSideIdentifier.isInitialized = false;
         statementValueType = UNDEFINED;
@@ -526,7 +521,7 @@ void rule_statement()
         }
         else if (isOptionalType(leftSideIdentifier.type))
         {
-            //leftSideIdentifier.isInitialized = true; // default init to nil
+            leftSideIdentifier.isInitialized = true; // default init to nil
             gen_move_nil_to_variable(&leftSideIdentifier.name, (int)symStackTopScopeID(&symtableStack));
         }
         // else definition withou assigment and - not initialized
@@ -552,7 +547,7 @@ void rule_if_cond()
         else if (!data->isConstant || !isOptionalType(data->type))
             error(OTHER_SEMANTIC_ERROR);
 
-        gen_start_if_let_condition(&varName,scope,(int)symStackTopScopeID(&symtableStack));
+        gen_start_if_let_condition(&varName, scope, (int)symStackTopScopeID(&symtableStack));
 
         defineVariable(varName, convertToNonOptionalType(data->type), true, true);
         getNextToken(); // need same end state as precedence analysis
@@ -640,7 +635,6 @@ void rule_statement_action()
     else if (tokenIs(TOKEN_EQUAL)) // assigment to variable - without variable definition
     {
         // left side ID is one token back
-        // todo gen assigment to variable - get var data with scope
         leftSideIdentifier.name.nameStart = tokenHistory[0].start_ptr;
         leftSideIdentifier.name.literal_len = tokenHistory[0].literal_len;
         size_t scope;
@@ -1572,6 +1566,7 @@ void errorHandle(ErrorCodes ErrorType, const char *functionName)
     // todo free memory
     symStackDispose(&symtableStack);
     LV_free(&literalVector);
+    gen_dispose();
     // paramVectorDispose(&paramVector);
     switch (ErrorType)
     {
