@@ -174,7 +174,9 @@ RETURN\n\
 \n\
 LABEL main\n\
 CREATEFRAME\n\
-DEFVAR GF@tempIfVar\n";
+DEFVAR GF@tempIfVar\n\
+DEFVAR GF@precedenceConcatFirst\n\
+DEFVAR GF@precedenceConcatSecond\n";
     printf("%s", built_in_funcs);
 }
 

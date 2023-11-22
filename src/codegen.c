@@ -10,7 +10,7 @@
 #include "codegen.h"
 
 char *stringForStoring = NULL;
-char helpStr[100];
+char helpStr[750];
 
 int ifCount = 0;
 

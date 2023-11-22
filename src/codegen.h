@@ -19,6 +19,7 @@
 extern char *stringForStoring;
 extern int whileLayer;
 extern bool inFunc;
+extern char helpStr[750];
 
 void gen_init();
 void gen_dispose();

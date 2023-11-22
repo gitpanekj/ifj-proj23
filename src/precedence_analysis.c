@@ -245,35 +245,62 @@ bool rule_1(ExpressionStack* stack){
     getVariableDataAndScopeFromSymstack((Name){.literal_len=op->data.term.literal_len,.nameStart=op->data.term.literal}, &scope);
 
     if(op->type == IDENTIFIER){
-        if(inFunc && scope > 0){
-            printf("PUSHS LF@%.*s_%d\n", (int)op->data.term.literal_len, op->data.term.literal, (int)scope);
+        if (whileLayer){
+            if(inFunc && scope > 0){
+                sprintf(helpStr,"PUSHS LF@%.*s_%d\n", (int)op->data.term.literal_len, op->data.term.literal, (int)scope);
+                appendString(&stringForStoring, helpStr, false);
+            } else {
+                sprintf(helpStr,"PUSHS GF@%.*s_%d\n", (int)op->data.term.literal_len, op->data.term.literal, (int)scope);
+                appendString(&stringForStoring, helpStr, false);
+            }
         } else {
-            printf("PUSHS GF@%.*s_%d\n", (int)op->data.term.literal_len, op->data.term.literal, (int)scope);
+            if(inFunc && scope > 0){
+                printf("PUSHS LF@%.*s_%d\n", (int)op->data.term.literal_len, op->data.term.literal, (int)scope);
+            } else {
+                printf("PUSHS GF@%.*s_%d\n", (int)op->data.term.literal_len, op->data.term.literal, (int)scope);
+            }
         }
+        
     } else {
          switch (dtype)
         {
 
         case INT_CONVERTABLE:
         case INT_UNCONVERTABLE:
-            printf("PUSHS int@%s\n", op->data.term.literal);
+            if(whileLayer){
+                sprintf(helpStr, "PUSHS int@%s\n", op->data.term.literal);
+                appendString(&stringForStoring, helpStr, false);
+            } else {
+                printf("PUSHS int@%s\n", op->data.term.literal);
+            }
+            
             break;
         case DOUBLE:
-
-            printf("PUSHS");
+            if(whileLayer){                
+                appendString(&stringForStoring, "PUSHS", false);
+            } else {
+                printf("PUSHS");
+            }
             gen_Insert_double_literal(op->data.term.literal);
-            printf("\n");
+            gen_end_line();
 
             break;
         case STRING:
-
-            printf("PUSHS");
+            if(whileLayer){                
+                appendString(&stringForStoring, "PUSHS", false);
+            } else {
+                printf("PUSHS");
+            }
             gen_Insert_string_literal(op->data.term.literal, op->data.term.literal_len);
-            printf("\n");
+            gen_end_line();
             break;
 
         case NIL:
-            printf("PUSHS nil@nil\n");
+            if(whileLayer){                
+                appendString(&stringForStoring, "PUSHS nil@nil\n", false);
+            } else {
+                printf("PUSHS nil@nil\n");
+            }
             break;
 
         default:
@@ -313,9 +340,14 @@ bool rule_2(ExpressionStack* stack){
         fprintf(stderr, "Value of Int? or Double? must be unwrapped to value of type 'Int'/'Double'\n");
         return false;
     }
-
-    printf("PUSHS int@-1\n");
-    printf("MULS\n");
+    if(whileLayer){                
+        appendString(&stringForStoring, "PUSHS int@-1\n", false);
+        appendString(&stringForStoring, "MULS\n", false);
+    } else {
+        printf("PUSHS int@-1\n");
+        printf("MULS\n");
+    }
+    
     
     ExpressionStackItem result;
     init_expression(&result, dtype);
@@ -387,37 +419,60 @@ bool rule_4(ExpressionStack* stack){
         result_dtype = op1_dtype;
         if (op1_dtype == STRING){
 
-            printf("PUSHFRAME\n");
-            printf("CREATEFRAME\n"); 
+            if(whileLayer){                
+                appendString(&stringForStoring, "PUSHFRAME\n", false);
+                appendString(&stringForStoring, "CREATEFRAME\n", false);
 
-            printf("DEFVAR TF@precedenceHelpFirst\n"); // create first temp variable
-            printf("DEFVAR TF@precedenceHelpSecond\n"); // create second temp variable
+                appendString(&stringForStoring, "POPS GF@precedenceConcatSecond\n", false);
+                appendString(&stringForStoring, "POPS GF@precedenceConcatFirst\n", false);
 
-            printf("POPS TF@precedenceHelpSecond\n"); // load first value
-            printf("POPS TF@precedenceHelpFirst\n"); // load second value
+                appendString(&stringForStoring, "CONCAT GF@precedenceConcatFirst GF@precedenceConcatFirst GF@precedenceConcatSecond\n", false);
+                appendString(&stringForStoring, "PUSHS GF@precedenceConcatFirst\n", false);
 
-            printf("CONCAT TF@precedenceHelpFirst TF@precedenceHelpFirst TF@precedenceHelpSecond\n"); // concat strings
-            printf("PUSHS TF@precedenceHelpFirst\n"); // push value
+                appendString(&stringForStoring, "POPFRAME\n", false);
+                appendString(&stringForStoring, "ADDS\n", false);
+            } else {
+                printf("PUSHFRAME\n");
+                printf("CREATEFRAME\n"); 
 
-            printf("POPFRAME\n");
+                printf("POPS GF@precedenceConcatSecond\n"); // load first value
+                printf("POPS GF@precedenceConcatFirst\n"); // load second value
+
+                printf("CONCAT GF@precedenceConcatFirst GF@precedenceConcatFirst GF@precedenceConcatSecond\n"); // concat strings
+                printf("PUSHS GF@precedenceConcatFirst\n"); // push value
+
+                printf("POPFRAME\n");
+            }
 
         }
         else {
-            printf("ADDS\n");
+            if(whileLayer){                
+                appendString(&stringForStoring, "ADDS\n", false);
+            } else {
+                printf("ADDS\n");
+            }
         }
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
              ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         result_dtype = INT_UNCONVERTABLE;
-        printf("ADDS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "ADDS\n", false);
+        } else {
+            printf("ADDS\n");
+        }
 
     }
     else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
              ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
     {
         result_dtype =  DOUBLE;
-        printf("ADDS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "ADDS\n", false);
+        } else {
+            printf("ADDS\n");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '+' operand\n");
@@ -463,21 +518,33 @@ bool rule_5(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        printf("SUBS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "SUBS\n", false);
+        } else {
+            printf("SUBS\n");
+        }
        
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
              ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         result_dtype = INT_UNCONVERTABLE;
-        printf("SUBS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "SUBS\n", false);
+        } else {
+            printf("SUBS\n");
+        }
 
     }
     else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
              ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
     {
         result_dtype =  DOUBLE;
-        printf("SUBS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "SUBS\n", false);
+        } else {
+            printf("SUBS\n");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '-'\n");
@@ -523,20 +590,32 @@ bool rule_6(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        printf("MULS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "MULS\n", false);
+        } else {
+            printf("MULS\n");
+        }
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
              ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         result_dtype = INT_UNCONVERTABLE;
-        printf("MULS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "MULS\n", false);
+        } else {
+            printf("MULS\n");
+        }
 
     }
     else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
              ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
     {
         result_dtype =  DOUBLE;
-        printf("MULS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "MULS\n", false);
+        } else {
+            printf("MULS\n");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '*'\n");
@@ -582,20 +661,32 @@ bool rule_7(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        printf("DIVS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "DIVS\n", false);
+        } else {
+            printf("DIVS\n");
+        }
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
              ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
         result_dtype = INT_UNCONVERTABLE;
-        printf("DIVS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "DIVS\n", false);
+        } else {
+            printf("DIVS\n");
+        }
 
     }
     else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
              ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
     {
         result_dtype =  DOUBLE;
-        printf("DIVS\n");
+        if(whileLayer){                
+            appendString(&stringForStoring, "DIVS\n", false);
+        } else {
+            printf("DIVS\n");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '/'\n");
