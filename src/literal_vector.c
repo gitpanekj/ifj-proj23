@@ -142,6 +142,7 @@ char* LV_submit(LiteralVector *vec, size_t *literal_len){
     for (size_t i=0;i<vec->n_items;i++){
         if (vec->forming_size == strlen(vec->items[i])){
             if (memcmp(vec->literal_buffer, vec->items[i], vec->forming_size) == 0){
+                LV_restore(vec);
                 return vec->items[i];
             }
         }
