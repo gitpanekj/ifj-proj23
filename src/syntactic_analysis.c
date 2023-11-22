@@ -1504,8 +1504,9 @@ void generateFunctionCallParam(Token token, int paramCount)
         switch (token.type)
         {
         case TOKEN_IDENTIFIER:
-            getVariableDataAndScopeFromSymstack(name, &scope);
-            gen_write_var(&name, scope);
+            symData *data;
+            data = getVariableDataAndScopeFromSymstack(name, &scope);
+            gen_write_var(&name, scope, data->type);
             break;
         case TOKEN_INTEGER:
             gen_write_int(&name);

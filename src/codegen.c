@@ -222,19 +222,6 @@ void gen_declare_global_variable(Name *name, int scope)
     }
 }
 
-/*void gen_declare_local_variable(Name *name, int scope)
-{
-    if (whileLayer)
-    {
-        sprintf(helpStr, "DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
-        appendStringToBuffStart(&stringForStoring, helpStr);
-    }
-    else
-    {
-        printf("DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
-    }
-}*/
-
 void gen_function_param(Name *name, int scope, int param)
 {
     if (whileLayer)
@@ -426,40 +413,6 @@ void gen_move_nil_to_variable(Name *name, int scope){
     }
 }
 
-/*void gen_move_var_to_global_var(Name *name1, Name *name2, bool isGlobal)
-{
-    if (whileLayer)
-    {
-        if (isGlobal)
-        {
-            appendString(&stringForStoring, "MOVE GF@", false);
-            appendStringFromPointer(&stringForStoring, (int)name1->literal_len, name1->nameStart, false);
-            appendString(&stringForStoring, " GF@", false);
-            appendStringFromPointer(&stringForStoring, (int)name2->literal_len, name2->nameStart, false);
-            gen_end_line(true);
-        }
-        else
-        {
-            appendString(&stringForStoring, "MOVE GF@", false);
-            appendStringFromPointer(&stringForStoring, (int)name1->literal_len, name1->nameStart, false);
-            appendString(&stringForStoring, " LF@", false);
-            appendStringFromPointer(&stringForStoring, (int)name2->literal_len, name2->nameStart, false);
-            gen_end_line(true);
-        }
-    }
-    else
-    {
-        if (isGlobal)
-        {
-            printf("MOVE GF@%.*s GF@%.*s\n", (int)name1->literal_len, name1->nameStart, (int)name2->literal_len, name2->nameStart);
-        }
-        else
-        {
-            printf("MOVE GF@%.*s LF@%.*s\n", (int)name1->literal_len, name1->nameStart, (int)name2->literal_len, name2->nameStart);
-        }
-    }
-}*/
-
 void gen_move_var_to_local_var(Name *name1, Name *name2, bool isGlobal)
 {
     if (whileLayer)
@@ -503,18 +456,6 @@ void gen_create_function_param(Name *name, int scope, int param)
 
 ////////// FUNCTION ////////
 
-/*
-    call function =>
-    createframe_before_function();
-    declare_variable_for_function();
-    move_value_to_function_variable();
-    start_function();
-
-    // vnitřek funkce
-
-    end_function();
-*/
-
 void gen_start_function(Name *label)
 {
     funcCount++;
@@ -522,7 +463,6 @@ void gen_start_function(Name *label)
     printf("JUMP skipFunction%d\n", funcCount);
     printf("LABEL %.*s\n", (int)label->literal_len, label->nameStart);
     printf("PUSHFRAME\n");
-    //  printf("DEFVAR LF@%s\n", "result");
 }
 
 void gen_function_return()
@@ -554,7 +494,6 @@ void gen_end_function()
 {
     inFunc = false;
     printf("LABEL endOfFunc%d\n", funcCount);
-    // printf("PUSHS LF@result\n");
     printf("POPFRAME\n");
     printf("RETURN\n");
     printf("LABEL skipFunction%d\n", funcCount);
@@ -599,23 +538,22 @@ void gen_stacksDispose()
     stackDispose(&ifStack);
 }
 
-///////////////// IF /////////////////// možná depth
+///////////////// IF ///////////////////
 
 void gen_start_if()
 {
     ifCount++;
     stackPush(&ifStack, ifCount);
-    // pushIfStack layer
     if (whileLayer)
     {
         appendString(&stringForStoring, "POPS GF@tempIfVar\n", false);
-        sprintf(helpStr, "JUMPIFNEQ $if_else_%d GF@tempIfVar bool@true\n", ifCount); // layer
+        sprintf(helpStr, "JUMPIFNEQ $if_else_%d GF@tempIfVar bool@true\n", ifCount);
         appendString(&stringForStoring, helpStr, false);
     }
     else
     {
         printf("POPS GF@tempIfVar\n");
-        printf("JUMPIFNEQ $if_else_%d GF@tempIfVar bool@true\n", ifCount); // layer
+        printf("JUMPIFNEQ $if_else_%d GF@tempIfVar bool@true\n", ifCount);
     }
 }
 
@@ -662,7 +600,6 @@ void gen_if_else_branch()
 {
     int top;
     stackTop(&ifStack, &top);
-    // topIfStack top
     if (whileLayer)
     {
         sprintf(helpStr, "JUMP $endIf_%d\n", top);
@@ -710,7 +647,7 @@ void gen_start_while_conditon()
     int whileNum;
     stackTop(&whileStack, &whileNum);
     appendString(&stringForStoring, "POPS GF@tempIfVar\n", false);
-    sprintf(helpStr, "JUMPIFEQ $endWhile_%d GF@tempIfVar bool@false\n", whileNum); // layer
+    sprintf(helpStr, "JUMPIFEQ $endWhile_%d GF@tempIfVar bool@false\n", whileNum);
     appendString(&stringForStoring, helpStr, false);
 }
 
@@ -787,34 +724,48 @@ void gen_nil_conseal_insturcts()
     nil_con_cnt++;
 }
 
-// pseudofunc for write
-/*void gen_add_write(){
-    for(size_t param_Idx = 0; param_Idx ++){
-        printf("WRITE");
-        add_Var(param[param_Idx]);
-        end_line();
-    }
-}*/
-
-void gen_write_var(Name *value, int scope){
+void gen_write_var(Name *value, int scope, DataType type){
     if (whileLayer)
     {
         if(inFunc && scope > 0){
-            appendString(&stringForStoring, "WRITE LF@", false);
+            if(type == DOUBLE){
+                sprintf(helpStr, "PUSHS LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+                appendString(&stringForStoring, helpStr, false);
+                appendString(&stringForStoring, "CALL !!converSolo\n", false);
+                sprintf(helpStr, "POPS LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+                appendString(&stringForStoring, helpStr, false);
+            } 
+            sprintf(helpStr, "WRITE LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+            appendString(&stringForStoring, helpStr, false);
         } else {
-            appendString(&stringForStoring, "WRITE GF@", false);
+            if(type == DOUBLE){
+                sprintf(helpStr, "PUSHS GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+                appendString(&stringForStoring, helpStr, false);
+                appendString(&stringForStoring, "CALL !!converSolo\n", false);
+                sprintf(helpStr, "POPS GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+                appendString(&stringForStoring, helpStr, false);
+            } 
+            sprintf(helpStr, "WRITE GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+            appendString(&stringForStoring, helpStr, false);
         }
-        sprintf(helpStr, "%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
-        appendString(&stringForStoring, helpStr, false);
     }
     else
     {
         if(inFunc && scope > 0){
-            printf("WRITE LF@");
+            if(type == DOUBLE){
+                printf("PUSHS LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+                printf("CALL !!converSolo\n");
+                printf("POPS LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+            }
+            printf("WRITE LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
         } else {
-            printf("WRITE GF@");
+            if(type == DOUBLE){
+                printf("PUSHS GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+                printf("CALL !!converSolo\n");
+                printf("POPS GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+            }
+            printf("WRITE GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
         }
-        printf("%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
     }
 }
 
@@ -882,40 +833,3 @@ bool gen_initStringForStoring()
 
     return true;
 }
-
-/*void gen_main(){
-    //stringForStoring = (char *)malloc(1); // Initial memory allocation for an empty string
-    //stringForStoring[0] = '\0'; // Ensure the string is null-terminated
-    //char *toAppend = "_konec_";
-    // Append the new string to the dynamic string
-    //appendString(&stringForStoring,"_middle_",true);
-    //appendStringFromPointer(&stringForStoring,toAppend,7,true);
-    //appendStringToBuffStart(&stringForStoring,"_Start_");
-
-    // Print the resulting string
-    //printf("%s\n", stringForStoring);
-
-    // Don't forget to free the allocated memory
-    //free(stringForStoring);
-
-    stringForStoring = (char *)malloc(1); // Initial memory allocation for an empty string
-    stringForStoring[0] = '\0';
-
-    start_while(9);
-    end_while(9);
-    appendStringToBuffStart(&stringForStoring,"_Start_\n");
-    print_after_while();
-    appendString(&stringForStoring,"aa tt bb\n",false);
-    appendStringToBuffStart(&stringForStoring,"_Start_\n");
-    printf("%s\n", stringForStoring);
-
-    print_after_while();
-    free(stringForStoring);
-
-    stacksInit();
-    initStringForStoring();
-
-
-
-    stacksDispose();
-}*/

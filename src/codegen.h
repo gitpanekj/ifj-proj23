@@ -76,7 +76,7 @@ void gen_call_function(Name *name);
 void gen_nil_conseal_insturcts();
 
 //write
-void gen_write_var(Name *value, int scope);
+void gen_write_var(Name *value, int scope, DataType type);
 void gen_write_int(Name *value);
 void gen_write_double(Name *value);
 void gen_write_string(Name *value);
