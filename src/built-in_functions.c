@@ -174,7 +174,10 @@ RETURN\n\
 \n\
 LABEL main\n\
 CREATEFRAME\n\
-DEFVAR GF@tempIfVar\n";
+DEFVAR GF@tempIfVar\n\
+DEFVAR GF@!!tmpNILConsOP1!!\n\
+DEFVAR GF@!!tmpNILConsOP2!!\n\
+DEFVAR GF@!!tmpRelatop2!!\n";
     printf("%s", built_in_funcs);
 }
 

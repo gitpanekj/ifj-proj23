@@ -681,28 +681,50 @@ bool rule_9(ExpressionStack *stack){
     if (op1_dtype == op2_dtype ||
         ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
         ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE))){
-        printf("EQS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "EQS\n", false);
+        }else{
+            printf("EQS\n");
+        }
     } else if (op1_dtype == NIL &&
                (op2_dtype == STRING_NIL || op2_dtype == INT_UNCONVERTABLE_NIL || op2_dtype == DOUBLE_NIL)){
-        printf("EQS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "EQS\n", false);
+        }else{
+            printf("EQS\n");
+        }
     } else if (op2_dtype == NIL &&
                (op1_dtype == STRING_NIL || op1_dtype == INT_UNCONVERTABLE_NIL || op1_dtype == DOUBLE_NIL)){
-        printf("EQS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "EQS\n", false);
+        }else{
+            printf("EQS\n");
+        }
     } else if (op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) {
-        printf("#== between Double and Int literal\n");
-        printf("INT2FLOATS\n");
-        printf("EQS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "#== between Double and Int literal\n", false);
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
+            appendString(&stringForStoring, "EQS\n", false);
+        }else{
+            printf("#== between Double and Int literal\n");
+            printf("INT2FLOATS\n");
+            printf("EQS\n");
+        }
     }
     else if (op2_dtype == DOUBLE && op1_dtype == INT_CONVERTABLE) {
-        printf("#== between Int literal and Double\n");
-        printf("PUSHFRAME\n");
-        printf("CREATEFRAME\n");
-        printf("DEFVAR TF@!!tmpEQop2!!\n");
-        printf("POPS TF@!!tmpEQop2!!\n");
-        printf("INT2FLOATS\n");
-        printf("PUSHS TF@!!tmpEQop2!!\n");
-        printf("POPFRAME\n");
-        printf("EQS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "#== between Int literal and Double\n", false);
+            appendString(&stringForStoring, "POPS GF@!!tmpRelatop2!!\n", false);
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
+            appendString(&stringForStoring, "PUSHS GF@!!tmpRelatop2!!\n", false);
+            appendString(&stringForStoring, "EQS", false);
+        }else{
+            printf("#== between Int literal and Double\n");
+            printf("POPS GF@!!tmpRelatop2!!\n");
+            printf("INT2FLOATS\n");
+            printf("PUSHS GF@!!tmpRelatop2!!\n");
+            printf("EQS\n");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '==' operator\n");
@@ -737,33 +759,60 @@ bool rule_10(ExpressionStack *stack){
     if (op1_dtype == op2_dtype ||
         ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
         ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE))){
-        printf("EQS\n");
-        printf("NOTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "EQS\n", false);
+            appendString(&stringForStoring, "NOTS\n", false);
+        }else{
+            printf("EQS\n");
+            printf("NOTS\n"); 
+        }
     } else if (op1_dtype == NIL &&
                (op2_dtype == STRING_NIL || op2_dtype == INT_UNCONVERTABLE_NIL || op2_dtype == DOUBLE_NIL)){
-        printf("EQS\n");
-        printf("NOTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "EQS\n", false);
+            appendString(&stringForStoring, "NOTS\n", false);
+        }else{
+            printf("EQS\n");
+            printf("NOTS\n"); 
+        }
     } else if (op2_dtype == NIL &&
                (op1_dtype == STRING_NIL || op1_dtype == INT_UNCONVERTABLE_NIL || op1_dtype == DOUBLE_NIL)){
-        printf("EQS\n");
-        printf("NOTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "EQS\n", false);
+            appendString(&stringForStoring, "NOTS\n", false);
+        }else{
+            printf("EQS\n");
+            printf("NOTS\n"); 
+        }
     } else if (op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) {
-        printf("#!= between Double and Int literal\n");
-        printf("INT2FLOATS\n");
-        printf("EQS\n");
-        printf("NOTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "#!= between Double and Int literal\n", false);
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
+            appendString(&stringForStoring, "EQS\n", false);
+            appendString(&stringForStoring, "NOTS\n", false);
+        }else{
+            printf("#!= between Double and Int literal\n");
+            printf("INT2FLOATS\n");
+            printf("EQS\n");
+            printf("NOTS\n");
+        }
     }
     else if (op2_dtype == DOUBLE && op1_dtype == INT_CONVERTABLE) {
-        printf("#!= between Int literal and Double\n");
-        printf("PUSHFRAME\n");
-        printf("CREATEFRAME\n");
-        printf("DEFVAR TF@!!tmpNEQop2!!\n");
-        printf("POPS TF@!!tmpNEQop2!!\n");
-        printf("INT2FLOATS\n");
-        printf("PUSHS TF@!!tmpNEQop2!!\n");
-        printf("POPFRAME\n");
-        printf("EQS\n");
-        printf("NOTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "#!= between Int literal and Double\n", false);
+            appendString(&stringForStoring, "POPS GF@!!tmpRelatop2!!\n", false);
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
+            appendString(&stringForStoring, "PUSHS GF@!!tmpRelatop2!!\n", false);
+            appendString(&stringForStoring, "EQS\n", false);
+            appendString(&stringForStoring, "NOTS\n", false);
+        }else{
+            printf("#!= between Int literal and Double\n");
+            printf("POPS GF@!!tmpRelatop2!!\n");
+            printf("INT2FLOATS\n");
+            printf("PUSHS GF@!!tmpRelatop2!!\n");
+            printf("EQS\n");
+            printf("NOTS\n");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '==' operator\n");
@@ -807,26 +856,43 @@ bool rule_11(ExpressionStack *stack){
     else if (op1_dtype == op2_dtype || // same types
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
-    {
-        printf("LTS\n");
+    {   
+        if(whileLayer){
+            appendString(&stringForStoring, "LTS\n", false);
+        }else{
+            printf("LTS\n");
+        }
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
              (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
         if(op1_dtype == INT_CONVERTABLE){
-            printf("#< between Int literal and Double\n");
-            printf("PUSHFRAME\n");
-            printf("CREATEFRAME\n");
-            printf("DEFVAR TF@!!tmpLTop2!!\n");
-            printf("POPS TF@!!tmpLTop2!!\n");
-            printf("INT2FLOATS\n");
-            printf("PUSHS TF@!!tmpLTop2!!\n");
-            printf("POPFRAME\n");
+            if(whileLayer){
+                appendString(&stringForStoring, "#< between Int literal and Double\n", false);
+                appendString(&stringForStoring, "POPS GF@!!tmpRelatop2!!\n", false);
+                appendString(&stringForStoring, "INT2FLOATS\n", false);
+                appendString(&stringForStoring, "PUSHS GF@!!tmpRelatop2!!\n", false);
+            }else{
+                printf("#< between Int literal and Double\n");
+                printf("POPS GF@!!tmpRelatop2!!\n");
+                printf("INT2FLOATS\n");
+                printf("PUSHS GF@!!tmpRelatop2!!\n");
+            }
         }
         else{
-            printf("#< between Double and Int literal\n");
-            printf("INT2FLOATS\n");
+            if(whileLayer){
+                appendString(&stringForStoring, "#< between Double and Int literal\n", false);
+                appendString(&stringForStoring, "INT2FLOATS\n", false);
+            }
+            else{
+                printf("#< between Double and Int literal\n");
+                printf("INT2FLOATS\n");
+            }
         }
-        printf("LTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "LTS\n", false);
+        }else{
+            printf("LTS\n");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '<' operator\n");
@@ -870,28 +936,48 @@ bool rule_12(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        printf("#Relation operator <=\n");
-        printf("GTS\n");
-        printf("NOTS!");
+        if(whileLayer){
+            appendString(&stringForStoring, "#Relation operator <=\n", false);
+            appendString(&stringForStoring, "GTS\n", false);
+            appendString(&stringForStoring, "NOTS\n", false);
+        }else{
+            printf("#Relation operator <=\n");
+            printf("GTS\n");
+            printf("NOTS!");
+        }
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
              (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
         if(op1_dtype == INT_CONVERTABLE){
-            printf("<= between Int literal and Double\n");
-            printf("PUSHFRAME\n");
-            printf("CREATEFRAME\n");
-            printf("DEFVAR TF@!!tmpLTop2!!\n");
-            printf("POPS TF@!!tmpLTop2!!\n");
-            printf("INT2FLOATS\n");
-            printf("PUSHS TF@!!tmpLTop2!!\n");
-            printf("POPFRAME\n");
+            if(whileLayer){
+                appendString(&stringForStoring, "#<= between Int literal and Double\n", false);
+                appendString(&stringForStoring, "POPS GF@!!tmpRelatop2!!\n", false);
+                appendString(&stringForStoring, "INT2FLOATS\n", false);
+                appendString(&stringForStoring, "PUSHS GF@!!tmpRelatop2!!\n", false);
+            }else{
+                printf("#<= between Int literal and Double\n");
+                printf("POPS GF@!!tmpRelatop2!!\n");
+                printf("INT2FLOATS\n");
+                printf("PUSHS GF@!!tmpRelatop2!!\n");
+            }
         }
         else{
-            printf("<= between Double and Int literal\n");
-            printf("INT2FLOATS\n");
+            if(whileLayer){
+                appendString(&stringForStoring, "#<= between Double and Int literal\n", false);
+                appendString(&stringForStoring, "INT2FLOATS\n", false);
+            }
+            else{
+                printf("#<= between Double and Int literal\n");
+                printf("INT2FLOATS\n");
+            }
         }
-        printf("GTS\n");
-        printf("NOTS!");
+        if(whileLayer){
+            appendString(&stringForStoring, "GTS\n", false);
+            appendString(&stringForStoring, "NOTS\n", false);
+        }else{
+            printf("GTS\n");
+            printf("NOTS!");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '<=' operator\n");
@@ -938,25 +1024,42 @@ bool rule_13(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        printf("GTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "GTS\n", false);
+        }else{
+            printf("GTS\n");
+        }
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
              (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
         if(op1_dtype == INT_CONVERTABLE){
-            printf("#> between Int literal and Double\n");
-            printf("PUSHFRAME\n");
-            printf("CREATEFRAME\n");
-            printf("DEFVAR TF@!!tmpLTop2!!\n");
-            printf("POPS TF@!!tmpLTop2!!\n");
-            printf("INT2FLOATS\n");
-            printf("PUSHS TF@!!tmpLTop2!!\n");
-            printf("POPFRAME\n");
+            if(whileLayer){
+                appendString(&stringForStoring, "#> between Int literal and Double\n", false);
+                appendString(&stringForStoring, "POPS GF@!!tmpRelatop2!!\n", false);
+                appendString(&stringForStoring, "INT2FLOATS\n", false);
+                appendString(&stringForStoring, "PUSHS GF@!!tmpRelatop2!!\n", false);
+            }else{
+                printf("#> between Int literal and Double\n");
+                printf("POPS GF@!!tmpRelatop2!!\n");
+                printf("INT2FLOATS\n");
+                printf("PUSHS GF@!!tmpRelatop2!!\n");
+            }
         }
         else{
-            printf("#> between Double and Int literal\n");
-            printf("INT2FLOATS\n");
+            if(whileLayer){
+                appendString(&stringForStoring, "#> between Double and Int literal\n", false);
+                appendString(&stringForStoring, "INT2FLOATS\n", false);
+            }
+            else{
+                printf("#> between Double and Int literal\n");
+                printf("INT2FLOATS\n");
+            }
         }
-        printf("GTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "GTS\n", false);
+        }else{
+            printf("GTS\n");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '>' operator\n");
@@ -1002,28 +1105,48 @@ bool rule_14(ExpressionStack *stack){
        ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
        ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
     {
-        printf("#Relation operator >=\n");
-        printf("LTS\n");
-        printf("NOTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "#Relation operator >=\n", false);
+            appendString(&stringForStoring, "LTS\n", false);
+            appendString(&stringForStoring, "NOTS\n", false);
+        }else{
+            printf("#Relation operator >=\n");
+            printf("LTS\n");
+            printf("NOTS!");
+        }
     }
     else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
              (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
         if(op1_dtype == INT_CONVERTABLE){
-            printf("#>= between Int literal and Double\n");
-            printf("PUSHFRAME\n");
-            printf("CREATEFRAME\n");
-            printf("DEFVAR TF@!!tmpLTop2!!\n");
-            printf("POPS TF@!!tmpLTop2!!\n");
-            printf("INT2FLOATS\n");
-            printf("PUSHS TF@!!tmpLTop2!!\n");
-            printf("POPFRAME\n");
+            if(whileLayer){
+                appendString(&stringForStoring, "#>= between Int literal and Double\n", false);
+                appendString(&stringForStoring, "POPS GF@!!tmpRelatop2!!\n", false);
+                appendString(&stringForStoring, "INT2FLOATS\n", false);
+                appendString(&stringForStoring, "PUSHS GF@!!tmpRelatop2!!\n", false);
+            }else{
+                printf("#>= between Int literal and Double\n");
+                printf("POPS GF@!!tmpRelatop2!!\n");
+                printf("INT2FLOATS\n");
+                printf("PUSHS GF@!!tmpRelatop2!!\n");
+            }
         }
         else{
-            printf("#>= between Double and Int literal\n");
-            printf("INT2FLOATS\n");
+            if(whileLayer){
+                appendString(&stringForStoring, "#>= between Double and Int literal\n", false);
+                appendString(&stringForStoring, "INT2FLOATS\n", false);
+            }
+            else{
+                printf("#>= between Double and Int literal\n");
+                printf("INT2FLOATS\n");
+            }
         }
-        printf("LTS\n");
-        printf("NOTS\n");
+        if(whileLayer){
+            appendString(&stringForStoring, "LTS\n", false);
+            appendString(&stringForStoring, "NOTS\n", false);
+        }else{
+            printf("LTS\n");
+            printf("NOTS!");
+        }
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '>=' operator\n");
