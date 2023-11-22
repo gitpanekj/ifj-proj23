@@ -44,7 +44,8 @@ void analysisStart()
     LV_init(&literalVector);
     scaner_init(&scanner, &literalVector);
     symStackInit(&symtableStack);
-    gen_init();
+    if(!gen_init())
+        error(INTERNAL_COMPILER_ERROR);
     if (!symtableInit(&globalSymtable))
         error(INTERNAL_COMPILER_ERROR);
     symStackPush(&symtableStack, globalSymtable);
@@ -171,8 +172,6 @@ void rule_param()
     {
         error(FUNCTION_CALL_ERROR);
     }
-    // semantic rules code gen or make variableVector for storing variable for code generate after processing all params (mostly for function call)
-    // gen_create_function_param()
 
     getNextToken();
     assertToken(TOKEN_COLON);
@@ -1501,10 +1500,10 @@ void generateFunctionCallParam(Token token, int paramCount)
     { // call write
         Name name = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
         size_t scope;
+        symData *data;
         switch (token.type)
         {
         case TOKEN_IDENTIFIER:
-            symData *data;
             data = getVariableDataAndScopeFromSymstack(name, &scope);
             gen_write_var(&name, scope, data->type);
             break;
