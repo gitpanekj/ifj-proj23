@@ -241,8 +241,15 @@ bool rule_1(ExpressionStack* stack){
     // Determine type of TERM
     DataType dtype = op->data.term.data_type;
 
-    if(op->type == IDENTIFIER){
+    size_t scope;
+    getVariableDataAndScopeFromSymstack((Name){.literal_len=op->data.term.literal_len,.nameStart=op->data.term.literal}, &scope);
 
+    if(op->type == IDENTIFIER){
+        if(inFunc && scope > 0){
+            printf("PUSHS LF@%.*s_%d\n", (int)op->data.term.literal_len, op->data.term.literal, (int)scope);
+        } else {
+            printf("PUSHS GF@%.*s_%d\n", (int)op->data.term.literal_len, op->data.term.literal, (int)scope);
+        }
     } else {
          switch (dtype)
         {

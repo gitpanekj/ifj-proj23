@@ -15,6 +15,8 @@ PUSHFRAME\n\
 DEFVAR LF@result\n\
 READ LF@result string\n\
 \n\
+PUSHS LF@result\n\
+\n\
 POPFRAME\n\
 RETURN\n\
 \n\
@@ -23,6 +25,8 @@ PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
 READ LF@result float\n\
+\n\
+PUSHS LF@result\n\
 \n\
 POPFRAME\n\
 RETURN\n\
@@ -33,6 +37,8 @@ PUSHFRAME\n\
 DEFVAR LF@result\n\
 READ LF@result int\n\
 \n\
+PUSHS LF@result\n\
+\n\
 POPFRAME\n\
 RETURN\n\
 \n\
@@ -41,6 +47,8 @@ PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
 INT2FLOAT LF@result LF@_1\n\
+\n\
+PUSHS LF@result\n\
 \n\
 POPFRAME\n\
 RETURN\n\
@@ -51,6 +59,8 @@ PUSHFRAME\n\
 DEFVAR LF@result\n\
 FLOAT2INT LF@result LF@_1\n\
 \n\
+PUSHS LF@result\n\
+\n\
 POPFRAME\n\
 RETURN\n\
 \n\
@@ -60,6 +70,8 @@ PUSHFRAME\n\
 DEFVAR LF@result\n\
 \n\
 STRLEN LF@result LF@_1\n\
+\n\
+PUSHS LF@result\n\
 \n\
 POPFRAME\n\
 RETURN\n\
@@ -117,6 +129,8 @@ move LF@result nil@nil\n\
 \n\
 LABEL substringEnd\n\
 \n\
+PUSHS LF@result\n\
+\n\
 POPFRAME\n\
 RETURN\n\
 \n\
@@ -142,6 +156,8 @@ MOVE LF@result int@0\n\
 \n\
 LABEL ordEnd\n\
 \n\
+PUSHS LF@result\n\
+\n\
 POPFRAME\n\
 RETURN\n\
 \n\
@@ -151,10 +167,14 @@ PUSHFRAME\n\
 DEFVAR LF@result\n\
 INT2CHAR LF@result LF@_1\n\
 \n\
+PUSHS LF@result\n\
+\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL main";
+LABEL main\n\
+CREATEFRAME\n\
+DEFVAR GF@tempIfVar\n";
     printf("%s", built_in_funcs);
 }
 
