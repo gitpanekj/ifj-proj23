@@ -360,7 +360,12 @@ bool rule_statement_func()
         {
             leftSideIdentifier.type = statementValueType;
             leftSideIdentifier.isInitialized = true;
-        } // else definition withou assigment
+        }
+        else if (isOptionalType(leftSideIdentifier.type))
+        {
+           // leftSideIdentifier.isInitialized = true; // default init to nil
+            gen_move_nil_to_variable(&leftSideIdentifier.name, (int)symStackTopScopeID(&symtableStack));
+        }
         defineVariable(leftSideIdentifier.name, leftSideIdentifier.type, leftSideIdentifier.isConstant, leftSideIdentifier.isInitialized);
     }
     else
@@ -521,7 +526,8 @@ void rule_statement()
         }
         else if (isOptionalType(leftSideIdentifier.type))
         {
-            leftSideIdentifier.isInitialized = true; // default init to nil
+            //leftSideIdentifier.isInitialized = true; // default init to nil
+            gen_move_nil_to_variable(&leftSideIdentifier.name, (int)symStackTopScopeID(&symtableStack));
         }
         // else definition withou assigment and - not initialized
         defineVariable(leftSideIdentifier.name, leftSideIdentifier.type, leftSideIdentifier.isConstant, leftSideIdentifier.isInitialized);
@@ -575,7 +581,6 @@ void rule_id_decl()
     assertToken(TOKEN_IDENTIFIER);
     leftSideIdentifier.name.literal_len = token.literal_len;
     leftSideIdentifier.name.nameStart = token.start_ptr;
-    // todo generate var - get scope from top
 }
 
 void rule_decl_opt()
@@ -1500,15 +1505,13 @@ void generateFunctionCallParam(Token token, int paramCount)
 {
     if (callingWriteFunc)
     { // call write
-      gen_declare_variable_for_function(paramCount);
         Name name = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
-        //size_t scope;
+        size_t scope;
         switch (token.type)
         {
         case TOKEN_IDENTIFIER:
-
-            gen_write_var(&name, symStackActiveScopeID(&symtableStack));
-            // todo add function variable param
+            getVariableDataAndScopeFromSymstack(name, &scope);
+            gen_write_var(&name, scope);
             break;
         case TOKEN_INTEGER:
             gen_write_int(&name);
@@ -1537,7 +1540,7 @@ void generateFunctionCallParam(Token token, int paramCount)
         case TOKEN_IDENTIFIER:
 
             getVariableDataAndScopeFromSymstack(name, &scope);
-            // todo add function variable param
+            gen_move_var_to_function_variable(&name, scope, paramCount);
             break;
         case TOKEN_INTEGER:
             gen_move_int_to_function_variable(paramCount, &name);

@@ -301,6 +301,14 @@ void gen_move_value_to_variable(Name *name, int scope)
     }
 }
 
+void gen_move_var_to_function_variable(Name *name, int scope, int paramCount){
+    if(inFunc && scope > 0){
+        printf("MOVE TF@_%d LF@%.*s_%d\n", paramCount, (int)name->literal_len, name->nameStart, scope);
+    } else {
+        printf("MOVE TF@_%d GF@%.*s_%d\n", paramCount, (int)name->literal_len, name->nameStart, scope);
+    }
+}
+
 void gen_move_int_to_function_variable(int paramCount, Name *value)
 {
     printf("MOVE TF@_%d int@%.*s\n", paramCount, (int)value->literal_len, value->nameStart);
@@ -325,6 +333,14 @@ void gen_move_nil_to_function_variable(int paramCount)
     printf("MOVE TF@_%d", paramCount);
     gen_Insert_nil();
     gen_end_line();
+}
+
+void gen_move_nil_to_variable(Name *name, int scope){
+    if(inFunc && scope > 0){
+        printf("MOVE LF@%.*s_%d nil@nil", (int)name->literal_len, name->nameStart, scope);
+    } else {
+        printf("MOVE GF@%.*s_%d nil@nil", (int)name->literal_len, name->nameStart, scope);
+    }
 }
 
 /*void gen_move_var_to_global_var(Name *name1, Name *name2, bool isGlobal)
