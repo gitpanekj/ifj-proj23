@@ -177,7 +177,9 @@ CREATEFRAME\n\
 DEFVAR GF@tempIfVar\n\
 DEFVAR GF@!!tmpNILConsOP1!!\n\
 DEFVAR GF@!!tmpNILConsOP2!!\n\
-DEFVAR GF@!!tmpRelatop2!!\n";
+DEFVAR GF@!!tmpRelatop2!!\n\
+DEFVAR GF@precedenceConcatFirst\n\
+DEFVAR GF@precedenceConcatSecond\n";
     printf("%s", built_in_funcs);
 }
 

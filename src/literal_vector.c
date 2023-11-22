@@ -139,6 +139,16 @@ char* LV_submit(LiteralVector *vec, size_t *literal_len){
     // return of literal len
     *literal_len = vec->forming_size;
 
+    for (size_t i=0;i<vec->n_items;i++){
+        if (vec->forming_size == strlen(vec->items[i])){
+            if (memcmp(vec->literal_buffer, vec->items[i], vec->forming_size) == 0){
+                LV_restore(vec);
+                return vec->items[i];
+            }
+        }
+    }
+
+
     // allocating space for literal
     void *tmp_ptr = malloc(sizeof(char)*(vec->forming_size+1)); // reserving 1 position for '\0'
     if (tmp_ptr == NULL) return NULL;

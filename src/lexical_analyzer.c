@@ -356,7 +356,6 @@ Token scan_token(Scanner *s){
     init_token(&t, TOKEN_LA_ERROR, NULL, 0, false);
 
     //consume invalid token
-    // TODO: error handling
     error(s, "Invalid character %c\n", peek(s));
     advance(s);
 
@@ -381,6 +380,7 @@ void consume_whitespace(Scanner *s){
     while (current_char != EOF){
         switch (current_char){
             case '\t':
+            case '\r':
             case ' ':
                 // consume whitespace and get next character
                 advance(s);
@@ -821,7 +821,6 @@ TokenType scan_multi_line_string(Scanner *s){
     bool end_of_string=false;
     int indentation=0;
     int string_len=0;
-    int lines=0;
     TokenType result = TOKEN_STRING;
 
     // load characters to literal vector until " is reached
@@ -831,7 +830,6 @@ TokenType scan_multi_line_string(Scanner *s){
             switch (peek(s)){
                 case '\n':
                     new_line = true;
-                    lines++;
                     string_len++;
                     indentation = 0;
 
@@ -1039,6 +1037,7 @@ TokenType scan_operator(Scanner* s, TokenType expected_token_type){
         // should never be called with expected_token_type=TOKEN_DUMMY.
         // It is present for debugging purposes and to avoid compilation errors.
         default:
+            advance(s);
             return TOKEN_LA_ERROR;
     }
 }

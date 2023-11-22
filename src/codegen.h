@@ -19,6 +19,7 @@
 extern char *stringForStoring;
 extern int whileLayer;
 extern bool inFunc;
+extern char helpStr[750];
 
 void gen_init();
 void gen_dispose();
@@ -52,10 +53,13 @@ void gen_function_param(Name *name, int scope, int param);
 
 //move variable to function
 void gen_move_value_to_variable(Name *name, int scope);
+void gen_move_var_to_function_variable(Name *name, int scope, int paramCount);
 void gen_move_int_to_function_variable(int paramCount, Name *value);
 void gen_move_double_to_function_variable(int paramCount, Name *value);
 void gen_move_string_to_function_variable(int paramCount, Name *value);
 void gen_move_nil_to_function_variable(int paramCount);
+
+void gen_move_nil_to_variable(Name *name, int scope);
 
 void gen_move_var_to_global_var(Name *name1, Name *name2, bool isGlobal);
 void gen_move_var_to_local_var(Name *name1, Name *name2, bool isGlobal);

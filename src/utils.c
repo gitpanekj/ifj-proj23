@@ -124,7 +124,7 @@ void error(Scanner *s, const char* format, ...){
     va_start(args, format);
 
     fprintf(stderr, "Error: line %d - ", s->line);
-    fprintf(stderr, format, args);
+    vfprintf(stderr, format, args);
 }
 
 
