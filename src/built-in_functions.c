@@ -42,22 +42,22 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL int2Double  #////////////////// int2Double ///////////////////\n\
+LABEL Int2Double  #////////////////// Int2Double ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
-INT2FLOAT LF@result LF@_1\n\
+INT2FLOAT LF@result LF@_0\n\
 \n\
 PUSHS LF@result\n\
 \n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL double2Int  #////////////////// double2Int ///////////////////\n\
+LABEL Double2Int  #////////////////// Double2Int ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
-FLOAT2INT LF@result LF@_1\n\
+FLOAT2INT LF@result LF@_0\n\
 \n\
 PUSHS LF@result\n\
 \n\
@@ -69,7 +69,7 @@ PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
 \n\
-STRLEN LF@result LF@_1\n\
+STRLEN LF@result LF@_0\n\
 \n\
 PUSHS LF@result\n\
 \n\
@@ -91,36 +91,36 @@ DEFVAR LF@index\n\
 \n\
 MOVE LF@index int@0                         # index vysledku na 0\n\
 \n\
-LT LF@if LF@_2 int@0                        # start < 0\n\
+LT LF@if LF@_1 int@0                        # start < 0\n\
 JUMPIFEQ substringError LF@if bool@true\n\
-LT LF@if LF@_3 int@0                        # end < 0\n\
+LT LF@if LF@_2 int@0                        # end < 0\n\
 JUMPIFEQ substringError LF@if bool@true\n\
-GT LF@if LF@_2 LF@_3                        # start > end\n\
+GT LF@if LF@_1 LF@_2                        # start > end\n\
 JUMPIFEQ substringError LF@if bool@true\n\
 \n\
 CREATEFRAME\n\
-DEFVAR TF@_1\n\
-MOVE TF@_1 LF@_1\n\
+DEFVAR TF@_0\n\
+MOVE TF@_0 LF@_0\n\
 CALL length\n\
 move LF@length TF@result\n\
 \n\
-GT LF@if LF@_3 LF@length                    # end > length\n\
+GT LF@if LF@_2 LF@length                    # end > length\n\
 JUMPIFEQ substringError LF@if bool@true\n\
-GT LF@if LF@_2 LF@length                    # start > length\n\
+GT LF@if LF@_1 LF@length                    # start > length\n\
 JUMPIFEQ substringError LF@if bool@true\n\
-EQ LF@if LF@_2 LF@length                    # start == length\n\
+EQ LF@if LF@_1 LF@length                    # start == length\n\
 JUMPIFEQ substringError LF@if bool@true\n\
 \n\
 MOVE LF@result string@\n\
 \n\
 LABEL substringLoop\n\
-GETCHAR LF@tempChar LF@_1 LF@_2\n\
+GETCHAR LF@tempChar LF@_0 LF@_1\n\
 CONCAT LF@result LF@result LF@tempChar\n\
 \n\
-ADD LF@_2 LF@_2 int@1\n\
+ADD LF@_1 LF@_1 int@1\n\
 ADD LF@index LF@index int@1\n\
 \n\
-EQ LF@if LF@_2 LF@_3\n\
+EQ LF@if LF@_1 LF@_2\n\
 JUMPIFEQ substringEnd LF@if bool@true\n\
 JUMP substringLoop\n\
 \n\
@@ -141,14 +141,14 @@ DEFVAR LF@result\n\
 DEFVAR LF@length\n\
 \n\
 CREATEFRAME\n\
-DEFVAR TF@_1\n\
-MOVE TF@_1 LF@_1\n\
+DEFVAR TF@_0\n\
+MOVE TF@_0 LF@_0\n\
 CALL length\n\
 MOVE LF@length TF@result\n\
 \n\
 JUMPIFEQ ordEnd0 LF@length int@0\n\
 \n\
-STRI2INT LF@result LF@_1 int@0\n\
+STRI2INT LF@result LF@_0 int@0\n\
 JUMP ordEnd\n\
 \n\
 LABEL ordEnd0\n\
@@ -165,7 +165,7 @@ LABEL chr  #////////////////// chr ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
-INT2CHAR LF@result LF@_1\n\
+INT2CHAR LF@result LF@_0\n\
 \n\
 PUSHS LF@result\n\
 \n\
