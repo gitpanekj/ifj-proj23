@@ -639,29 +639,46 @@ void gen_nil_conseal_insturcts()
 {
     static int nil_con_cnt; // static counter for generating unique identificators
     // everytime this fuction was called
-
     printf("#NIL-consealing\n");
-    // making new temporal frame
-    printf("PUSHFRAME\n");
-    printf("CREATEFRAME\n");
+    if(whileLayer){
+        //sprintf(helpStr, "LABEL $endIf_%d\n", ifNum);
+        appendString(&stringForStoring, "#NIL-consealing\n", false);
+        appendString(&stringForStoring, "POPS GF@!!tmpNILConsOP2!!\n", false);
+        appendString(&stringForStoring, "POPS GF@!!tmpNILConsOP1!!\n", false);
 
-    // declaration for temporal variables
-    printf("DEFVAR TF@!!tmpNILConsOP1!!\n");
-    printf("DEFVAR TF@!!tmpNILConsOP2!!\n");
-    printf("POPS TF@!!tmpNILConsOP2!!\n");
-    printf("POPS TF@!!tmpNILConsOP1!!\n");
+        sprintf(helpStr, "JUMPIFNEQ !!tmpNILConsPUSHSOP1$%d!! GF@!!tmpNILConsOP1!! nil@nil\n", nil_con_cnt);
+        appendString(&stringForStoring, helpStr, false);
 
-    // comparation of op1with NIL
-    printf("JUMPIFNEQ !!tmpNILConsPUSHSOP1$%d!! TF@!!tmpNILConsOP1!! nil@nil\n", nil_con_cnt);
-    // op1 was NIL => push op2 back to stack and jump to end label
-    printf("PUSHS TF@!!tmpNILConsOP2!!\n");
-    printf("JUMP !!tmpNILConsEND$%d!!\n", nil_con_cnt);
-    // op1 is not NIL => push op1 back to stack
-    printf("LABEL !!tmpNILConsPUSHSOP1$%d!!\n", nil_con_cnt);
-    printf("PUSHS TF@!!tmpNILConsOP2!!\n");
-    printf("LABEL !!tmpNILConsEND$%d!!\n", nil_con_cnt);
+        appendString(&stringForStoring, "PUSHS GF@!!tmpNILConsOP2!!\n", false);
 
-    printf("POPFRAME\n");
+        sprintf(helpStr, "JUMP !!tmpNILConsEND$%d!!\n", nil_con_cnt);
+        appendString(&stringForStoring, helpStr, false);
+        sprintf(helpStr, "LABEL !!tmpNILConsPUSHSOP1$%d!!\n", nil_con_cnt);
+        appendString(&stringForStoring, helpStr, false);
+
+        appendString(&stringForStoring, "PUSHS GF@!!tmpNILConsOP1!!\n", false);
+
+        sprintf(helpStr, "LABEL !!tmpNILConsEND$%d!!\n", nil_con_cnt);
+        appendString(&stringForStoring, helpStr, false);
+
+
+
+    }
+    else{
+        printf("#NIL-consealing\n");
+        printf("POPS GF@!!tmpNILConsOP2!!\n");
+        printf("POPS GF@!!tmpNILConsOP1!!\n");
+
+        // comparation of op1with NIL
+        printf("JUMPIFNEQ !!tmpNILConsPUSHSOP1$%d!! GF@!!tmpNILConsOP1!! nil@nil\n", nil_con_cnt);
+        // op1 was NIL => push op2 back to stack and jump to end label
+        printf("PUSHS GF@!!tmpNILConsOP2!!\n");
+        printf("JUMP !!tmpNILConsEND$%d!!\n", nil_con_cnt);
+        // op1 is not NIL => push op1 back to stack
+        printf("LABEL !!tmpNILConsPUSHSOP1$%d!!\n", nil_con_cnt);
+        printf("PUSHS GF@!!tmpNILConsOP1!!\n");
+        printf("LABEL !!tmpNILConsEND$%d!!\n", nil_con_cnt);        
+    }
 
     // incrementing counter for next call so no label collision happends
     nil_con_cnt++;
