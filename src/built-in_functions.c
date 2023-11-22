@@ -172,9 +172,33 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
+LABEL !!conver  #////////////////// !!conver ///////////////////\n\
+CREATEFRAME\n\
+PUSHFRAME\n\
+DEFVAR LF@_0\n\
+POPS LF@_0\n\
+TYPE GF@tempIfVar LF@_0\n\
+JUMPIFEQ !!skip_conver GF@tempIfVar string@double\n\
+INT2FLOAT LF@_0 LF@_0\n\
+LABEL !!skip_conver\n\
+\n\
+DEFVAR LF@_1\n\
+POPS LF@_1\n\
+TYPE GF@tempIfVar LF@_1\n\
+JUMPIFEQ !!skip_conver2 GF@tempIfVar string@double\n\
+INT2FLOAT LF@_1 LF@_1\n\
+LABEL !!skip_conver2\n\
+\n\
+PUSHS LF@_1\n\
+PUSHS LF@_0\n\
+\n\
+POPFRAME\n\
+RETURN\n\
+\n\
 LABEL main\n\
 CREATEFRAME\n\
 DEFVAR GF@tempIfVar\n\
+DEFVAR GF@precedenceMatTemp\n\
 DEFVAR GF@!!tmpNILConsOP1!!\n\
 DEFVAR GF@!!tmpNILConsOP2!!\n\
 DEFVAR GF@!!tmpRelatop2!!\n\
