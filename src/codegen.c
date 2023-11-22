@@ -186,8 +186,7 @@ void gen_Insert_nil()
 
 ////// END INSERT LITERAL //////
 
-void gen_end_line(bool whileLayer)
-{
+void gen_end_line(){
     if (whileLayer)
     {
         appendString(&stringForStoring, "\n", false);
@@ -199,34 +198,6 @@ void gen_end_line(bool whileLayer)
 }
 
 //////////// DECLARE VAR /////////////
-/*void gen_declare_variable(Name *name, int scope)
-{
-    if (!inFunc)
-    {
-        if (whileLayer)
-        {
-            sprintf(helpStr, "DEFVAR GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
-            appendStringToBuffStart(&stringForStoring, helpStr);
-        }
-        else
-        {
-            printf("DEFVAR GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
-        }
-    }
-    else
-    {
-        if (whileLayer)
-        {
-            sprintf(helpStr, "DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
-            appendStringToBuffStart(&stringForStoring, helpStr);
-        }
-        else
-        {
-            printf("DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
-        }
-    }
-}*/
-
 void gen_declare_global_variable(Name *name, int scope)
 {
     if (whileLayer)
@@ -240,7 +211,7 @@ void gen_declare_global_variable(Name *name, int scope)
     }
 }
 
-void gen_declare_local_variable(Name *name, int scope)
+/*void gen_declare_local_variable(Name *name, int scope)
 {
     if (whileLayer)
     {
@@ -251,6 +222,24 @@ void gen_declare_local_variable(Name *name, int scope)
     {
         printf("DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
     }
+}*/
+
+void gen_function_param(Name *name, int scope, int param)
+{
+    if (whileLayer)
+    {
+        sprintf(helpStr, "DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+        appendStringToBuffStart(&stringForStoring, helpStr);
+        sprintf(helpStr, "MOVE LF@%.*s_%d LF@_%d\n", (int)name->literal_len, name->nameStart, scope, param);
+        appendStringToBuffStart(&stringForStoring, helpStr);
+    }
+    else
+    {
+        printf("DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+        printf("MOVE LF@%.*s_%d LF@_%d\n", (int)name->literal_len, name->nameStart, scope, param);
+    }
+
+    
 }
 
 void gen_declare_variable(Name *name, int scope)
@@ -320,24 +309,25 @@ void gen_move_int_to_function_variable(int paramCount, Name *value)
 void gen_move_double_to_function_variable(int paramCount, Name *value)
 {
     printf("MOVE TF@_%d", paramCount);
-    gen_Insert_double_literal(value);
-    gen_end_line(false);
+    sprintf(helpStr, "%.*s", (int)value->literal_len, value->nameStart);
+    gen_Insert_double_literal(helpStr);
+    gen_end_line();
 }
 
 void gen_move_string_to_function_variable(int paramCount, Name *value)
 {
     printf("MOVE TF@_%d", paramCount);
     gen_Insert_string_literal(value->nameStart, value->literal_len);
-    gen_end_line(false);
+    gen_end_line();
 }
 void gen_move_nil_to_function_variable(int paramCount)
 {
     printf("MOVE TF@_%d", paramCount);
     gen_Insert_nil();
-    gen_end_line(false);
+    gen_end_line();
 }
 
-void gen_move_var_to_global_var(Name *name1, Name *name2, bool isGlobal)
+/*void gen_move_var_to_global_var(Name *name1, Name *name2, bool isGlobal)
 {
     if (whileLayer)
     {
@@ -369,7 +359,7 @@ void gen_move_var_to_global_var(Name *name1, Name *name2, bool isGlobal)
             printf("MOVE GF@%.*s LF@%.*s\n", (int)name1->literal_len, name1->nameStart, (int)name2->literal_len, name2->nameStart);
         }
     }
-}
+}*/
 
 void gen_move_var_to_local_var(Name *name1, Name *name2, bool isGlobal)
 {
@@ -381,7 +371,7 @@ void gen_move_var_to_local_var(Name *name1, Name *name2, bool isGlobal)
             appendStringFromPointer(&stringForStoring, (int)name1->literal_len, name1->nameStart, false);
             appendString(&stringForStoring, " GF@", false);
             appendStringFromPointer(&stringForStoring, (int)name2->literal_len, name2->nameStart, false);
-            gen_end_line(true);
+            gen_end_line();
         }
         else
         {
@@ -389,7 +379,7 @@ void gen_move_var_to_local_var(Name *name1, Name *name2, bool isGlobal)
             appendStringFromPointer(&stringForStoring, (int)name1->literal_len, name1->nameStart, false);
             appendString(&stringForStoring, " LF@", false);
             appendStringFromPointer(&stringForStoring, (int)name2->literal_len, name2->nameStart, false);
-            gen_end_line(true);
+            gen_end_line();
         }
     }
     else
@@ -407,54 +397,9 @@ void gen_move_var_to_local_var(Name *name1, Name *name2, bool isGlobal)
 
 void gen_create_function_param(Name *name, int scope, int param)
 {
-    printf("MOVE LF@%.*s_%d LF@_%d", (int)name->literal_len, name->nameStart, scope, param);
+    printf("MOVE LF@%.*s_%d LF@_%d\n", (int)name->literal_len, name->nameStart, scope, param);
 }
 
-/*
-void gen_move_int_to_variable(char *name, bool isGlobal, char *value){
-    if(isGlobal){
-        printf("MOVE GF@%s int@%s\n", name, value);
-    }else{
-        printf("MOVE LF@%s int@%s\n", name, value);
-    }
-}
-
-void gen_move_double_to_variable(char *name, bool isGlobal, char* value){
-    if(isGlobal){
-        printf("MOVE GF@%s", name);
-        Insert_double_literal(value, false);
-        end_line(false);
-    }else{
-        printf("MOVE LF@%s", name);
-        Insert_double_literal(value, false);
-        end_line(false);
-    }
-}
-
-
-void gen_move_string_to_variable(char *name, bool isGlobal, char *value){
-    if(isGlobal){
-        printf("MOVE GF@%s", name);
-        Insert_string_literal(value, strlen(value), false);
-    }else{
-        printf("MOVE LF@%s", name);
-        Insert_string_literal(value, strlen(value), false);
-    }
-    end_line();
-}
-
-void gen_move_isGlobal_var_to_var(char *name, char *name2){
-    printf("MOVE GF@%s GF@%s", name, name2);
-}
-
-void gen_move_local_var_to_var(){
-
-}
-
-void gen_move_temp_var_to_var(){
-
-}
-*/
 ////////// END MOVE VALUE TO VARIABLE ///////////////
 
 ////////// FUNCTION ////////
@@ -514,7 +459,7 @@ void gen_end_function()
     printf("LABEL skipFunction%d\n", funcCount);
 }
 
-void gen_createframe_before_function()
+void gen_before_params_to_function()
 {
     if (whileLayer)
     {
@@ -572,6 +517,26 @@ void gen_start_if()
     }
 }
 
+void gen_start_if_let_condition(Name *name, int scope, int scope2){
+    ifCount++;
+    stackPush(&ifStack, ifCount);
+    if(whileLayer){
+        sprintf(helpStr, "TYPE GF@tempIfVar GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+        appendString(&stringForStoring, helpStr, false);
+        sprintf(helpStr, "JUMPIFEQ $if_else_%d GF@tempIfVar string@nil\n", ifCount);
+        appendString(&stringForStoring, helpStr, false);
+        sprintf(helpStr, "DEFVAR GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope2);
+        appendString(&stringForStoring, helpStr, false);
+        sprintf(helpStr, "MOVE GF@%.*s_%d GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope2, (int)name->literal_len, name->nameStart, scope);
+        appendString(&stringForStoring, helpStr, false);
+    } else {
+        printf("TYPE GF@tempIfVar GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+        printf("JUMPIFEQ $if_else_%d GF@tempIfVar string@nil\n", ifCount);
+        printf("DEFVAR GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope2);
+        printf("MOVE GF@%.*s_%d GF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope2, (int)name->literal_len, name->nameStart, scope);
+    }
+}
+
 void gen_if_else_branch()
 {
     int top;
@@ -616,17 +581,17 @@ void gen_start_while()
     whileCount++;
     whileLayer++;
     stackPush(&whileStack, whileCount);
-    // pushWhileStack layer
-    appendString(&stringForStoring, "LABEL $while_", false);
-    sprintf(helpStr, "%d", whileCount); // layer
-    appendString(&stringForStoring, helpStr, false);
 
-    appendString(&stringForStoring, "\n", false);
-    // todo add condition on start
-    //! like normal while not doooo while
+    sprintf(helpStr, "LABEL $while_%d\n", whileCount);
+    appendString(&stringForStoring, helpStr, false);
 }
 void gen_start_while_conditon()
 {
+    int whileNum;
+    stackTop(&whileStack, &whileNum);
+    appendString(&stringForStoring, "POPS GF@tempIfVar\n", false);
+    sprintf(helpStr, "JUMPIFEQ $endWhile_%d GF@tempIfVar bool@false\n", whileNum); // layer
+    appendString(&stringForStoring, helpStr, false);
 }
 
 // todo add gen start while condition
@@ -635,11 +600,12 @@ void gen_end_while()
 
     int whileNum;
     stackPop(&whileStack, &whileNum);
-    // popWhileStack layer
-    appendString(&stringForStoring, "JUMPIFEQ $while_", false);
-    sprintf(helpStr, "%d", whileNum); // layer
+
+    sprintf(helpStr, "JUMP $while_%d\n", whileNum); 
     appendString(&stringForStoring, helpStr, false);
-    appendString(&stringForStoring, " GF@tempIfVar bool@true\n", false);
+    sprintf(helpStr, "LABEL $endWhile_%d\n", whileNum); 
+    appendString(&stringForStoring, helpStr, false);
+
     whileLayer--;
     if (whileLayer == 0)
         gen_print_after_while();
@@ -693,6 +659,83 @@ void gen_nil_conseal_insturcts()
         end_line();
     }
 }*/
+
+void gen_write_var(Name *value, int scope){
+    if (whileLayer)
+    {
+        if(inFunc && scope > 0){
+            appendString(&stringForStoring, "WRITE LF@", false);
+        } else {
+            appendString(&stringForStoring, "WRITE GF@", false);
+        }
+        sprintf(helpStr, "%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+        appendString(&stringForStoring, helpStr, false);
+    }
+    else
+    {
+        if(inFunc && scope > 0){
+            printf("WRITE LF@");
+        } else {
+            printf("WRITE GF@");
+        }
+        printf("%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
+    }
+}
+
+void gen_write_int(Name *value){
+if (whileLayer)
+    {
+        sprintf(helpStr, "WRITE int@%.*s\n", (int)value->literal_len, value->nameStart);
+        appendString(&stringForStoring, helpStr, false);
+    }
+    else
+    {
+        printf("WRITE int@%.*s\n", (int)value->literal_len, value->nameStart);
+    }
+}
+
+void gen_write_double(Name *value){
+    if (whileLayer)
+    {
+        appendString(&stringForStoring, "WRITE", false);
+        sprintf(helpStr, "%.*s", (int)value->literal_len, value->nameStart);
+        gen_Insert_double_literal(helpStr);
+        gen_end_line();
+    }
+    else
+    {
+        printf("WRITE");
+        sprintf(helpStr, "%.*s", (int)value->literal_len, value->nameStart);
+        gen_Insert_double_literal(helpStr);
+        gen_end_line();
+    }
+}
+
+void gen_write_string(Name *value){
+    if (whileLayer)
+    {
+        appendString(&stringForStoring, "WRITE", false);
+        gen_Insert_string_literal(value->nameStart, value->literal_len);
+        gen_end_line();
+    }
+    else
+    {
+        printf("WRITE");
+        gen_Insert_string_literal(value->nameStart, value->literal_len);
+        gen_end_line();
+    }
+}
+
+void gen_write_nil(){
+    if (whileLayer)
+    {
+        appendString(&stringForStoring, "WRITE nil@nil\n", false);
+    }
+    else
+    {
+        printf("WRITE nil@nil\n");
+    }
+}
 
 void gen_initStringForStoring()
 {

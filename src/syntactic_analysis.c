@@ -49,7 +49,7 @@ void analysisStart()
         error(INTERNAL_COMPILER_ERROR);
     symStackPush(&symtableStack, globalSymtable);
     addBuiltInFunctionsToSymtable();
-    // add_built_in_functions();
+    add_built_in_functions();
     getNextToken();
     rule_prog();
 
@@ -183,8 +183,9 @@ void rule_param()
 
     // todo merge to one gen function
     //  generate function param
-    gen_declare_local_variable(&paramId, (int)symStackTopScopeID(&symtableStack));
-    gen_create_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+    //gen_declare_local_variable(&paramId, (int)symStackTopScopeID(&symtableStack));
+    //gen_create_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+    gen_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
     //-------
     currentFunctionParameter.type = type;
     if (!paramVectorPush(&paramVector, currentFunctionParameter))
@@ -545,12 +546,7 @@ void rule_if_cond()
         else if (!data->isConstant || !isOptionalType(data->type))
             error(OTHER_SEMANTIC_ERROR);
 
-        // todo codegen for varibale definition - gen_if_let_condition
-        /*
-            condition prom1 == nil else
-            mov prom2 prom1
-        */
-        // gen_if_let_condition(varName,scope,(int)symStackTopScopeID(&symStack))
+        gen_start_if_let_condition(&varName,scope,(int)symStackTopScopeID(&symtableStack));
 
         defineVariable(varName, convertToNonOptionalType(data->type), true, true);
         getNextToken(); // need same end state as precedence analysis
@@ -620,7 +616,7 @@ void rule_statement_action()
         else
             callingWriteFunc = false;
         if (!callingWriteFunc)
-            gen_createframe_before_function();
+            gen_before_params_to_function();
 
         getNextToken(); // get token after (
         paramVectorInit(&paramVector);
@@ -761,12 +757,16 @@ void rule_arg_expr()
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
         callingWriteFunc = false;
 
+        gen_before_params_to_function();
+
         getNextToken(); // get token after (
         paramVectorInit(&paramVector);
         rule_first_arg();
         assertToken(TOKEN_R_PAR);
         storeOrCheckFunction(callingFuncName, leftSideIdentifier.type, paramVector, false);
         statementValueType = getFunctionDataFromSymstack(callingFuncName)->type;
+
+        gen_call_function(&callingFuncName);
         // need to leave same token position as precedence
         getNextToken();
     }
@@ -1500,7 +1500,32 @@ void generateFunctionCallParam(Token token, int paramCount)
 {
     if (callingWriteFunc)
     { // call write
-      // todo write gen
+      gen_declare_variable_for_function(paramCount);
+        Name name = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
+        //size_t scope;
+        switch (token.type)
+        {
+        case TOKEN_IDENTIFIER:
+
+            gen_write_var(&name, symStackActiveScopeID(&symtableStack));
+            // todo add function variable param
+            break;
+        case TOKEN_INTEGER:
+            gen_write_int(&name);
+            break;
+        case TOKEN_DOUBLE:
+            gen_write_double(&name);
+            break;
+        case TOKEN_STRING:
+            gen_write_string(&name);
+            break;
+        case TOKEN_NIL:
+            gen_write_nil();
+            break;
+        default:
+            error(SYNTACTIC_ERROR);
+            break;
+        }
     }
     else
     {
