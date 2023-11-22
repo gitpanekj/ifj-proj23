@@ -341,11 +341,23 @@ bool rule_2(ExpressionStack* stack){
         return false;
     }
     if(whileLayer){                
-        appendString(&stringForStoring, "PUSHS int@-1\n", false);
-        appendString(&stringForStoring, "MULS\n", false);
+        if(dtype == DOUBLE){
+            appendString(&stringForStoring, "PUSHS int@-1\n", false);
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
+            appendString(&stringForStoring, "MULS\n", false);
+        } else {
+            appendString(&stringForStoring, "PUSHS int@-1\n", false);
+            appendString(&stringForStoring, "MULS\n", false);
+        }
     } else {
-        printf("PUSHS int@-1\n");
-        printf("MULS\n");
+        if(dtype == DOUBLE){
+            printf("PUSHS int@-1\n");
+            printf("INT2FLOATS\n");
+            printf("MULS\n");
+        } else {
+            printf("PUSHS int@-1\n");        
+            printf("MULS\n");
+        }
     }
     
     
@@ -420,30 +432,27 @@ bool rule_4(ExpressionStack* stack){
         if (op1_dtype == STRING){
 
             if(whileLayer){                
-                appendString(&stringForStoring, "PUSHFRAME\n", false);
-                appendString(&stringForStoring, "CREATEFRAME\n", false);
-
                 appendString(&stringForStoring, "POPS GF@precedenceConcatSecond\n", false);
                 appendString(&stringForStoring, "POPS GF@precedenceConcatFirst\n", false);
 
                 appendString(&stringForStoring, "CONCAT GF@precedenceConcatFirst GF@precedenceConcatFirst GF@precedenceConcatSecond\n", false);
                 appendString(&stringForStoring, "PUSHS GF@precedenceConcatFirst\n", false);
-
-                appendString(&stringForStoring, "POPFRAME\n", false);
-                appendString(&stringForStoring, "ADDS\n", false);
             } else {
-                printf("PUSHFRAME\n");
-                printf("CREATEFRAME\n"); 
-
                 printf("POPS GF@precedenceConcatSecond\n"); // load first value
                 printf("POPS GF@precedenceConcatFirst\n"); // load second value
 
                 printf("CONCAT GF@precedenceConcatFirst GF@precedenceConcatFirst GF@precedenceConcatSecond\n"); // concat strings
                 printf("PUSHS GF@precedenceConcatFirst\n"); // push value
-
-                printf("POPFRAME\n");
             }
-
+        }
+        else if (op1_dtype == DOUBLE){
+            if(whileLayer){                
+                appendString(&stringForStoring, "CALL !!conver\n", false);
+                appendString(&stringForStoring, "ADDS\n", false);
+            } else {
+                printf("CALL !!conver\n");
+                printf("ADDS\n");
+            }
         }
         else {
             if(whileLayer){                
@@ -464,13 +473,29 @@ bool rule_4(ExpressionStack* stack){
         }
 
     }
-    else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
-             ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
+    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE))
     {
         result_dtype =  DOUBLE;
         if(whileLayer){                
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
             appendString(&stringForStoring, "ADDS\n", false);
         } else {
+            printf("INT2FLOATS\n");
+            printf("ADDS\n");
+        }
+    }
+    else if ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE))
+    {
+        result_dtype =  DOUBLE;
+        if(whileLayer){   
+            appendString(&stringForStoring, "POPS GF@precedenceMatTemp", false);             
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
+            appendString(&stringForStoring, "PUSHS GF@precedenceMatTemp", false);             
+            appendString(&stringForStoring, "ADDS\n", false);
+        } else {
+            printf("POPS GF@precedenceMatTemp\n");
+            printf("INT2FLOATS\n");
+            printf("PUSHS GF@precedenceMatTemp\n");
             printf("ADDS\n");
         }
     }
@@ -518,11 +543,22 @@ bool rule_5(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if(whileLayer){                
-            appendString(&stringForStoring, "SUBS\n", false);
+        if (op1_dtype == DOUBLE){
+            if(whileLayer){                
+                appendString(&stringForStoring, "CALL !!conver\n", false);
+                appendString(&stringForStoring, "SUBS\n", false);
+            } else {
+                printf("CALL !!conver\n");
+                printf("SUBS\n");
+            }
         } else {
-            printf("SUBS\n");
+            if(whileLayer){                
+                appendString(&stringForStoring, "SUBS\n", false);
+            } else {
+                printf("SUBS\n");
+            }
         }
+        
        
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
@@ -536,13 +572,29 @@ bool rule_5(ExpressionStack *stack){
         }
 
     }
-    else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
-             ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
+    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE))
     {
         result_dtype =  DOUBLE;
         if(whileLayer){                
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
             appendString(&stringForStoring, "SUBS\n", false);
         } else {
+            printf("INT2FLOATS\n");
+            printf("SUBS\n");
+        }
+    }
+    else if ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE))
+    {
+        result_dtype =  DOUBLE;
+        if(whileLayer){   
+            appendString(&stringForStoring, "POPS GF@precedenceMatTemp", false);             
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
+            appendString(&stringForStoring, "PUSHS GF@precedenceMatTemp", false);             
+            appendString(&stringForStoring, "SUBS\n", false);
+        } else {
+            printf("POPS GF@precedenceMatTemp\n");
+            printf("INT2FLOATS\n");
+            printf("PUSHS GF@precedenceMatTemp\n");
             printf("SUBS\n");
         }
     }
@@ -590,10 +642,20 @@ bool rule_6(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if(whileLayer){                
-            appendString(&stringForStoring, "MULS\n", false);
+        if (op1_dtype == DOUBLE){
+            if(whileLayer){                
+                appendString(&stringForStoring, "CALL !!conver\n", false);
+                appendString(&stringForStoring, "MULS\n", false);
+            } else {
+                printf("CALL !!conver\n");
+                printf("MULS\n");
+            }
         } else {
-            printf("MULS\n");
+            if(whileLayer){                
+                appendString(&stringForStoring, "MULS\n", false);
+            } else {
+                printf("MULS\n");
+            }
         }
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
@@ -607,13 +669,29 @@ bool rule_6(ExpressionStack *stack){
         }
 
     }
-    else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
-             ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
+    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE))
     {
         result_dtype =  DOUBLE;
         if(whileLayer){                
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
             appendString(&stringForStoring, "MULS\n", false);
         } else {
+            printf("INT2FLOATS\n");
+            printf("MULS\n");
+        }
+    }
+    else if ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE))
+    {
+        result_dtype =  DOUBLE;
+        if(whileLayer){   
+            appendString(&stringForStoring, "POPS GF@precedenceMatTemp", false);             
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
+            appendString(&stringForStoring, "PUSHS GF@precedenceMatTemp", false);             
+            appendString(&stringForStoring, "MULS\n", false);
+        } else {
+            printf("POPS GF@precedenceMatTemp\n");
+            printf("INT2FLOATS\n");
+            printf("PUSHS GF@precedenceMatTemp\n");
             printf("MULS\n");
         }
     }
@@ -661,10 +739,20 @@ bool rule_7(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if(whileLayer){                
-            appendString(&stringForStoring, "DIVS\n", false);
+        if (op1_dtype == DOUBLE){
+            if(whileLayer){                
+                appendString(&stringForStoring, "CALL !!conver\n", false);
+                appendString(&stringForStoring, "DIVS\n", false);
+            } else {
+                printf("CALL !!conver\n");
+                printf("DIVS\n");
+            }
         } else {
-            printf("DIVS\n");
+            if(whileLayer){                
+                appendString(&stringForStoring, "DIVS\n", false);
+            } else {
+                printf("DIVS\n");
+            }
         }
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
@@ -678,13 +766,29 @@ bool rule_7(ExpressionStack *stack){
         }
 
     }
-    else if (((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) ||
-             ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE)))
+    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE))
     {
         result_dtype =  DOUBLE;
         if(whileLayer){                
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
             appendString(&stringForStoring, "DIVS\n", false);
         } else {
+            printf("INT2FLOATS\n");
+            printf("DIVS\n");
+        }
+    }
+    else if ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE))
+    {
+        result_dtype =  DOUBLE;
+        if(whileLayer){   
+            appendString(&stringForStoring, "POPS GF@precedenceMatTemp", false);             
+            appendString(&stringForStoring, "INT2FLOATS\n", false);
+            appendString(&stringForStoring, "PUSHS GF@precedenceMatTemp", false);             
+            appendString(&stringForStoring, "DIVS\n", false);
+        } else {
+            printf("POPS GF@precedenceMatTemp\n");
+            printf("INT2FLOATS\n");
+            printf("PUSHS GF@precedenceMatTemp\n");
             printf("DIVS\n");
         }
     }
