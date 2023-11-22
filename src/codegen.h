@@ -21,7 +21,7 @@ extern int whileLayer;
 extern bool inFunc;
 extern char helpStr[750];
 
-void gen_init();
+bool gen_init();
 void gen_dispose();
 
 //string for while
@@ -67,7 +67,6 @@ void gen_move_var_to_local_var(Name *name1, Name *name2, bool isGlobal);
 //function
 void gen_start_function(Name *label);
 void gen_function_return();
-void gen_function_empty_return();
 void gen_function_call_end_without_assignment();
 void gen_end_function();
 void gen_before_params_to_function();
@@ -85,7 +84,7 @@ void gen_write_nil();
 
 
 //stack
-void gen_stacksInit();
+bool gen_stacksInit();
 void gen_stacksDispose();
 
 //if
@@ -98,8 +97,8 @@ void gen_end_of_if();
 void gen_start_while();
 void gen_start_while_conditon();
 void gen_end_while();
-void gen_print_after_while();
-void gen_initStringForStoring();
+bool gen_print_after_while();
+bool gen_initStringForStoring();
 
 //main
 void gen_start_main();

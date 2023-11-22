@@ -178,16 +178,24 @@ PUSHFRAME\n\
 DEFVAR LF@_0\n\
 POPS LF@_0\n\
 TYPE GF@tempIfVar LF@_0\n\
-JUMPIFEQ !!skip_conver GF@tempIfVar string@double\n\
+\n\
+JUMPIFEQ !!jumpToConver1 GF@tempIfVar string@int\n\
+JUMP !!skipConver1\n\
+LABEL !!jumpToConver1\n\
+\n\
 INT2FLOAT LF@_0 LF@_0\n\
-LABEL !!skip_conver\n\
+LABEL !!skipConver1\n\
 \n\
 DEFVAR LF@_1\n\
 POPS LF@_1\n\
 TYPE GF@tempIfVar LF@_1\n\
-JUMPIFEQ !!skip_conver2 GF@tempIfVar string@double\n\
+\n\
+JUMPIFEQ !!jumpToConver2 GF@tempIfVar string@int\n\
+JUMP !!skipConver2\n\
+LABEL !!jumpToConver2\n\
+\n\
 INT2FLOAT LF@_1 LF@_1\n\
-LABEL !!skip_conver2\n\
+LABEL !!skipConver2\n\
 \n\
 PUSHS LF@_1\n\
 PUSHS LF@_0\n\

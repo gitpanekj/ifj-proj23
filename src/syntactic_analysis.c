@@ -379,7 +379,7 @@ void rule_return_value()
 
         if (currentFunctionReturnType != UNDEFINED)
             error(FUNCTION_RETURN_ERROR);
-        gen_function_empty_return();
+        gen_function_return();
         return;
     }
     else
