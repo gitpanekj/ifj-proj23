@@ -63,7 +63,8 @@ def main():
         # Extract the substring between '-' and '/'
             number_str = file[file.rfind('-', 0, last_slash_index) + 1 : last_slash_index]
             try:
-                number = int(number_str)
+                numbers = list(map(int, number_str.split('_')))
+               # number = int(number_str)
             except ValueError:
                 print("Invalida error number in file path format.")
         else:
@@ -73,7 +74,7 @@ def main():
         return_code = result.returncode
         
         if (file.endswith("-e.swift")):
-             if(return_code == number):
+             if(return_code in numbers):
                 test_pass_cnt +=1
                 print(f"Test {file:70} : \033[1;32mPassed\033[0m \n")
              else:
@@ -92,7 +93,7 @@ def main():
                 print(f"\t Return code of program > {return_code}")
                 print(f"\t Return message > {error_message}")
                 status = 1
-    print(f"Summary: {test_pass_cnt}/{test_cnt} and failed {test_failed_cnt} \t")
+    print(f"Summary: {test_pass_cnt}/{test_cnt} passed and {test_failed_cnt} failed  \t")
     percentage = test_pass_cnt/test_cnt *100
     print(f"Summary: {percentage}% \t")
     exit(status)
