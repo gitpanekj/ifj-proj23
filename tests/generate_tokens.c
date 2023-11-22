@@ -8,12 +8,12 @@ int main(){
     LV_init(&literals);
 
     scaner_init(&scanner, &literals);
-    getNextToken();
+    token = scan_token(&scanner);
 
     while (token.type != TOKEN_EOF){
 
         print_token(token);
-        getNextToken();
+        token = scan_token(&scanner);
         if (token.type == TOKEN_MEMMORY_ERROR){
             LV_free(&literals);
             exit(1);
