@@ -630,7 +630,7 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
     // in order to correctly determine wheter table row on index
     // specified by character is empty (0) or contains information
     // about escape sequence value in ASCII.
-    static const char ESCAPE_SEQUENCE_TABLE[] = {
+    static const char ESCAPE_SEQUENCE_TABLE[256] = {
         [(unsigned char) '\\'] = '\\' +1,
         [(unsigned char) 'n']  = '\n' +1,
         [(unsigned char) '0']  = '\0' +1,
@@ -674,7 +674,7 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
             }
             else if (sequence_start[i]=='}'){
                 (*new_pos)++; // consume }
-                if (n_digits > 8) return -1;
+                if (n_digits > 8 || n_digits < 1) return -1;
                 return value;
             }
             else { // unsuported escape sequence
