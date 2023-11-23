@@ -59,7 +59,7 @@ static const PRECEDENCE PRECEDENCE_TABLE[16][16] = {
 /*
  0)  $ -> $E
  1)  E -> TERM
- 2)  E ->  E!
+ 2)  E ->  E!git sa
  3)  E -> E + E
  4)  E -> E - E
  5)  E -> E * E
