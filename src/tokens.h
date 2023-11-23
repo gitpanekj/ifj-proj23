@@ -1,7 +1,8 @@
 /**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
  * @file tokens.h
- * @author Jan Pánek (xpanek11@fit.vutbr.cz)
- * @brief
+ * @author Jan Pánek (xpanek11)
  * 
  * @copyright Copyright (c) 2023
  * 
@@ -10,7 +11,9 @@
 #ifndef TOKENS
 #define TOKENS
 #include <stdbool.h>
+#include <stddef.h>
 
+// < Enumeration type for token types
 typedef enum {
     TOKEN_DUMMY,                   // used in OperatorTable as a dummy value
 
@@ -27,6 +30,7 @@ typedef enum {
     TOKEN_COLON,                   // :
     TOKEN_COMMA,                   // ,
     TOKEN_UNDERSCORE,              // _
+    TOKEN_SEMICOLON,               // ;
 
     // Single or two character lexemes
     TOKEN_MINUS,                   // -
@@ -59,11 +63,11 @@ typedef enum {
     TOKEN_RETURN,                  // return
     TOKEN_IDENTIFIER,              // ([a-zA-Z][a-zA-Z0-9_]*)|(_[a-zA-Z0-9_]+)
     TOKEN_INTEGER_T,               // Int
-    TOKEN_INTEGER_NILL_T,          // Int?
+    TOKEN_INTEGER_NIL_T,           // Int?
     TOKEN_DOUBLE_T,                // Double
-    TOKEN_DOUBLE_NILL_T,           // Double?
+    TOKEN_DOUBLE_NIL_T,            // Double?
     TOKEN_STRING_T,                // String
-    TOKEN_STRING_NILL_T,           // String?
+    TOKEN_STRING_NIL_T,            // String?
 
 
     // Literals
@@ -82,26 +86,20 @@ typedef enum {
 } TokenType;
 
 
+/**
+ * @brief Token structure
+ * 
+ */
 typedef struct {
-    TokenType type;
-    char* start_ptr;
-    size_t literal_len;
-    bool follows_separator;
+    TokenType type;         //< type of token
+    char* start_ptr;        //< pointer to the literal
+    size_t literal_len;     //< lenght of literal
+    bool follows_separator; //< states whether token appears after EOL or {
 } Token;
 
 
-/**
- * @brief 
- * 
- * @param t 
- */
-void InitToken(Token *t, TokenType, char*, size_t, bool);
+void init_token(Token *t, TokenType, char*, size_t, bool);
 
-
-/**
- * @brief Print token utility
- * 
- */
 void print_token(Token);
 
 
@@ -110,7 +108,7 @@ void print_token(Token);
  * 
  * Enable effective determination of forming token type.
  * Additionaly, number of expected lexeme characters given the first one is defined as range
- *  - <TOKEN_PLUS, TOKEN_UNDERSCORE> for single character lexemes
+ *  - <TOKEN_PLUS, TOKEN_SEMICOLON> for single character lexemes
  *  - <TOKEN_EXCLAMATION_MARK, TOKEN_EQUAL> for single or two character lexemes
  *  - {TOKEN_AND, TOKEN_OR} for two character lexemes
  * 
@@ -128,7 +126,8 @@ static const TokenType CharacterEncodingTable[256] = {
 
     [(unsigned char) ':'] = TOKEN_COLON,                  
     [(unsigned char) ','] = TOKEN_COMMA,                 
-    [(unsigned char) '_'] = TOKEN_UNDERSCORE,         
+    [(unsigned char) '_'] = TOKEN_UNDERSCORE,
+    [(unsigned char) ';'] = TOKEN_SEMICOLON,
 
     // Single or two character lexemes
     [(unsigned char) '!'] = TOKEN_EXCLAMATION_MARK,     
@@ -144,67 +143,65 @@ static const TokenType CharacterEncodingTable[256] = {
  * @brief Lookup table mapping token type to corresponding string representation.
  * 
  */
-static const char TokenTypeToString[][27] = {
-    [TOKEN_DUMMY]="TOKEN_DUMMY",                  // used in OperatorTable as a dummy value
+static const char TokenTypeToString[][28] = {
+    [TOKEN_DUMMY]="TOKEN_DUMMY",                              // used in OperatorTable as a dummy value
 
     // Single character lexemes
-    [TOKEN_PLUS]="TOKEN_PLUS",                    // +
-    [TOKEN_STAR]="TOKEN_STAR",                    // *
-    [TOKEN_SLASH]="TOKEN_SLASH",                   // /
-
-    [TOKEN_L_BRACE]="TOKEN_L_BRACE",                 // {
-    [TOKEN_R_BRACE]="TOKEN_R_BRACE",                 // }
-    [TOKEN_L_PAR]="TOKEN_L_PAR",                   // (
-    [TOKEN_R_PAR]="TOKEN_R_PAR",                   // )
-
-    [TOKEN_COLON]="TOKEN_COLON",                   // :
-    [TOKEN_COMMA]="TOKEN_COMMA",                   // ,
-    [TOKEN_UNDERSCORE]="TOKEN_UNDERSCORE",              // _
+    [TOKEN_PLUS]="TOKEN_PLUS",                                 // '+'
+    [TOKEN_STAR]="TOKEN_STAR",                                 // '*'
+    [TOKEN_SLASH]="TOKEN_SLASH",                               // '/'
+    [TOKEN_L_BRACE]="TOKEN_L_BRACE",                           // '{'
+    [TOKEN_R_BRACE]="TOKEN_R_BRACE",                           // '}'
+    [TOKEN_L_PAR]="TOKEN_L_PAR",                               // '(' 
+    [TOKEN_R_PAR]="TOKEN_R_PAR",                               // ')'
+    [TOKEN_COLON]="TOKEN_COLON",                               // ':'
+    [TOKEN_COMMA]="TOKEN_COMMA",                               // ','
+    [TOKEN_UNDERSCORE]="TOKEN_UNDERSCORE",                     // '_'
+    [TOKEN_SEMICOLON]="TOKEN_SEMICOLON",                       // ';'
 
     // Single or two character lexemes
-    [TOKEN_DOUBLE_QUESTION_MARK]="TOKEN_DOUBLE_QUESTION_MARK",    // ??
-    [TOKEN_MINUS]="TOKEN_MINUS",                   // -
-    [TOKEN_RIGHT_ARROW]="TOKEN_RIGHT_ARROW",             // ->
-
-    [TOKEN_LESS]="TOKEN_LESS",                    // <
-    [TOKEN_LESS_EQUAL]="TOKEN_LESS_EQUAL",              // <=
-
-    [TOKEN_GREATER]="TOKEN_GREATER",                 // >
-    [TOKEN_GREATER_EQUAL]="TOKEN_GREATER_EQUAL",           // >=
-
-    [TOKEN_EQUAL]="TOKEN_EQUAL",                   // =
-    [TOKEN_EQUAL_EQUAL]="TOKEN_EQUAL_EQUAL",             // ==
-    
-    [TOKEN_EXCLAMATION_MARK]="TOKEN_EXCLAMATION_MARK",        // !
-    [TOKEN_NOT_EQUAL]="TOKEN_NOT_EQUAL",               // !=
+    [TOKEN_DOUBLE_QUESTION_MARK]="TOKEN_DOUBLE_QUESTION_MARK", // '??'
+    [TOKEN_MINUS]="TOKEN_MINUS",                               // '-'
+    [TOKEN_RIGHT_ARROW]="TOKEN_RIGHT_ARROW",                   // '->'
+    [TOKEN_LESS]="TOKEN_LESS",                                 // '<'
+    [TOKEN_LESS_EQUAL]="TOKEN_LESS_EQUAL",                     // '<='
+    [TOKEN_GREATER]="TOKEN_GREATER",                           // '>'
+    [TOKEN_GREATER_EQUAL]="TOKEN_GREATER_EQUAL",               // '>='
+    [TOKEN_EQUAL]="TOKEN_EQUAL",                               // '='
+    [TOKEN_EQUAL_EQUAL]="TOKEN_EQUAL_EQUAL",                   // '=='
+    [TOKEN_EXCLAMATION_MARK]="TOKEN_EXCLAMATION_MARK",         // '!'
+    [TOKEN_NOT_EQUAL]="TOKEN_NOT_EQUAL",                       // '!='
 
 
     // Keywords
-    [TOKEN_LET]="TOKEN_LET",                     // let
-    [TOKEN_VAR]="TOKEN_VAR",                     // var
-    [TOKEN_IF]="TOKEN_IF",                      // if
-    [TOKEN_ELSE]="TOKEN_ELSE",                    // else
-    [TOKEN_WHILE]="TOKEN_WHILE",                   // while
-    [TOKEN_FUNC]="TOKEN_FUNC",                    // func
-    [TOKEN_RETURN]="TOKEN_RETURN",                  // return
-    [TOKEN_INTEGER_T]="TOKEN_INTERGER_T",              // Int
-    [TOKEN_DOUBLE_T]="TOKEN_DOUBLE_T",                // Double
-    [TOKEN_STRING_T]="TOKEN_STRING_T",                // String
-    [TOKEN_INTEGER_NILL_T]="TOKEN_INTEGER_NILL_T",          // Int?
-    [TOKEN_DOUBLE_NILL_T]="TOKEN_DOUBLE_NILL_T",           // Double?
-    [TOKEN_STRING_NILL_T]="TOKEN_STRING_NILL_T",           // String?
+    [TOKEN_LET]="TOKEN_LET",                                  // 'let'
+    [TOKEN_VAR]="TOKEN_VAR",                                  // 'var'
+    [TOKEN_IF]="TOKEN_IF",                                    // 'if'
+    [TOKEN_ELSE]="TOKEN_ELSE",                                // 'else'
+    [TOKEN_WHILE]="TOKEN_WHILE",                              // 'while'
+    [TOKEN_FUNC]="TOKEN_FUNC",                                // 'func'
+    [TOKEN_RETURN]="TOKEN_RETURN",                            // 'return'
+    [TOKEN_INTEGER_T]="TOKEN_INTERGER_T",                     // 'Int'
+    [TOKEN_DOUBLE_T]="TOKEN_DOUBLE_T",                        // 'Double'
+    [TOKEN_STRING_T]="TOKEN_STRING_T",                        // 'String'
+    [TOKEN_INTEGER_NIL_T]="TOKEN_INTEGER_NIL_T",              // 'Int?'
+    [TOKEN_DOUBLE_NIL_T]="TOKEN_DOUBLE_NIL_T",                // 'Double?'
+    [TOKEN_STRING_NIL_T]="TOKEN_STRING_NIL_T",                // 'String?'
 
     // Identifier
-    [TOKEN_IDENTIFIER]="TOKEN_IDENTIFIER",              // ([a-zA-Z][a-zA-Z0-9_]*)|(_[a-zA-Z0-9_]+)
+    [TOKEN_IDENTIFIER]="TOKEN_IDENTIFIER",                    // ([a-zA-Z][a-zA-Z0-9_]*)|(_[a-zA-Z0-9_]+)
 
 
     // Literals
-    [TOKEN_INTEGER]="TOKEN_INTEGER",                 // [0-9]+
-    [TOKEN_DOUBLE]="TOKEN_DOUBLE",                  // [0-9]+(.[0-9]+)?[eE]([+-])?[0-9]+
-    [TOKEN_STRING]="TOKEN_STRING",                  // 
-    [TOKEN_NIL]="TOKEN_NIL",                    // nill
+    [TOKEN_INTEGER]="TOKEN_INTEGER",                          // [0-9]+
+    [TOKEN_DOUBLE]="TOKEN_DOUBLE",                            // [0-9]+(.[0-9]+)?[eE]([+-])?[0-9]+
+    [TOKEN_STRING]="TOKEN_STRING",                            // string
+    [TOKEN_NIL]="TOKEN_NIL",                                  // nill
 
-    [TOKEN_EOF]="TOKEN_EOF",
+    // EOF
+    [TOKEN_EOF]="TOKEN_EOF",                                  
+
+    // ERROR tokens
     [TOKEN_LA_ERROR]="TOKEN_LA_ERROR",
     [TOKEN_MEMMORY_ERROR]="TOKEN_MEM_ERROR",
 

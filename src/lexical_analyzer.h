@@ -1,7 +1,9 @@
 /**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
  * @file lexical_analyzer.h
- * @author Jan Pánek (xpanek11@fit.vutbr.cz)
- * @brief
+ * @author Jan Pánek (xpanek11)
+ * @brief Lexical analyzer implementation.
  * 
  * @copyright Copyright (c) 2023
  * 
@@ -26,7 +28,7 @@
  * Field literals contains a pointer to the literal vector
  * where literals are stored.
  * Field separator flag determines whether previously produced token
- * was separator - '{'.
+ * was separator (EOL, '{').
  * 
  */
 typedef struct {
@@ -36,28 +38,48 @@ typedef struct {
     bool separator_flag;      //< A separator flag
 } Scanner;
 
+// Enumeration type which indication position of first mismatch in
+// buffer to string comparision. Maximum len 3.
+typedef enum {MATCH, MISS_1, MISS_2, MISS_3} LOOKUP_RESULT;
 
-/**
- * @brief Initialize scanner
- * 
- * Load first 3 characters from stdin to scanner buffer.
- * Initialize line to 1.
- * Links existing LiteralVector structure to scanner.
- * 
- * @param s 
- */
+
+
+// Scanner interface
 void scaner_init(Scanner *s, LiteralVector *);
 
-/**
- * @brief 
- * 
- * @param s 
- * @return Token 
- */
+char advance(Scanner*);
+
+char peek(Scanner*);
+
+char peek_next(Scanner*);
+
+bool is_at_end(Scanner*);
+
+LOOKUP_RESULT forward_lookup(Scanner*, const char*);
+
 Token scan_token(Scanner *s);
 
 
-typedef enum {MATCH, MISS_1, MISS_2, MISS_3} LOOKUP_RESULT;
+// Functions implementing FSM parts
+void consume_whitespace(Scanner*);
+
+void consume_single_line_comment(Scanner*);
+
+bool consume_multi_line_comment(Scanner*);
+
+bool scan_identifier(Scanner *);
+
+TokenType scan_number_literal(Scanner*);
+
+int scan_escape_sequence(char*, int, int*);
+
+TokenType scan_single_line_string(Scanner*);
+
+TokenType scan_multi_line_string(Scanner*);
+
+TokenType scan_operator(Scanner*, TokenType);
+
+
 
 #endif
 

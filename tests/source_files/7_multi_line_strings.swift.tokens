@@ -1,0 +1,11 @@
+
+<TOKEN_STRING :: Very\032simple\032multi-line\032string\010with\032no\032indentation.\010\010"!$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~\010\010Just\032few\032empty\032lines\032and\032string\032test.>
+<TOKEN_STRING :: Testing\032indentation\0321\010\010Test:\010\032\032\032\032"!$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~\010\032\032\032\032\032\032\032\032End\032of\032string.>
+<TOKEN_STRING :: Testing\032indentation\0322\010\010Test:\010\032\032\032\032"!$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~\010\032\032\032\032\032\032\032\032End\032of\032string.>
+<TOKEN_STRING :: \032\032\032\032Line1:\032""Hello,\032World"\010\009'this\032is\032mock\032test'"\010\032\032\032\032\032\032\032\032\032\032\032\032Line2:\032"Ahoj"Sve'te\032\092""\010\032\032\032\032Line3:\032"Next\032test:\032'\092u{61}'=a"\010\032\032\032\032\032\032\032\032Line4:\032"Hello\032World"\010\032\032\032\032Line5:\032"\035Test\035\032\010'"\092">
+
+======== Literal Vector ========
+0 :: Very\032simple\032multi-line\032string\010with\032no\032indentation.\010\010"!$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~\010\010Just\032few\032empty\032lines\032and\032string\032test.
+1 :: Testing\032indentation\0321\010\010Test:\010\032\032\032\032"!$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~\010\032\032\032\032\032\032\032\032End\032of\032string.
+2 :: Testing\032indentation\0322\010\010Test:\010\032\032\032\032"!$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~\010\032\032\032\032\032\032\032\032End\032of\032string.
+3 :: \032\032\032\032Line1:\032""Hello,\032World"\010\009'this\032is\032mock\032test'"\010\032\032\032\032\032\032\032\032\032\032\032\032Line2:\032"Ahoj"Sve'te\032\092""\010\032\032\032\032Line3:\032"Next\032test:\032'\092u{61}'=a"\010\032\032\032\032\032\032\032\032Line4:\032"Hello\032World"\010\032\032\032\032Line5:\032"\035Test\035\032\010'"\092"

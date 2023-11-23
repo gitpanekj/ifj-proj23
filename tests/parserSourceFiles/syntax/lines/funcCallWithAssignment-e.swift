@@ -1,0 +1,33 @@
+func
+ foo 
+ (
+    paramName 
+        paramID 
+            : 
+            Int
+                 ,
+                 paramName2
+                 paramID2
+                  :
+               String
+            )
+            ->
+            Double
+           {
+return 
+5.4
+}
+
+var 
+a
+ = 
+foo  
+  (
+    paramName
+    : 
+    2
+    ,
+     paramName2 
+     :
+      "asd"
+      )

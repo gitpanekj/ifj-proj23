@@ -1,7 +1,8 @@
 /**
+ * Implementace překladače imperativního jazyka IFJ23.
  * @file lexical_analyzer.c
- * @author Jan Pánek (xpanek11@fit.vutbr.cz)
- * @brief
+ * @author Jan Pánek (xpanek11)
+ * @brief Lexical analyzer implementation.
  * 
  * @copyright Copyright (c) 2023
  * 
@@ -13,22 +14,37 @@
 
 #include "lexical_analyzer.h"  // Scanner
 #include "literal_vector.h"    // LiteralVector, LV_add, LV_submit, LV_restore
-#include "tokens.h"            // Token, TokenType, InitToken
+#include "tokens.h"            // Token, TokenType, init_token
 #include "utils.h"             // is_digit, is_alpha, is_alphanum_or_underscore
 
 
 
 /*********************************  Scanner interface *********************************/
+/**
+ * @brief Initialize scanner
+ * 
+ * Load first 3 characters from stdin to scanner buffer.
+ * Initialize line to 1.
+ * Links existing LiteralVector structure to scanner.
+ * 
+ * @param s pointer to the scanner structure
+ */
 void scaner_init(Scanner *s, LiteralVector *literals){
     s->char_buffer[0] = fgetc(stdin);
     s->char_buffer[1] = fgetc(stdin);
     s->char_buffer[2] = fgetc(stdin);
     s->line = 1;
     s->literals = literals;
-    s->separator_flag = false;
+    s->separator_flag = true;
 }
 
 
+/**
+ * @brief Try to load next character from scanner stream and update char_buffer.
+ * 
+ * @param s pointer to the scanner structure
+ * @return char Character from char_buffer[0], next to process.
+ */
 char advance(Scanner *s){
     char tmp = s->char_buffer[0];
     // buffer shift left + loading new value to he most right buffer cell
@@ -39,16 +55,48 @@ char advance(Scanner *s){
     return tmp;
 }
 
+/**
+ * @brief Return character from  scanner char_buffer[0], next to process.
+ * 
+ * @param s pointer to the scanner structure
+ * @return char char_buffer[0].
+ */
 char peek(Scanner *s){
     return s->char_buffer[0];
 }
 
 
+/**
+ * @brief Return character from  scanner char_buffer[1], Forward lookup 1.
+ * 
+ * @param s pointer to the scanner structure
+ * @return char char_buffer[0].
+ */
 char peek_next(Scanner *s){
     return s->char_buffer[1];
 }
 
 
+/**
+ * @brief Compares content of scanner char_buffer and required format.
+ * 
+ * Returns MATCH if char_buffer matches specified format, otherwise return
+ * first position which violates specified format (MISS_1, MISS_2, MISS_3).
+ * 
+ * Formats:
+ *  - single character represent its value
+ *  - escape sequences:
+ *      - \d - 0...9
+ *      - \a - a...z,A...Z
+ *      - \w - a...z,A...Z, 0...9, _
+ *      - \e - e,E
+ *      - \s - +,-
+ * 
+ * 
+ * @param s pointer to the scanner structure
+ * @param format Required format of scanner buffer
+ * @return LOOKUP_RESULT MATCH, MISS_1, MISS_2, MISS_3
+ */
 LOOKUP_RESULT forward_lookup(Scanner *s, const char *format) {
     
     int format_string_pos=0;
@@ -99,18 +147,225 @@ LOOKUP_RESULT forward_lookup(Scanner *s, const char *format) {
 }
 
 
+/**
+ * @brief States whether scanner is at the end of input stream.
+ * 
+ * @param s pointer to the scanner structure
+ * @return true reached EOF
+ * @return false otherwise
+ */
 bool is_at_end(Scanner *s){
     return s->char_buffer[0] == EOF;
 }
 
 
-/******************************  End of Scanner interface ******************************/
+/**
+ * @brief Scan next token from scanner stream.
+ * 
+ * @param s A pointer to scanner structure
+ * @return Token scanned token
+ */
+Token scan_token(Scanner *s){
+    
 
+    TokenType confirmed_token_type;
+    TokenType expected_token_type;
+    char *literal_start;
+    size_t literal_length=0;
+    Token t;
+    bool follows_separator = s->separator_flag;
+    s->separator_flag = false;
+
+    if (LV_restore(s->literals)==NULL){init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false); return t;}
+    init_token(&t, TOKEN_DUMMY, NULL, 0, false);
+
+    
+    // TODO: nicer solution
+    while ((peek(s)==' ') || (peek(s)=='\t') || (peek(s)=='\r')  || (peek(s)=='\n') ||
+           forward_lookup(s, "//")==0 ||
+           forward_lookup(s, "/*")==0
+    ){
+        // Automata part - Consume whitespaces
+        // Consume whitespaces and does not produce any token
+        consume_whitespace(s);
+
+        // Automata part - new line character
+        if (peek(s) == '\n'){
+            advance(s); // consume \n
+            follows_separator = true;
+            s->line++;
+        }
+
+
+        // Automata part - Comments
+        // Consumes comment and does not produce any token
+        if (forward_lookup(s, "//")==0){ // single-line comment
+            consume_single_line_comment(s);
+            follows_separator = true;
+        }
+        
+        if (forward_lookup(s, "/*")==0) { // multi-line comment
+
+            if (consume_multi_line_comment(s) == false){
+                // TODO: error handling
+                error(s, "Unterminated multiline comment\n");
+                init_token(&t, TOKEN_LA_ERROR, NULL, 0, false);
+                return t;
+            }
+        }
+    }
+
+    // If scanner reaches EOF, return token with type of TOKEN_EOF
+    if (is_at_end(s)) {
+        init_token(&t, TOKEN_EOF, NULL, 0, follows_separator);
+        return t;
+    }
+
+
+
+
+    // Automata part - Identifiers and keywords
+    if (forward_lookup(s, "_\\w")==0){ // Identifier starting with _
+        
+        // it starts with _ and is followed by alphanum character or _, therefore it must be identifier
+        if (scan_identifier(s) == false) {init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
+        literal_start = LV_submit(s->literals, &literal_length);
+        
+        if (literal_start == NULL) {init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
+        else {init_token(&t, TOKEN_IDENTIFIER, literal_start, literal_length, follows_separator);}
+
+        return t;
+    }
+    else if (is_alpha(peek(s))) { // Identifiers/keywords starting with letter
+
+        if (scan_identifier(s) == false) {init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
+        
+        confirmed_token_type = is_kw(s->literals);
+
+        if (confirmed_token_type == TOKEN_IDENTIFIER){
+
+            literal_start = LV_submit(s->literals, &literal_length);
+            if (literal_start == NULL){ init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);} 
+            else {init_token(&t, TOKEN_IDENTIFIER, literal_start, literal_length, follows_separator);}
+
+        }
+        else // is keyword
+        {
+
+            // check Int?, Double?, String?
+            if (( confirmed_token_type == TOKEN_INTEGER_T ||
+                  confirmed_token_type == TOKEN_DOUBLE_T  ||
+                  confirmed_token_type == TOKEN_STRING_T
+                ) && peek(s) == '?')
+            {
+                advance(s); // consume ?
+                confirmed_token_type++;
+            }
+
+            init_token(&t, confirmed_token_type, NULL, 0, follows_separator);
+        }
+
+        return t;
+    }
+
+
+
+    // Automata part - Operators
+    expected_token_type = CharacterEncodingTable[(int) peek(s)];
+
+
+    // If current token indicates beginning of any 1-2 character lexeme
+    if (expected_token_type != TOKEN_DUMMY){
+
+        confirmed_token_type = scan_operator(s, expected_token_type);
+
+        init_token(&t, confirmed_token_type, NULL, 0, follows_separator);
+
+        return t;
+    }
+
+
+    // Automata part - Number literals
+    if (is_digit(peek(s))){
+        confirmed_token_type = scan_number_literal(s);
+
+        if (confirmed_token_type == TOKEN_MEMMORY_ERROR){
+            init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
+        }
+        else if (confirmed_token_type == TOKEN_LA_ERROR){
+            init_token(&t, TOKEN_LA_ERROR, NULL, 0, false);
+        }
+        else {
+            literal_start = LV_submit(s->literals, &literal_length);
+            if (literal_start == NULL){init_token(&t, TOKEN_MEMMORY_ERROR, NULL,0,false);}
+            else {init_token(&t, confirmed_token_type, literal_start, literal_length, follows_separator);}
+        }
+
+        return t;
+    }
+
+
+    // Automata part - string literals
+    switch (forward_lookup(s, "\"\"\"")){
+        case MATCH: // """ - start of multiline strings
+            confirmed_token_type =  scan_multi_line_string(s);
+            if (confirmed_token_type == TOKEN_MEMMORY_ERROR){
+                init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
+            }
+            else if (confirmed_token_type == TOKEN_LA_ERROR){
+                init_token(&t, TOKEN_LA_ERROR, NULL, 0, false);
+            }
+            else {
+                literal_start = LV_submit(s->literals, &literal_length);
+                if (literal_start == NULL){init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
+                else {init_token(&t, confirmed_token_type, literal_start, literal_length, follows_separator);}
+            }
+
+
+            return t;
+
+        case MISS_1: // Non-string
+            break;
+        case MISS_2: // Start of single line string
+            
+            confirmed_token_type = scan_single_line_string(s);
+
+            if (confirmed_token_type == TOKEN_MEMMORY_ERROR){
+                init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
+            }
+            else if (confirmed_token_type == TOKEN_LA_ERROR){
+                init_token(&t, TOKEN_LA_ERROR, NULL, 0, false);
+            }
+            else {
+                literal_start = LV_submit(s->literals, &literal_length);
+                if (literal_start == NULL) init_token(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
+                else init_token(&t, TOKEN_STRING, literal_start, literal_length, follows_separator);
+            }
+
+            return t;
+
+        case MISS_3: // Empty string
+            advance(s); // consume "
+            advance(s); // consume "
+            init_token(&t, TOKEN_STRING, NULL, 0, follows_separator);
+            return t;
+    }
+
+
+    // If no transition from initial automata state was possible, return lexical error - unexpected token
+    init_token(&t, TOKEN_LA_ERROR, NULL, 0, false);
+
+    //consume invalid token
+    error(s, "Invalid character %c\n", peek(s));
+    advance(s);
+
+
+    return t;
+}
 
 
 
 /***************************  Functions implementing FSM parts  *************************/
-
 /**
  * @brief Implementation of FSM part which handles whitespaces
  * 
@@ -125,6 +380,7 @@ void consume_whitespace(Scanner *s){
     while (current_char != EOF){
         switch (current_char){
             case '\t':
+            case '\r':
             case ' ':
                 // consume whitespace and get next character
                 advance(s);
@@ -218,10 +474,9 @@ bool consume_multi_line_comment(Scanner *s){
 /**
  * @brief Implementation of FSM part which handles identifiers and keywords
  * 
- * This function is called only if correct indentifier/keywords format is
+ * This function is called only if correct indentifier/keyword format is
  * ensured. It loads identifier/keywords characters until invalid character
- * is reached. Every accepted character is appended at the end of scanner
- * literal vector.
+ * is reached. Every accepted character is added to scanner literal buffer.
  * 
  * @param s A pointer to scanner structure
  * @return true If enough memmory is available to append character to literal vector.
@@ -351,6 +606,7 @@ TokenType scan_number_literal(Scanner* s){
     return TOKEN_LA_ERROR;
 }
 
+
 /**
  * @brief Implementation of FSM part which handles escape sequences in string literals
  * 
@@ -360,7 +616,7 @@ TokenType scan_number_literal(Scanner* s){
  * Returns corresponding value for accepted escape sequence.
  *
  * Retruns -1 if invalid escape sequence is encountered. This covers cases
- * when escape sequence is not supported, unicode escape sequence has incorect format.
+ * when escape sequence is not supported or unicode escape sequence has incorect format.
  * 
  * 
  * @param sequence_start A pointer to the first character of string
@@ -374,7 +630,7 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
     // in order to correctly determine wheter table row on index
     // specified by character is empty (0) or contains information
     // about escape sequence value in ASCII.
-    static const char ESCAPE_SEQUENCE_TABLE[] = {
+    static const char ESCAPE_SEQUENCE_TABLE[256] = {
         [(unsigned char) '\\'] = '\\' +1,
         [(unsigned char) 'n']  = '\n' +1,
         [(unsigned char) '0']  = '\0' +1,
@@ -386,7 +642,7 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
     };
 
 
-    // Check whether any character left in the string and
+    // Check whether any character is left in the string and
     // if escape sequence is supported.
     if (max_len < 2) return -1;
     if (ESCAPE_SEQUENCE_TABLE[(int) sequence_start[1]] == 0){
@@ -397,7 +653,7 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
     // consume character after '\'
     (*new_pos)++;
 
-    // case \u
+    // case \u{XXXXXXXX}
     if (ESCAPE_SEQUENCE_TABLE[(int) sequence_start[1]] == 'u'+1){
 
         if (sequence_start[2] != '{'){
@@ -405,9 +661,10 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
         }
 
         (*new_pos)++; // consume {
-        char value=0;
+        char value=0; // ASCII value
         int n_digits=0;
 
+        // for all remaining characters in the string
         for (int i=3; i<max_len; i++) {
             if (is_hex_digit(sequence_start[i])){
                 n_digits++;
@@ -417,7 +674,7 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
             }
             else if (sequence_start[i]=='}'){
                 (*new_pos)++; // consume }
-                if (n_digits > 8) return -1;
+                if (n_digits > 8 || n_digits < 1) return -1;
                 return value;
             }
             else { // unsuported escape sequence
@@ -437,9 +694,17 @@ int scan_escape_sequence(char* sequence_start, int max_len, int *new_pos){
 
 
 /**
- * @brief 
+ * @brief Implementation of FSM part which handles single line string literals
  * 
- * @param s 
+ * This function is called only if '"' is detected in input stream.
+ * It loads characters to literal buffer until closing '"', EOL, EOF is reached.
+ * If closing '"' is detected, process escape sequences in string.
+ * If EOL, EOF is reached return error.
+ * 
+ * On succes, content of literal buffer contains processed string literal.
+ * 
+ * 
+ * @param s pointer to the scanenr structure
  * @return TokenType 
  */
 TokenType scan_single_line_string(Scanner *s){
@@ -494,9 +759,9 @@ TokenType scan_single_line_string(Scanner *s){
             }
     }
 
-    // restore state of literal vector and process cached literl string
-    LV_restore(s->literals);
-    char *string = &(s->literals->literal_array[s->literals->confirmed_size]);
+    // process cached literl string
+    s->literals->forming_size = 0;
+    char *string = s->literals->literal_buffer;
 
     // Process cached string literals.
     // Transform escape sequences to its corresponding ASCII values
@@ -522,7 +787,20 @@ TokenType scan_single_line_string(Scanner *s){
     return result;
 }
 
-
+/**
+ * @brief Implementation of FSM part which handles multi line string literals
+ * 
+ * This function is called only if '"""' is detected in input stream.
+ * It loads characters to literal buffer until closing '\n<spaces>"""', EOL, EOF is reached.
+ * If closing '\n<spaces>"""' is detected, process escape sequences and indentation in string.
+ * If EOL, EOF is reached return error.
+ * 
+ * On succes, content of literal buffer contains processed string literal.
+ * 
+ * 
+ * @param s pointer to the scanenr structure
+ * @return TokenType 
+ */
 TokenType scan_multi_line_string(Scanner *s){
 
     // consume """
@@ -543,7 +821,6 @@ TokenType scan_multi_line_string(Scanner *s){
     bool end_of_string=false;
     int indentation=0;
     int string_len=0;
-    int lines=0;
     TokenType result = TOKEN_STRING;
 
     // load characters to literal vector until " is reached
@@ -553,7 +830,6 @@ TokenType scan_multi_line_string(Scanner *s){
             switch (peek(s)){
                 case '\n':
                     new_line = true;
-                    lines++;
                     string_len++;
                     indentation = 0;
 
@@ -610,14 +886,15 @@ TokenType scan_multi_line_string(Scanner *s){
                     break;
                 default:
                     new_line = false;
+                    string_len++;
                     if (LV_add(s->literals, peek(s))==NULL) return TOKEN_MEMMORY_ERROR;
                     advance(s);
             }
     }
 
-    // restore state of literal vector and process cached literl string
-    LV_restore(s->literals);
-    char *string = &(s->literals->literal_array[s->literals->confirmed_size]);
+    // process cached literl string
+    s->literals->forming_size = 0;
+    char *string = s->literals->literal_buffer;
 
 
     // Process cached string literals.
@@ -626,8 +903,7 @@ TokenType scan_multi_line_string(Scanner *s){
     int current_line_indentation = 0;
     new_line = true;
     int encoded_escape;
-
-    for (int i=0;i<string_len-indentation-2;i++){ // -2 - because of which is not part of literal \n
+    for (int i=0;i<string_len-indentation-1;i++){ // -2 - because of which is not part of literal \n
         switch(string[i]){
             case '\n':
                 LV_add(s->literals, string[i]);
@@ -690,7 +966,7 @@ TokenType scan_multi_line_string(Scanner *s){
                 LV_add(s->literals, string[i]);
         }
     }
-
+    s->line++;
     return result;
 }
 
@@ -713,7 +989,7 @@ TokenType scan_operator(Scanner* s, TokenType expected_token_type){
     switch (expected_token_type){
 
         // single character tokens
-        case TOKEN_PLUS...TOKEN_UNDERSCORE:
+        case TOKEN_PLUS...TOKEN_SEMICOLON:
             advance(s); // consume character
             if (expected_token_type == TOKEN_L_BRACE){
                 s->separator_flag = true;
@@ -761,221 +1037,9 @@ TokenType scan_operator(Scanner* s, TokenType expected_token_type){
         // should never be called with expected_token_type=TOKEN_DUMMY.
         // It is present for debugging purposes and to avoid compilation errors.
         default:
+            advance(s);
             return TOKEN_LA_ERROR;
     }
-}
-
-/************************  End of Functions implementing FSM parts  **********************/
-
-
-/**
- * @brief Scan next token from scanner stream.
- * 
- * @param s A pointer to scanner structure
- * @return Token
- */
-Token scan_token(Scanner *s){
-    
-
-    TokenType confirmed_token_type;
-    TokenType expected_token_type;
-
-    char *literal_start;
-    size_t literal_length=0;
-    Token t;
-    bool follows_separator = s->separator_flag;
-    s->separator_flag = false;
-
-
-    InitToken(&t, TOKEN_DUMMY, NULL, 0, false);
-
-    
-    // TODO: nicer solution
-    while ((peek(s)==' ') || (peek(s)=='\t') || (peek(s)=='\r')  || (peek(s)=='\n') ||
-           forward_lookup(s, "//")==0 ||
-           forward_lookup(s, "/*")==0
-    ){
-        // Automata part - Consume whitespaces
-        // Consume whitespaces and does not produce any token
-        consume_whitespace(s);
-
-        // Automata part - new line character
-        if (peek(s) == '\n'){
-            advance(s); // consume \n
-            follows_separator = true;
-            s->line++;
-        }
-
-
-        // Automata part - Comments
-        // Consumes comment and does not produce any token
-        if (forward_lookup(s, "//")==0){ // single-line comment
-            consume_single_line_comment(s);
-        }
-        
-        if (forward_lookup(s, "/*")==0) { // multi-line comment
-
-            if (consume_multi_line_comment(s) == false){
-                // TODO: error handling
-                error(s, "Unterminated multiline comment\n");
-                InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
-                return t;
-            }
-        }
-    }
-
-
-
-
-    // Automata part - Identifiers and keywords
-    if (forward_lookup(s, "_\\w")==0){ // Identifier starting with _
-        
-        // it starts with _ and is followed by alphanum character or _, therefore it must be identifier
-        if (scan_identifier(s) == false) {InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
-        literal_start = LV_submit(s->literals, &literal_length);
-        
-        if (literal_start == NULL) {InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
-        else {InitToken(&t, TOKEN_IDENTIFIER, literal_start, literal_length, follows_separator);}
-
-        return t;
-    }
-    else if (is_alpha(peek(s))) { // Identifiers/keywords starting with letter
-
-        if (scan_identifier(s) == false) {InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
-        
-        confirmed_token_type = is_kw(s->literals);
-
-        if (confirmed_token_type == TOKEN_IDENTIFIER){
-
-            literal_start = LV_submit(s->literals, &literal_length);
-            if (literal_start == NULL){ InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);} 
-            else {InitToken(&t, TOKEN_IDENTIFIER, literal_start, literal_length, follows_separator);}
-
-        }
-        else // is keyword
-        {
-            // remove buffered characters
-            LV_restore(s->literals);
-
-            // check Int?, Double?, String?
-            if (( confirmed_token_type == TOKEN_INTEGER_T ||
-                  confirmed_token_type == TOKEN_DOUBLE_T  ||
-                  confirmed_token_type == TOKEN_STRING_T
-                ) && peek(s) == '?')
-            {
-                advance(s); // consume ?
-                confirmed_token_type++;
-            }
-
-            InitToken(&t, confirmed_token_type, NULL, 0, follows_separator);
-        }
-
-        return t;
-    }
-
-
-
-    // Automata part - Operators
-    expected_token_type = CharacterEncodingTable[(int) peek(s)];
-
-
-    // If current token indicates beginning of any 1-2 character lexeme
-    if (expected_token_type != TOKEN_DUMMY){
-
-        confirmed_token_type = scan_operator(s, expected_token_type);
-
-        InitToken(&t, confirmed_token_type, NULL, 0, follows_separator);
-
-        return t;
-    }
-
-
-    // Automata part - Number literals
-    if (is_digit(peek(s))){
-        confirmed_token_type = scan_number_literal(s);
-
-        if (confirmed_token_type == TOKEN_MEMMORY_ERROR){
-            InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
-        }
-        else if (confirmed_token_type == TOKEN_LA_ERROR){
-            LV_restore(s->literals);
-            InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
-        }
-        else {
-            literal_start = LV_submit(s->literals, &literal_length);
-            if (literal_start == NULL){InitToken(&t, TOKEN_MEMMORY_ERROR, NULL,0,false);}
-            else {InitToken(&t, confirmed_token_type, literal_start, literal_length, follows_separator);}
-        }
-
-        return t;
-    }
-
-
-    // Automata part - string literals
-    switch (forward_lookup(s, "\"\"\"")){
-        case MATCH: // """ - start of multiline strings
-            confirmed_token_type =  scan_multi_line_string(s);
-            if (confirmed_token_type == TOKEN_MEMMORY_ERROR){
-                InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
-            }
-            else if (confirmed_token_type == TOKEN_LA_ERROR){
-                InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
-                LV_restore(s->literals);
-            }
-            else {
-                literal_start = LV_submit(s->literals, &literal_length);
-                if (literal_start == NULL){InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);}
-                else {InitToken(&t, confirmed_token_type, literal_start, literal_length, follows_separator);}
-            }
-
-
-            return t;
-
-        case MISS_1: // Non-string
-            break;
-        case MISS_2: // Start of single line string
-            
-            confirmed_token_type = scan_single_line_string(s);
-
-            if (confirmed_token_type == TOKEN_MEMMORY_ERROR){
-                InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
-            }
-            else if (confirmed_token_type == TOKEN_LA_ERROR){
-                InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
-            }
-            else {
-                literal_start = LV_submit(s->literals, &literal_length);
-                if (literal_start == NULL) InitToken(&t, TOKEN_MEMMORY_ERROR, NULL, 0, false);
-                else InitToken(&t, TOKEN_STRING, literal_start, literal_length, follows_separator);
-            }
-
-            return t;
-
-        case MISS_3: // Empty string
-            advance(s); // consume "
-            advance(s); // consume "
-            InitToken(&t, TOKEN_STRING, NULL, 0, follows_separator);
-            return t;
-    }
-
-
-    // If scanner reaches EOF, return token with type of TOKEN_EOF
-    if (is_at_end(s)) {
-        InitToken(&t, TOKEN_EOF, NULL, 0, follows_separator);
-        return t;
-    }
-
-
-    // If no transition from initial automata state was possible, return lexical error - unexpected token
-    InitToken(&t, TOKEN_LA_ERROR, NULL, 0, false);
-
-    //consume invalid token
-    // TODO: error handling
-    error(s, "Invalid character %c\n", peek(s));
-    advance(s);
-
-
-    return t;
 }
 
 
