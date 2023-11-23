@@ -350,15 +350,9 @@ int get_rule_number(ExpressionStack *stack){
         ExpressionStackItem *member1 = &(stack->items[expression_start+1]);
         ExpressionStackItem *member2 = &(stack->items[expression_start+2]);
 
-        // rule 2 : -E
-        if (is_terminal(member1, MINUS) && is_expression(member2)){
-                return 2;
-        }
-
-
-        // rule 3 : E!
+        // rule 2 : E!
         if (is_expression(member1) && is_terminal(member2, EXCL)){
-                return 3;
+                return 2;
         }
 
         // No rule with matching number of terminal and non-terminals
@@ -372,67 +366,67 @@ int get_rule_number(ExpressionStack *stack){
         ExpressionStackItem *member3 = &(stack->items[expression_start+3]);
 
 
-        // rule 4 : E + E
+        // rule 3 : E + E
         if (is_expression(member1) && is_terminal(member2, PLUS) && is_expression(member3)){
+                return 3;
+            }
+
+        // rule 4 : E - E
+        if (is_expression(member1) && is_terminal(member2, MINUS) && is_expression(member3)){
                 return 4;
             }
 
-        // rule 5 : E - E
-        if (is_expression(member1) && is_terminal(member2, MINUS) && is_expression(member3)){
+        // rule 5 : E * E
+        if (is_expression(member1) && is_terminal(member2, STAR) && is_expression(member3)){
                 return 5;
             }
-
-        // rule 6 : E * E
-        if (is_expression(member1) && is_terminal(member2, STAR) && is_expression(member3)){
+        
+        // rule 6 : E / E
+        if (is_expression(member1) && is_terminal(member2, SLASH) && is_expression(member3)){
                 return 6;
             }
         
-        // rule 7 : E / E
-        if (is_expression(member1) && is_terminal(member2, SLASH) && is_expression(member3)){
+        // rule 7 : E ?? E
+        if (is_expression(member1) && is_terminal(member2, QUEST) && is_expression(member3)){
                 return 7;
             }
         
-        // rule 8 : E ?? E
-        if (is_expression(member1) && is_terminal(member2, QUEST) && is_expression(member3)){
+
+        // rule 8 : E == E
+        if (is_expression(member1) && is_terminal(member2, EQEQ) && is_expression(member3)){
                 return 8;
             }
-        
 
-        // rule 9 : E == E
-        if (is_expression(member1) && is_terminal(member2, EQEQ) && is_expression(member3)){
+        
+        // rule 9 : E != E
+        if (is_expression(member1) && is_terminal(member2, NEQ) && is_expression(member3)){
                 return 9;
             }
-
         
-        // rule 10 : E != E
-        if (is_expression(member1) && is_terminal(member2, NEQ) && is_expression(member3)){
+        // rule 10 : E < E
+        if (is_expression(member1) && is_terminal(member2, LT) && is_expression(member3)){
                 return 10;
             }
         
-        // rule 11 : E < E
-        if (is_expression(member1) && is_terminal(member2, LT) && is_expression(member3)){
+        // rule 11 : E <= E
+        if (is_expression(member1) && is_terminal(member2, LEQ) && is_expression(member3)){
                 return 11;
             }
         
-        // rule 12 : E <= E
-        if (is_expression(member1) && is_terminal(member2, LEQ) && is_expression(member3)){
+
+        // rule 12 : E > E
+        if (is_expression(member1) && is_terminal(member2, GT) && is_expression(member3)){
                 return 12;
             }
-        
 
-        // rule 13 : E > E
-        if (is_expression(member1) && is_terminal(member2, GT) && is_expression(member3)){
+        // rule 13 : E >= E
+        if (is_expression(member1) && is_terminal(member2, GEQ) && is_expression(member3)){
                 return 13;
             }
-
-        // rule 14 : E >= E
-        if (is_expression(member1) && is_terminal(member2, GEQ) && is_expression(member3)){
-                return 14;
-            }
         
-        // rule 15: (E)
+        // rule 14: (E)
         if (is_terminal(member1, L_PAR) && is_expression(member2) && is_terminal(member3, R_PAR)){
-                return 15;
+                return 14;
             }
         
         // No rule with matching number of terminal and non-terminals
@@ -459,9 +453,10 @@ void reduce_rule(ExpressionStack* stack){
     stack->items[stack->top_most_expr_start].data.terminal.start_of_expr = false;
 
     // find next start of expression or set start of expression to -1 if it does not exist
-    while ((stack->items[stack->top_most_expr_start].type != TERMINAL ||
-            stack->items[stack->top_most_expr_start].data.terminal.start_of_expr != true
-           ) && stack->top_most_expr_start > -1){
+    while ((stack->top_most_expr_start > -1)  && 
+            (stack->items[stack->top_most_expr_start].type != TERMINAL ||
+            stack->items[stack->top_most_expr_start].data.terminal.start_of_expr != true)
+          ){
 
           stack->top_most_expr_start--;
     }

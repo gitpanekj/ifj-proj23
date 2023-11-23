@@ -309,7 +309,7 @@ bool rule_statement_func()
 
         DataType exprType;
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+        if (!parse_expression(tokenHistory, &exprType,UNDEFINED, &exprErrCode))
             error(exprErrCode);
         else if (exprType != BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -392,7 +392,7 @@ void rule_return_value()
         DataType returnType = UNDEFINED;
 
         getNextToken();
-        if (!parse_expression(tokenHistory, &returnType, &exprErrCode))
+        if (!parse_expression(tokenHistory, &returnType,UNDEFINED, &exprErrCode))
             error(exprErrCode);
         else if (returnType == BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -467,7 +467,7 @@ void rule_statement()
 
         DataType exprType;
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+        if (!parse_expression(tokenHistory, &exprType,UNDEFINED, &exprErrCode))
             error(exprErrCode);
         else if (exprType != BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -556,7 +556,7 @@ void rule_if_cond()
     DataType exprType;
     ErrorCodes exprErrCode;
 
-    if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
+    if (!parse_expression(tokenHistory, &exprType,UNDEFINED, &exprErrCode))
         error(exprErrCode);
     else if (exprType != BOOLEAN)
         error(TYPE_COMPATIBILITY_ERROR);
@@ -740,7 +740,7 @@ void rule_statement_value()
     {
         getNextToken();
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
+        if (!parse_expression(tokenHistory, &statementValueType,UNDEFINED, &exprErrCode))
             error(exprErrCode);
         if (statementValueType == BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -771,7 +771,7 @@ void rule_arg_expr()
     else
     {
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
+        if (!parse_expression(tokenHistory, &statementValueType,UNDEFINED, &exprErrCode))
             error(exprErrCode);
         if (statementValueType == BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);

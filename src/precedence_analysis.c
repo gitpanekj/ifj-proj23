@@ -2,7 +2,7 @@
  * Implementace překladače imperativního jazyka IFJ23.
  * 
  * @file precedence_analysis.c
- * @author Jan Pánek (xpanek11)
+ * @author Jan Pánek (xpanek11), Petr Novák (xnovak3l), Tibor Šimlaštík (xsimla00)
  * 
  * @copyright Copyright (c) 2023
  * 
@@ -11,6 +11,8 @@
 #include "precedence_analysis.h"
 #include "expression_stack.h"
 #include "syntactic_analysis.h"
+#include "token_vector.h"
+
 
 #include "codegen.h"
 
@@ -19,7 +21,7 @@
  * @brief Parse expression
  * 
  * Next token is repeatedly loaded form scanner as long as it is part
- * of the forming epxression. When token which is not part of epxression
+ * of the forming epxression. When token which is not part of expression
  * is detected, it is left in tokenHistory[1].
  * 
  * 
@@ -29,23 +31,39 @@
  * @return true if precedence analysis succeeds
  * @return false if precedence analysis fails
  */
-bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes *err){
+bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType expected_dtype, ErrorCodes *err){
 
+    // Init expression stack
     ExpressionStack stack;
-    expression_stack_init(&stack); 
+    expression_stack_init(&stack);
 
+    // Token vector
+    TokenVector token_buffer;
+    TV_init(&token_buffer);
+
+    // vars to extract data from symtable
     symData* sym_data;
     Name id_name;
-    ExpressionStackItem next;
-    ExpressionStackItem *top;
-    int top_idx;
-    int rule_number;
-    bool valid;
+
+    
+    ExpressionStackItem next;              // Next expression member to process
+    ExpressionStackItem *top;              // Topmost non-terminal item on stack
+    ExpressionStackItem expr_placeholder;  // Placehodler for expression stack item in first pass
+    int top_idx;                           // Index of topmost non-terminal item on stack
+    int rule_number;                       // determined rule number, see. precedence_analysis.h
 
 
+    bool valid;                   // indicates whether semantics of parsed rule is valid
+    bool contains_double = false; // indicates whether expression contains double token
+
+
+
+    /***** Start of First Pass *****/
+
+    // convert first item of expression
     token_to_expr_member(tokenHistory[0], &next);
 
-    // check whether identifier is defined
+    // if exp. start with identif., check whether it is defined
     if (next.type == IDENTIFIER){
         id_name.nameStart = next.data.term.literal;
         id_name.literal_len = next.data.term.literal_len;
@@ -54,43 +72,51 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
         // variable not defined
         if (sym_data == NULL){
             expression_stack_dispose(&stack);
+            TV_free(&token_buffer);
             *err = UNDEFINED_VARIABLE;
             return false; // undeclared, undefined variable
         }
 
         if (!sym_data->isInitialized){
             expression_stack_dispose(&stack);
+            TV_free(&token_buffer);
             *err = UNDEFINED_VARIABLE;
             return false;
         }
 
-
-        next.data.term.data_type = sym_data->type;// == INT ? INT_UNCONVERTABLE : sym_data->type;
+        next.data.term.data_type = sym_data->type;
     }
 
+    // first supplied token is not part of expression
     if (next.type == END_OF_EXPR){
         expression_stack_dispose(&stack);
+        TV_free(&token_buffer);
         *err = SYNTACTIC_ERROR;
         return false;  
     }
 
+    // check whether token is of type double
+    contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE;
 
+    TV_add(&token_buffer, tokenHistory[0]);
+    
+    // init. top of the stack
     top_idx = expression_stack_top(&stack);
     top = &(stack.items[top_idx]);
 
 
-    // if token
     while ((next.type != END_OF_EXPR) || (!expression_stack_empty(&stack))){
         
         switch (PRECEDENCE_TABLE[top->data.terminal.type][next.data.terminal.type]){
-            case ERROR:
+            case ERROR: // invalid syntax
                 fprintf(stderr, "Error occured during expression parsing: invalid order.\n");
                 expression_stack_dispose(&stack);
+                TV_free(&token_buffer);
                 getNextToken(); // consume token which caused error
                  *err = SYNTACTIC_ERROR;
                 return false;
 
-            case OPEN:
+            case OPEN: // new subexpression starts after topmost non-terminal
                 mark_start_of_expr(&stack, top_idx);
                 expression_stack_push(&stack, next);
                 
@@ -98,7 +124,94 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
                 top_idx = expression_stack_top(&stack);
                 top = &(stack.items[top_idx]);
 
+                // check next token before consuming it
+                token_to_expr_member(tokenHistory[1], &next);
+
+
+                // if next token is identifier on next line, check whether it can be added to the forming expression
+                // otherwise produce end of expression item and leave next token
+                if (next.type == IDENTIFIER && tokenHistory[1].follows_separator==true){
+                   if (PRECEDENCE_TABLE[top->data.terminal.type][next.data.terminal.type] == ERROR){
+                        next.type = END_OF_EXPR;
+                        next.data.terminal.type = SEP;
+                        break;
+                   }
+                }
+
+                // // if exp. start with identif., check whether it is defined
+                if (next.type == IDENTIFIER){
+                    id_name.nameStart = next.data.term.literal;
+                    id_name.literal_len = next.data.term.literal_len;
+                    sym_data = getVariableDataFromSymstack(id_name);
+
+                    // variable not defined
+                    if (sym_data == NULL){
+                        expression_stack_dispose(&stack);
+                        TV_free(&token_buffer);
+                        *err = UNDEFINED_VARIABLE;
+                        return false; // undeclared, undefined variable
+                    }
+
+                    if (!sym_data->isInitialized){
+                        expression_stack_dispose(&stack);
+                        TV_free(&token_buffer);
+                        *err = UNDEFINED_VARIABLE;
+                        return false;
+                    }
+
+                    next.data.term.data_type = sym_data->type; 
+                }
+
+                // check whether token is of type double
+                contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE;
+
+                // if current token indicates end of expression, leave it
+                if (next.type == END_OF_EXPR){
+                    break;
+                }
+
+                TV_add(&token_buffer, tokenHistory[1]);
+                getNextToken(); // consume token which is a part of forming epxression
                 
+                break;
+            
+
+            case CLOSE: // forming subexpression end before currently processed token
+
+                rule_number = get_rule_number(&stack);
+
+
+                // syntactic error
+                if (rule_number == -1){
+                   fprintf(stderr, "Error occured during expression parsing: Syntactic error.\n");
+                   expression_stack_dispose(&stack);
+                   TV_free(&token_buffer);
+                   *err = SYNTACTIC_ERROR;
+                   return false;
+                }
+
+
+                // transform topmost subepxression on stack into single expression item
+                reduce_rule(&stack);
+                init_expression(&expr_placeholder, UNDEFINED);
+                expression_stack_push(&stack, expr_placeholder);
+
+
+
+
+
+                // refresh top of stack
+                top_idx = expression_stack_top(&stack);
+                top = &(stack.items[top_idx]);
+                break;
+
+            case EQ: // push item
+                expression_stack_push(&stack, next);
+                // refresh top of stack
+                top_idx = expression_stack_top(&stack);
+                top = &(stack.items[top_idx]);
+
+                // check next token before consuming it
                 token_to_expr_member(tokenHistory[1], &next);
 
                 if (next.type == IDENTIFIER && tokenHistory[1].follows_separator==true){
@@ -118,24 +231,95 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
                     // variable not defined
                     if (sym_data == NULL){
                         expression_stack_dispose(&stack);
+                        TV_free(&token_buffer);
                         *err = UNDEFINED_VARIABLE;
                         return false; // undeclared, undefined variable
                     }
 
                     if (!sym_data->isInitialized){
                         expression_stack_dispose(&stack);
+                        TV_free(&token_buffer);
                         *err = UNDEFINED_VARIABLE;
                         return false;
                     }
 
-                    next.data.term.data_type = sym_data->type;// == INT ? INT_UNCONVERTABLE : sym_data->type;
+
+                    next.data.term.data_type = sym_data->type;
                 }
+
+                // check whether token is of type double
+                contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE;
 
                 if (next.type == END_OF_EXPR){
                     break;
                 }
 
+                TV_add(&token_buffer, tokenHistory[1]);
                 getNextToken(); // consume token and get next
+                
+
+                break;
+        }
+    }
+    /***** End of First Pass *****/
+
+
+    if (expected_dtype == UNDEFINED && contains_double){
+        expected_dtype = DOUBLE;
+    }
+
+
+    // reset expression stack state
+    expression_stack_dispose(&stack);
+    expression_stack_init(&stack);
+
+
+
+    /***** Second Pass *****/
+    top_idx = expression_stack_top(&stack);
+    top = &(stack.items[top_idx]);    
+
+
+    size_t current_token_idx=0;
+    token_to_expr_member(token_buffer.token_array[current_token_idx], &next);
+
+
+
+    while ((next.type != END_OF_EXPR) || (!expression_stack_empty(&stack))){
+        
+        switch (PRECEDENCE_TABLE[top->data.terminal.type][next.data.terminal.type]){
+            case ERROR:
+                fprintf(stderr, "Error occured during expression parsing: invalid order.\n");
+                expression_stack_dispose(&stack);
+                TV_free(&token_buffer);
+                 *err = SYNTACTIC_ERROR;
+                return false;
+
+            case OPEN:
+                mark_start_of_expr(&stack, top_idx);
+                expression_stack_push(&stack, next);
+                
+                // refresh top of stack
+                top_idx = expression_stack_top(&stack);
+                top = &(stack.items[top_idx]);
+
+                
+                current_token_idx++; // consume token and get next
+                if (current_token_idx >= token_buffer.size){
+                    next.type = END_OF_EXPR;
+                    next.data.terminal.type = SEP;
+                    break;
+                }
+
+
+                token_to_expr_member(token_buffer.token_array[current_token_idx], &next);
+                // check whether identifier is defined
+                if (next.type == IDENTIFIER){
+                    id_name.nameStart = next.data.term.literal;
+                    id_name.literal_len = next.data.term.literal_len;
+                    sym_data = getVariableDataFromSymstack(id_name);
+                    next.data.term.data_type = sym_data->type;
+                }
 
                 break;
 
@@ -144,24 +328,22 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
 
                 rule_number = get_rule_number(&stack);
 
-                // syntactic error
-                if (rule_number == -1){
-                   fprintf(stderr, "Error occured during expression parsing: Syntactic error.\n");
-                   expression_stack_dispose(&stack);
-                   *err = SYNTACTIC_ERROR;
-                   return false;
-                }
-
-
-                valid = RULES[rule_number](&stack);
-
-                // no matching rule found
+                /*
+                valid = RULES[rule_number](&stack, expected_dtype);
+                // Semantic error
                 if (!valid){
                     fprintf(stderr, "Error occured during expression parsing: Semantic error.\n");
                     expression_stack_dispose(&stack);
+                    TV_free(&token_buffer);
                     *err = TYPE_COMPATIBILITY_ERROR;
                     return false;
                 }
+                */
+
+               // transform topmost subepxression on stack into single expression item
+                reduce_rule(&stack);
+                init_expression(&expr_placeholder, UNDEFINED);
+                expression_stack_push(&stack, expr_placeholder);
 
 
                 // refresh top of stack
@@ -175,67 +357,42 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, ErrorCodes 
                 top_idx = expression_stack_top(&stack);
                 top = &(stack.items[top_idx]);
 
-
-                token_to_expr_member(tokenHistory[1], &next);
-
-                if (next.type == IDENTIFIER && tokenHistory[1].follows_separator==true){
-                   if (PRECEDENCE_TABLE[top->data.terminal.type][next.data.terminal.type] == ERROR){
-                        next.type = END_OF_EXPR;
-                        next.data.terminal.type = SEP;
-                        break;
-                   }
+                current_token_idx++; // consume token and get next
+                if (current_token_idx >= token_buffer.size){
+                    next.type = END_OF_EXPR;
+                    next.data.terminal.type = SEP;
+                    break;
                 }
 
+                token_to_expr_member(token_buffer.token_array[current_token_idx], &next);
                 // check whether identifier is defined
                 if (next.type == IDENTIFIER){
                     id_name.nameStart = next.data.term.literal;
                     id_name.literal_len = next.data.term.literal_len;
                     sym_data = getVariableDataFromSymstack(id_name);
-
-                    // variable not defined
-                    if (sym_data == NULL){
-                        expression_stack_dispose(&stack);
-                        *err = UNDEFINED_VARIABLE;
-                        return false; // undeclared, undefined variable
-                    }
-
-                    if (!sym_data->isInitialized){
-                        expression_stack_dispose(&stack);
-                        *err = UNDEFINED_VARIABLE;
-                        return false;
-                    }
-
-                    next.data.term.data_type = sym_data->type; //== INT ? INT_UNCONVERTABLE : sym_data->type;
+                    next.data.term.data_type = sym_data->type;
                 }
-
-                if (next.type == END_OF_EXPR){
-                    break;
-                }
-
-                getNextToken(); // consume token and get next
 
                 break;
         }
     }
 
-    // if (stack.items[1].data.expr.data_type == INT_UNCONVERTABLE)
-    // {
-    //     *result_dtype = INT;
-    // }
-    // else {
-        *result_dtype = stack.items[1].data.expr.data_type;
-   //}
+
+    *result_dtype = stack.items[1].data.expr.data_type;
+
+    TV_free(&token_buffer);
+    expression_stack_dispose(&stack);
 
     return true;
 }
 
 
-bool rule_0(ExpressionStack* stack){
+bool rule_0(ExpressionStack* stack, DataType expected_dtype){
     reduce_rule(stack);
     return true;
 }
 
-bool rule_1(ExpressionStack* stack){
+bool rule_1(ExpressionStack* stack, DataType expected_dtype){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 1]);
     
     // Determine type of TERM
@@ -323,57 +480,8 @@ bool rule_1(ExpressionStack* stack){
     return true;
 }
 
-bool rule_2(ExpressionStack* stack){
-    ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 2]);
 
-    // unary '-' is valid for types int and double
-    DataType dtype = op->data.expr.data_type;
-    if (dtype == STRING || dtype == STRING_NIL){
-        fprintf(stderr, "Unsupported operand unary - for type string\n");
-        return false;
-    }
-    else if (dtype == NIL){
-        fprintf(stderr, "Unsupported operand unary - for type nil\n");
-        return false;
-    }
-    else if ( dtype == INT_UNCONVERTABLE_NIL || dtype == DOUBLE_NIL){
-        fprintf(stderr, "Value of Int? or Double? must be unwrapped to value of type 'Int'/'Double'\n");
-        return false;
-    }
-    if(whileLayer){                
-        if(dtype == DOUBLE){
-            appendString(&stringForStoring, "PUSHS int@-1\n");
-            appendString(&stringForStoring, "INT2FLOATS\n");
-            appendString(&stringForStoring, "MULS\n");
-        } else {
-            appendString(&stringForStoring, "PUSHS int@-1\n");
-            appendString(&stringForStoring, "MULS\n");
-        }
-    } else {
-        if(dtype == DOUBLE){
-            printf("PUSHS int@-1\n");
-            printf("INT2FLOATS\n");
-            printf("MULS\n");
-        } else {
-            printf("PUSHS int@-1\n");        
-            printf("MULS\n");
-        }
-    }
-    
-    
-    ExpressionStackItem result;
-    init_expression(&result, dtype);
-
-
-    reduce_rule(stack);
-    // replace by E with resulting dtype - push
-    expression_stack_push(stack, result);
-
-
-    return true;
-}
-
-bool rule_3(ExpressionStack* stack){
+bool rule_2(ExpressionStack* stack, DataType expected_dtype){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 1]);
     
     // postfix '!' is valid only for DOUBLE_NIL, INT_UNCONVERTABLE_NIL, STRING_NIL
@@ -405,7 +513,7 @@ bool rule_3(ExpressionStack* stack){
     return true;
 }
 
-bool rule_4(ExpressionStack* stack){
+bool rule_3(ExpressionStack* stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -517,7 +625,7 @@ bool rule_4(ExpressionStack* stack){
     return true;
 }
 
-bool rule_5(ExpressionStack *stack){
+bool rule_4(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -616,7 +724,7 @@ bool rule_5(ExpressionStack *stack){
     return true;
 }
 
-bool rule_6(ExpressionStack *stack){
+bool rule_5(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -713,7 +821,7 @@ bool rule_6(ExpressionStack *stack){
     return true;
 }
 
-bool rule_7(ExpressionStack *stack){
+bool rule_6(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -811,7 +919,7 @@ bool rule_7(ExpressionStack *stack){
 }
 
 
-bool rule_8(ExpressionStack *stack){
+bool rule_7(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -868,7 +976,7 @@ bool rule_8(ExpressionStack *stack){
     return true;
 }
 
-bool rule_9(ExpressionStack *stack){
+bool rule_8(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -952,7 +1060,7 @@ bool rule_9(ExpressionStack *stack){
     return true;
 }
 
-bool rule_10(ExpressionStack *stack){
+bool rule_9(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -1043,7 +1151,7 @@ bool rule_10(ExpressionStack *stack){
     return true;
 }
 
-bool rule_11(ExpressionStack *stack){
+bool rule_10(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -1121,7 +1229,7 @@ bool rule_11(ExpressionStack *stack){
     return true;
 }
 
-bool rule_12(ExpressionStack *stack){
+bool rule_11(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -1201,7 +1309,7 @@ bool rule_12(ExpressionStack *stack){
     return true;
 }
 
-bool rule_13(ExpressionStack *stack){
+bool rule_12(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -1279,7 +1387,7 @@ bool rule_13(ExpressionStack *stack){
 
     return true;
 }
-bool rule_14(ExpressionStack *stack){
+bool rule_13(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op1 = &(stack->items[stack->top_most_expr_start + 1]);
     ExpressionStackItem* op2 = &(stack->items[stack->top_most_expr_start + 3]);
     
@@ -1364,7 +1472,7 @@ bool rule_14(ExpressionStack *stack){
 }
 
 
-bool rule_15(ExpressionStack *stack){
+bool rule_14(ExpressionStack *stack, DataType expected_dtype){
     ExpressionStackItem* op = &(stack->items[stack->top_most_expr_start + 2]);
     
     ExpressionStackItem result;

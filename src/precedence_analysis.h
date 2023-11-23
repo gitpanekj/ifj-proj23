@@ -59,58 +59,57 @@ static const PRECEDENCE PRECEDENCE_TABLE[16][16] = {
 /*
  0)  $ -> $E
  1)  E -> TERM
- 2)  E -> -E
- 3)  E ->  E!
- 4)  E -> E + E
- 5)  E -> E - E
- 6)  E -> E * E
- 7)  E -> E / E
- 8)  E -> E ?? E
- 9)  E -> E == E
- 10) E -> E != E
- 11) E -> E <  E
- 12) E -> E <= E
- 13) E -> E >  E
- 14) E -> E >= E
- 15) E -> (E)
+ 2)  E ->  E!
+ 3)  E -> E + E
+ 4)  E -> E - E
+ 5)  E -> E * E
+ 6)  E -> E / E
+ 7)  E -> E ?? E
+ 8)  E -> E == E
+ 9) E -> E != E
+ 10) E -> E <  E
+ 11) E -> E <= E
+ 12) E -> E >  E
+ 13) E -> E >= E
+ 14) E -> (E)
 */
-bool rule_0(ExpressionStack*);
+bool rule_0(ExpressionStack*, DataType);
 
-bool rule_1(ExpressionStack*);
+bool rule_1(ExpressionStack*, DataType);
 
-bool rule_2(ExpressionStack*);
+bool rule_2(ExpressionStack*, DataType);
 
-bool rule_3(ExpressionStack*);
+bool rule_3(ExpressionStack*, DataType);
 
-bool rule_4(ExpressionStack*);
+bool rule_4(ExpressionStack*, DataType);
 
-bool rule_5(ExpressionStack*);
+bool rule_5(ExpressionStack*, DataType);
 
-bool rule_6(ExpressionStack*);
+bool rule_6(ExpressionStack*, DataType);
 
-bool rule_7(ExpressionStack*);
+bool rule_7(ExpressionStack*, DataType);
 
-bool rule_8(ExpressionStack*);
+bool rule_8(ExpressionStack*, DataType);
 
-bool rule_9(ExpressionStack*);
+bool rule_9(ExpressionStack*, DataType);
 
-bool rule_10(ExpressionStack*);
+bool rule_10(ExpressionStack*, DataType);
 
-bool rule_11(ExpressionStack*);
+bool rule_11(ExpressionStack*, DataType);
 
-bool rule_12(ExpressionStack*);
+bool rule_12(ExpressionStack*, DataType);
 
-bool rule_13(ExpressionStack*);
+bool rule_13(ExpressionStack*, DataType);
 
-bool rule_14(ExpressionStack*);
+bool rule_14(ExpressionStack*, DataType);
 
-bool rule_15(ExpressionStack*);
+
 
 //< Rule type
-typedef bool (*rule)(ExpressionStack*);
+typedef bool (*rule)(ExpressionStack*, DataType);
 
 //< LUT mapping rule number to corresponding function implementing that rule
-static const rule RULES[16] = {
+static const rule RULES[15] = {
   rule_0,
   rule_1,
   rule_2,
@@ -126,10 +125,9 @@ static const rule RULES[16] = {
   rule_12,
   rule_13,
   rule_14,
-  rule_15
 };
 
-bool parse_expression(Token[2], DataType*, ErrorCodes*);
+bool parse_expression(Token[2], DataType*, DataType, ErrorCodes*);
 
 
 
