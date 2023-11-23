@@ -57,14 +57,8 @@ LABEL Double2Int  #////////////////// Double2Int ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
-MOVE LF@result LF@_0\n\
-\n\
-TYPE GF@tempIfVar LF@_0\n\
-JUMPIFEQ !!skipDouble2Int GF@tempIfVar string@int\n\
-\n\
 FLOAT2INT LF@result LF@_0\n\
 \n\
-LABEL !!skipDouble2Int\n\
 PUSHS LF@result\n\
 \n\
 POPFRAME\n\
@@ -178,23 +172,6 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL !!converSolo  #////////////////// !!converSolo ///////////////////\n\
-CREATEFRAME\n\
-PUSHFRAME\n\
-DEFVAR LF@_0\n\
-POPS LF@_0\n\
-TYPE GF@tempIfVar LF@_0\n\
-\n\
-JUMPIFEQ !!jumpToConver GF@tempIfVar string@int\n\
-JUMP !!skipConver\n\
-LABEL !!jumpToConver\n\
-\n\
-INT2FLOAT LF@_0 LF@_0\n\
-LABEL !!skipConver\n\
-PUSHS LF@_0\n\
-\n\
-POPFRAME\n\
-RETURN\n\
 LABEL !!conver  #////////////////// !!conver ///////////////////\n\
 CREATEFRAME\n\
 PUSHFRAME\n\
@@ -226,14 +203,16 @@ PUSHS LF@_0\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL main\n\
+\n\
+LABEL main   #///////////////////////////// MAIN ////////////////\n\
 CREATEFRAME\n\
 DEFVAR GF@tempIfVar\n\
 DEFVAR GF@precedenceMatTemp\n\
 DEFVAR GF@!!tmpNILConsOP1!!\n\
 DEFVAR GF@!!tmpNILConsOP2!!\n\
 DEFVAR GF@precedenceConcatFirst\n\
-DEFVAR GF@precedenceConcatSecond\n";
+DEFVAR GF@precedenceConcatSecond\n\
+\n\
+\n";
     printf("%s", built_in_funcs);
 }
-

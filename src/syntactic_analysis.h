@@ -18,7 +18,8 @@
 //-------------------macros-----------------
 // macro for passing function name to error handle for debuging
 #define error(ErrorType) errorHandle(ErrorType, __func__)
-#define assertEndOfLine() wasEndOfLine(__func__)
+#define assertEndOfLine() wasEndOfLine(false,__func__)
+#define assertNotEndOfLine() wasEndOfLine(true,__func__)
 #define assertToken(mustBe) tokenMustBe(mustBe, __func__)
 // macro for passing array to function as parameter: func(1,2,3) - function
 #define arrayFrom(...) ((TokenType[]){__VA_ARGS__})
@@ -114,7 +115,7 @@ void generateFunctionCallParam(Token token, int paramCount);
 
 void errorHandle(ErrorCodes ErrorType, const char *functionName);
 
-void wasEndOfLine(const char *functionName);
+void wasEndOfLine(bool notEndOfLine, const char *functionName);
 
 void tokenMustBe(TokenType tokenShouldBe, const char *functionName);
 
