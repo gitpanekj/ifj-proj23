@@ -9,7 +9,7 @@ void add_built_in_functions(){
 JUMP main\n\
 \n\
 #////////////////// BUILT-IN FUNCTIONS ///////////////////\n\n\
-LABEL readString  #////////////////// readString ///////////////////\n\
+LABEL func_readString  #////////////////// readString ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
@@ -20,7 +20,7 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL readDouble  #////////////////// readDouble ///////////////////\n\
+LABEL func_readDouble  #////////////////// readDouble ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
@@ -31,7 +31,7 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL readInt  #////////////////// readInt ///////////////////\n\
+LABEL func_readInt  #////////////////// readInt ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
@@ -42,7 +42,7 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL Int2Double  #////////////////// Int2Double ///////////////////\n\
+LABEL func_Int2Double  #////////////////// Int2Double ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
@@ -53,7 +53,7 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL Double2Int  #////////////////// Double2Int ///////////////////\n\
+LABEL func_Double2Int  #////////////////// Double2Int ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
@@ -64,7 +64,7 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL length  #////////////////// length ///////////////////\n\
+LABEL func_length  #////////////////// length ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
@@ -76,7 +76,7 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL substring  #////////////////// substring ///////////////////\n\
+LABEL func_substring  #////////////////// substring ///////////////////\n\
 PUSHFRAME\n\
 \n\
 #  1 string\n\
@@ -101,7 +101,7 @@ JUMPIFEQ substringError LF@if bool@true\n\
 CREATEFRAME\n\
 DEFVAR TF@_0\n\
 MOVE TF@_0 LF@_0\n\
-CALL length\n\
+CALL func_length\n\
 move LF@length TF@result\n\
 \n\
 GT LF@if LF@_2 LF@length                    # end > length\n\
@@ -134,7 +134,7 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL ord  #////////////////// ord ///////////////////\n\
+LABEL func_ord  #////////////////// ord ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
@@ -143,7 +143,7 @@ DEFVAR LF@length\n\
 CREATEFRAME\n\
 DEFVAR TF@_0\n\
 MOVE TF@_0 LF@_0\n\
-CALL length\n\
+CALL func_length\n\
 MOVE LF@length TF@result\n\
 \n\
 JUMPIFEQ ordEnd0 LF@length int@0\n\
@@ -161,44 +161,13 @@ PUSHS LF@result\n\
 POPFRAME\n\
 RETURN\n\
 \n\
-LABEL chr  #////////////////// chr ///////////////////\n\
+LABEL func_chr  #////////////////// chr ///////////////////\n\
 PUSHFRAME\n\
 \n\
 DEFVAR LF@result\n\
 INT2CHAR LF@result LF@_0\n\
 \n\
 PUSHS LF@result\n\
-\n\
-POPFRAME\n\
-RETURN\n\
-\n\
-LABEL !!conver  #////////////////// !!conver ///////////////////\n\
-CREATEFRAME\n\
-PUSHFRAME\n\
-DEFVAR LF@_0\n\
-POPS LF@_0\n\
-TYPE GF@tempIfVar LF@_0\n\
-\n\
-JUMPIFEQ !!jumpToConver1 GF@tempIfVar string@int\n\
-JUMP !!skipConver1\n\
-LABEL !!jumpToConver1\n\
-\n\
-INT2FLOAT LF@_0 LF@_0\n\
-LABEL !!skipConver1\n\
-\n\
-DEFVAR LF@_1\n\
-POPS LF@_1\n\
-TYPE GF@tempIfVar LF@_1\n\
-\n\
-JUMPIFEQ !!jumpToConver2 GF@tempIfVar string@int\n\
-JUMP !!skipConver2\n\
-LABEL !!jumpToConver2\n\
-\n\
-INT2FLOAT LF@_1 LF@_1\n\
-LABEL !!skipConver2\n\
-\n\
-PUSHS LF@_1\n\
-PUSHS LF@_0\n\
 \n\
 POPFRAME\n\
 RETURN\n\

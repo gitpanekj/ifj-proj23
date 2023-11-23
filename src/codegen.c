@@ -13,12 +13,10 @@ char *stringForStoring = NULL;
 char helpStr[750];
 
 int ifCount = 0;
-
 int whileCount = 0;
-int whileLayer = 0;
-
 int funcCount = 0;
 
+int whileLayer = 0;
 bool inFunc = false;
 
 Stack ifStack;
@@ -135,7 +133,7 @@ void gen_Insert_double_literal(char *double_literal)
     if (whileLayer)
     {
         appendString(&stringForStoring, " float@");
-        sprintf(helpStr, "%03d", (int)literal_value);
+        sprintf(helpStr, "%a", literal_value);
         appendString(&stringForStoring, helpStr);
     }
     else
@@ -485,7 +483,7 @@ void gen_start_function(Name *label)
     funcCount++;
     inFunc = true;
     printf("JUMP skipFunction%d\n", funcCount);
-    printf("LABEL %.*s\n", (int)label->literal_len, label->nameStart);
+    printf("LABEL func_%.*s\n", (int)label->literal_len, label->nameStart);
     printf("PUSHFRAME\n");
 }
 
@@ -539,12 +537,12 @@ void gen_call_function(Name *name)
 {
     if (whileLayer)
     {
-        sprintf(helpStr, "CALL %.*s\n", (int)name->literal_len, name->nameStart);
+        sprintf(helpStr, "CALL func_%.*s\n", (int)name->literal_len, name->nameStart);
         appendString(&stringForStoring, helpStr);
     }
     else
     {
-        printf("CALL %.*s\n", (int)name->literal_len, name->nameStart);
+        printf("CALL func_%.*s\n", (int)name->literal_len, name->nameStart);
     }
 }
 ////////// STACK INIT  //////////////

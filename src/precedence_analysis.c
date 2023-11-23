@@ -282,11 +282,15 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
 
     size_t current_token_idx=0;
     token_to_expr_member(token_buffer.token_array[current_token_idx], &next);
-
+    if (next.type == IDENTIFIER){
+        id_name.nameStart = next.data.term.literal;
+        id_name.literal_len = next.data.term.literal_len;
+        sym_data = getVariableDataFromSymstack(id_name);
+        next.data.term.data_type = sym_data->type;
+    }
 
 
     while ((next.type != END_OF_EXPR) || (!expression_stack_empty(&stack))){
-        
         switch (PRECEDENCE_TABLE[top->data.terminal.type][next.data.terminal.type]){
             case ERROR:
                 fprintf(stderr, "Error occured during expression parsing: invalid order.\n");
@@ -414,16 +418,26 @@ bool rule_1(ExpressionStack* stack, DataType expected_dtype){
         }
         
     } else {
-         switch (dtype)
+        switch (dtype)
         {
 
         case INT_CONVERTABLE:
-        case INT_UNCONVERTABLE:
-            if(whileLayer){
-                sprintf(helpStr, "PUSHS int@%s\n", op->data.term.literal);
-                appendString(&stringForStoring, helpStr);
+            if(expected_dtype == DOUBLE || expected_dtype == DOUBLE_NIL){
+                dtype = DOUBLE;
+                if(whileLayer){                
+                    appendString(&stringForStoring, "PUSHS");
+                } else {
+                    printf("PUSHS");
+                }
+                gen_Insert_double_literal(op->data.term.literal);
+                gen_end_line();
             } else {
-                printf("PUSHS int@%s\n", op->data.term.literal);
+                if(whileLayer){
+                    sprintf(helpStr, "PUSHS int@%s\n", op->data.term.literal);
+                    appendString(&stringForStoring, helpStr);
+                } else {
+                    printf("PUSHS int@%s\n", op->data.term.literal);
+                }
             }
             
             break;
@@ -548,15 +562,6 @@ bool rule_3(ExpressionStack* stack, DataType expected_dtype){
                 printf("PUSHS GF@precedenceConcatFirst\n"); // push value
             }
         }
-        else if (op1_dtype == DOUBLE){ //todo delete
-            if(whileLayer){                
-                appendString(&stringForStoring, "CALL !!conver\n");
-                appendString(&stringForStoring, "ADDS\n");
-            } else {
-                printf("CALL !!conver\n");
-                printf("ADDS\n");
-            }
-        }
         else {
             if(whileLayer){                
                 appendString(&stringForStoring, "ADDS\n");
@@ -576,37 +581,10 @@ bool rule_3(ExpressionStack* stack, DataType expected_dtype){
         }
 
     }
-    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) //todo delete
-    {
-        result_dtype =  DOUBLE;
-        if(whileLayer){                
-            appendString(&stringForStoring, "INT2FLOATS\n");
-            appendString(&stringForStoring, "ADDS\n");
-        } else {
-            printf("INT2FLOATS\n");
-            printf("ADDS\n");
-        }
-    }
-    else if ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE))
-    {
-        result_dtype =  DOUBLE;
-        if(whileLayer){   
-            appendString(&stringForStoring, "POPS GF@precedenceMatTemp");             
-            appendString(&stringForStoring, "INT2FLOATS\n");
-            appendString(&stringForStoring, "PUSHS GF@precedenceMatTemp");             
-            appendString(&stringForStoring, "ADDS\n");
-        } else {
-            printf("POPS GF@precedenceMatTemp\n");
-            printf("INT2FLOATS\n");
-            printf("PUSHS GF@precedenceMatTemp\n");
-            printf("ADDS\n");
-        }
-    }
     else {
         fprintf(stderr, "Invalid combination of operand types for '+' operand\n");
         return false;
     }
-
 
     ExpressionStackItem result;
     init_expression(&result, result_dtype);
@@ -646,23 +624,11 @@ bool rule_4(ExpressionStack *stack, DataType expected_dtype){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if (op1_dtype == DOUBLE){ //todo delete
-            if(whileLayer){                
-                appendString(&stringForStoring, "CALL !!conver\n");
-                appendString(&stringForStoring, "SUBS\n");
-            } else {
-                printf("CALL !!conver\n");
-                printf("SUBS\n");
-            }
+        if(whileLayer){                
+            appendString(&stringForStoring, "SUBS\n");
         } else {
-            if(whileLayer){                
-                appendString(&stringForStoring, "SUBS\n");
-            } else {
-                printf("SUBS\n");
-            }
+            printf("SUBS\n");
         }
-        
-       
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
              ((op1_dtype == INT_UNCONVERTABLE) && (op2_dtype == INT_CONVERTABLE)))
@@ -674,32 +640,6 @@ bool rule_4(ExpressionStack *stack, DataType expected_dtype){
             printf("SUBS\n");
         }
 
-    }
-    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) //todo delete
-    {
-        result_dtype =  DOUBLE;
-        if(whileLayer){                
-            appendString(&stringForStoring, "INT2FLOATS\n");
-            appendString(&stringForStoring, "SUBS\n");
-        } else {
-            printf("INT2FLOATS\n");
-            printf("SUBS\n");
-        }
-    }
-    else if ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE))
-    {
-        result_dtype =  DOUBLE;
-        if(whileLayer){   
-            appendString(&stringForStoring, "POPS GF@precedenceMatTemp");             
-            appendString(&stringForStoring, "INT2FLOATS\n");
-            appendString(&stringForStoring, "PUSHS GF@precedenceMatTemp");             
-            appendString(&stringForStoring, "SUBS\n");
-        } else {
-            printf("POPS GF@precedenceMatTemp\n");
-            printf("INT2FLOATS\n");
-            printf("PUSHS GF@precedenceMatTemp\n");
-            printf("SUBS\n");
-        }
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '-'\n");
@@ -745,20 +685,10 @@ bool rule_5(ExpressionStack *stack, DataType expected_dtype){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if (op1_dtype == DOUBLE){ //todo delete
-            if(whileLayer){                
-                appendString(&stringForStoring, "CALL !!conver\n");
-                appendString(&stringForStoring, "MULS\n");
-            } else {
-                printf("CALL !!conver\n");
-                printf("MULS\n");
-            }
+        if(whileLayer){                
+            appendString(&stringForStoring, "MULS\n");
         } else {
-            if(whileLayer){                
-                appendString(&stringForStoring, "MULS\n");
-            } else {
-                printf("MULS\n");
-            }
+            printf("MULS\n");
         }
     }
     else if (((op1_dtype == INT_CONVERTABLE) && (op2_dtype == INT_UNCONVERTABLE)) ||
@@ -771,32 +701,6 @@ bool rule_5(ExpressionStack *stack, DataType expected_dtype){
             printf("MULS\n");
         }
 
-    }
-    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) //todo delete
-    {
-        result_dtype =  DOUBLE;
-        if(whileLayer){                
-            appendString(&stringForStoring, "INT2FLOATS\n");
-            appendString(&stringForStoring, "MULS\n");
-        } else {
-            printf("INT2FLOATS\n");
-            printf("MULS\n");
-        }
-    }
-    else if ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE))
-    {
-        result_dtype =  DOUBLE;
-        if(whileLayer){   
-            appendString(&stringForStoring, "POPS GF@precedenceMatTemp");             
-            appendString(&stringForStoring, "INT2FLOATS\n");
-            appendString(&stringForStoring, "PUSHS GF@precedenceMatTemp");             
-            appendString(&stringForStoring, "MULS\n");
-        } else {
-            printf("POPS GF@precedenceMatTemp\n");
-            printf("INT2FLOATS\n");
-            printf("PUSHS GF@precedenceMatTemp\n");
-            printf("MULS\n");
-        }
     }
     else {
         fprintf(stderr, "Invalid combination of operand types for '*'\n");
@@ -842,17 +746,9 @@ bool rule_6(ExpressionStack *stack, DataType expected_dtype){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if (op1_dtype == DOUBLE){ //todo delete
-            if(whileLayer){                
-                appendString(&stringForStoring, "CALL !!conver\n");
-                appendString(&stringForStoring, "DIVS\n");
-            } else {
-                printf("CALL !!conver\n");
-                printf("DIVS\n");
-            }
-        } 
-        else if ((op1_dtype == INT_CONVERTABLE) ||
-                 (op1_dtype == INT_UNCONVERTABLE))
+
+        if ((op1_dtype == INT_CONVERTABLE) ||
+            (op1_dtype == INT_UNCONVERTABLE))
         {
             if(whileLayer){                
                 appendString(&stringForStoring, "IDIVS\n");
@@ -876,33 +772,6 @@ bool rule_6(ExpressionStack *stack, DataType expected_dtype){
             appendString(&stringForStoring, "IDIVS\n");
         } else {
             printf("IDIVS\n");
-        }
-
-    }
-    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) //todo delete
-    {
-        result_dtype =  DOUBLE;
-        if(whileLayer){                
-            appendString(&stringForStoring, "INT2FLOATS\n");
-            appendString(&stringForStoring, "DIVS\n");
-        } else {
-            printf("INT2FLOATS\n");
-            printf("DIVS\n");
-        }
-    }
-    else if ((op1_dtype == INT_CONVERTABLE) && (op2_dtype == DOUBLE))
-    {
-        result_dtype =  DOUBLE;
-        if(whileLayer){   
-            appendString(&stringForStoring, "POPS GF@precedenceMatTemp");             
-            appendString(&stringForStoring, "INT2FLOATS\n");
-            appendString(&stringForStoring, "PUSHS GF@precedenceMatTemp");             
-            appendString(&stringForStoring, "DIVS\n");
-        } else {
-            printf("POPS GF@precedenceMatTemp\n");
-            printf("INT2FLOATS\n");
-            printf("PUSHS GF@precedenceMatTemp\n");
-            printf("DIVS\n");
         }
     }
     else {
@@ -1005,23 +874,6 @@ bool rule_8(ExpressionStack *stack, DataType expected_dtype){
         }else{
             printf("EQS\n");
         }
-    } else if (op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) {
-        if(whileLayer){
-            appendString(&stringForStoring, "#== between Double and Int literal\n");
-            appendString(&stringForStoring, "EQS\n");
-        }else{
-            printf("#== between Double and Int literal\n");
-            printf("EQS\n");
-        }
-    }
-    else if (op2_dtype == DOUBLE && op1_dtype == INT_CONVERTABLE) {
-        if(whileLayer){
-            appendString(&stringForStoring, "#== between Int literal and Double\n");
-            appendString(&stringForStoring, "EQS");
-        }else{
-            printf("#== between Int literal and Double\n");
-            printf("EQS\n");
-        }
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '==' operator\n");
@@ -1081,27 +933,6 @@ bool rule_9(ExpressionStack *stack, DataType expected_dtype){
             printf("EQS\n");
             printf("NOTS\n"); 
         }
-    } else if (op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) {
-        if(whileLayer){
-            appendString(&stringForStoring, "#!= between Double and Int literal\n");
-            appendString(&stringForStoring, "EQS\n");
-            appendString(&stringForStoring, "NOTS\n");
-        }else{
-            printf("#!= between Double and Int literal\n");
-            printf("EQS\n");
-            printf("NOTS\n");
-        }
-    }
-    else if (op2_dtype == DOUBLE && op1_dtype == INT_CONVERTABLE) {
-        if(whileLayer){
-            appendString(&stringForStoring, "#!= between Int literal and Double\n");
-            appendString(&stringForStoring, "EQS\n");
-            appendString(&stringForStoring, "NOTS\n");
-        }else{
-            printf("#!= between Int literal and Double\n");
-            printf("EQS\n");
-            printf("NOTS\n");
-        }
     }
     else {
         fprintf(stderr, "Invalid combination of operands for '==' operator\n");
@@ -1151,25 +982,6 @@ bool rule_10(ExpressionStack *stack, DataType expected_dtype){
             appendString(&stringForStoring, "LTS\n");
         }else{
             printf("#Relation operator <\n");
-            printf("LTS\n");
-        }
-    }
-    else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
-             (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
-        if(whileLayer){
-            if(op1_dtype == INT_CONVERTABLE){
-                appendString(&stringForStoring, "#< between Int literal and Double\n");   
-            }else{
-                appendString(&stringForStoring, "#< between Double and Int literal\n");
-            }
-            appendString(&stringForStoring, "LTS\n");
-            //appendString(&stringForStoring, "NOTS\n");
-        }else{
-            if(op1_dtype == INT_CONVERTABLE){
-                printf("#< between Int literal and Double\n");   
-            }else{
-                printf("#< between Double and  Int literal\n");
-            }
             printf("LTS\n");
         }
     }
@@ -1225,26 +1037,6 @@ bool rule_11(ExpressionStack *stack, DataType expected_dtype){
             printf("NOTS!");
         }
     }
-    else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
-             (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
-        if(whileLayer){
-            if(op1_dtype == INT_CONVERTABLE){
-                appendString(&stringForStoring, "#<= between Int literal and Double\n");   
-            }else{
-                appendString(&stringForStoring, "#<= between Double and Int literal\n");
-            }
-            appendString(&stringForStoring, "GTS\n");
-            appendString(&stringForStoring, "NOTS\n");
-        }else{
-            if(op1_dtype == INT_CONVERTABLE){
-                printf("#<= between Int literal and Double\n");   
-            }else{
-                printf("#<= between Double and  Int literal\n");
-            }
-            printf("GTS\n");
-            printf("NOTS\n");
-        }
-    }
     else {
         fprintf(stderr, "Invalid combination of operands for '<=' operator\n");
         return false;
@@ -1295,24 +1087,6 @@ bool rule_12(ExpressionStack *stack, DataType expected_dtype){
             appendString(&stringForStoring, "GTS\n");
         }else{
             printf("#Relation operator >\n");
-            printf("GTS\n");
-        }
-    }
-    else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
-             (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
-        if(whileLayer){
-            if(op1_dtype == INT_CONVERTABLE){
-                appendString(&stringForStoring, "#> between Int literal and Double\n");   
-            }else{
-                appendString(&stringForStoring, "#> between Double and Int literal\n");
-            }
-            appendString(&stringForStoring, "GTS\n");
-        }else{
-            if(op1_dtype == INT_CONVERTABLE){
-                printf("#> between Int literal and Double\n");   
-            }else{
-                printf("#> between Double and  Int literal\n");
-            }
             printf("GTS\n");
         }
     }
@@ -1368,27 +1142,6 @@ bool rule_13(ExpressionStack *stack, DataType expected_dtype){
             printf("#Relation operator >=\n");
             printf("LTS\n");
             printf("NOTS!");
-        }
-    }
-    else if ((op1_dtype == DOUBLE && op2_dtype == INT_CONVERTABLE) ||
-             (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE)){
-        if(whileLayer){
-            if(op1_dtype == INT_CONVERTABLE){
-                appendString(&stringForStoring, "#>= between Int literal and Double\n");   
-            }else{
-                appendString(&stringForStoring, "#>= between Double and Int literal\n");
-            }
-            appendString(&stringForStoring, "LTS\n");
-            appendString(&stringForStoring, "NOTS\n");
-
-        }else{
-            if(op1_dtype == INT_CONVERTABLE){
-                printf("#>= between Int literal and Double\n");   
-            }else{
-                printf("#>= between Double and  Int literal\n");
-            }
-            printf("LTS\n");
-            printf("NOTS\n");
         }
     }
     else {
