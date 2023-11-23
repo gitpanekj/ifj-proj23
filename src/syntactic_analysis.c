@@ -204,7 +204,7 @@ void rule_param_name()
     currentFunctionParameter.name.literal_len = token.literal_len;
     currentFunctionParameter.name.nameStart = token.start_ptr;
 }
-//? if storing current function as node of symtable, make from void datatype and return it to local variable in rule_func_decl
+
 void rule_return_type()
 {
     if (tokenIs(TOKEN_L_BRACE))
@@ -316,7 +316,7 @@ bool rule_statement_func()
 
         DataType exprType;
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &exprType,UNDEFINED, &exprErrCode))
+        if (!parse_expression(tokenHistory, &exprType, BOOLEAN, &exprErrCode))
             error(exprErrCode);
         else if (exprType != BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -385,6 +385,7 @@ void rule_return_value()
 
         if (currentFunctionReturnType != UNDEFINED)
             error(FUNCTION_RETURN_ERROR);
+
         gen_function_return();
         return;
     }
@@ -399,7 +400,7 @@ void rule_return_value()
         DataType returnType = UNDEFINED;
 
         getNextToken();
-        if (!parse_expression(tokenHistory, &returnType,UNDEFINED, &exprErrCode))
+        if (!parse_expression(tokenHistory, &returnType, currentFunctionReturnType, &exprErrCode))
             error(exprErrCode);
         else if (returnType == BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -474,7 +475,7 @@ void rule_statement()
 
         DataType exprType;
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &exprType,UNDEFINED, &exprErrCode))
+        if (!parse_expression(tokenHistory, &exprType, BOOLEAN, &exprErrCode))
             error(exprErrCode);
         else if (exprType != BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -563,7 +564,7 @@ void rule_if_cond()
     DataType exprType;
     ErrorCodes exprErrCode;
 
-    if (!parse_expression(tokenHistory, &exprType,UNDEFINED, &exprErrCode))
+    if (!parse_expression(tokenHistory, &exprType, BOOLEAN, &exprErrCode))
         error(exprErrCode);
     else if (exprType != BOOLEAN)
         error(TYPE_COMPATIBILITY_ERROR);
@@ -748,7 +749,7 @@ void rule_statement_value()
     {
         getNextToken();
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &statementValueType,UNDEFINED, &exprErrCode))
+        if (!parse_expression(tokenHistory, &statementValueType, leftSideIdentifier.type, &exprErrCode))
             error(exprErrCode);
         if (statementValueType == BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -780,7 +781,7 @@ void rule_arg_expr()
     else
     {
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &statementValueType,UNDEFINED, &exprErrCode))
+        if (!parse_expression(tokenHistory, &statementValueType, leftSideIdentifier.type, &exprErrCode))
             error(exprErrCode);
         if (statementValueType == BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
