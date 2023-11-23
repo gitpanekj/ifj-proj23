@@ -445,7 +445,7 @@ bool rule_4(ExpressionStack* stack){
                 printf("PUSHS GF@precedenceConcatFirst\n"); // push value
             }
         }
-        else if (op1_dtype == DOUBLE){
+        else if (op1_dtype == DOUBLE){ //todo delete
             if(whileLayer){                
                 appendString(&stringForStoring, "CALL !!conver\n");
                 appendString(&stringForStoring, "ADDS\n");
@@ -473,7 +473,7 @@ bool rule_4(ExpressionStack* stack){
         }
 
     }
-    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE))
+    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) //todo delete
     {
         result_dtype =  DOUBLE;
         if(whileLayer){                
@@ -543,7 +543,7 @@ bool rule_5(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if (op1_dtype == DOUBLE){
+        if (op1_dtype == DOUBLE){ //todo delete
             if(whileLayer){                
                 appendString(&stringForStoring, "CALL !!conver\n");
                 appendString(&stringForStoring, "SUBS\n");
@@ -572,7 +572,7 @@ bool rule_5(ExpressionStack *stack){
         }
 
     }
-    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE))
+    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) //todo delete
     {
         result_dtype =  DOUBLE;
         if(whileLayer){                
@@ -642,7 +642,7 @@ bool rule_6(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if (op1_dtype == DOUBLE){
+        if (op1_dtype == DOUBLE){ //todo delete
             if(whileLayer){                
                 appendString(&stringForStoring, "CALL !!conver\n");
                 appendString(&stringForStoring, "MULS\n");
@@ -669,7 +669,7 @@ bool rule_6(ExpressionStack *stack){
         }
 
     }
-    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE))
+    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) //todo delete
     {
         result_dtype =  DOUBLE;
         if(whileLayer){                
@@ -739,7 +739,7 @@ bool rule_7(ExpressionStack *stack){
     // Type conversions
     if (op1_dtype == op2_dtype){
         result_dtype = op1_dtype;
-        if (op1_dtype == DOUBLE){
+        if (op1_dtype == DOUBLE){ //todo delete
             if(whileLayer){                
                 appendString(&stringForStoring, "CALL !!conver\n");
                 appendString(&stringForStoring, "DIVS\n");
@@ -747,7 +747,17 @@ bool rule_7(ExpressionStack *stack){
                 printf("CALL !!conver\n");
                 printf("DIVS\n");
             }
-        } else {
+        } 
+        else if ((op1_dtype == INT_CONVERTABLE) ||
+                 (op1_dtype == INT_UNCONVERTABLE))
+        {
+            if(whileLayer){                
+                appendString(&stringForStoring, "IDIVS\n");
+            } else {
+                printf("IDIVS\n");
+            }
+        }
+        else {
             if(whileLayer){                
                 appendString(&stringForStoring, "DIVS\n");
             } else {
@@ -760,13 +770,13 @@ bool rule_7(ExpressionStack *stack){
     {
         result_dtype = INT_UNCONVERTABLE;
         if(whileLayer){                
-            appendString(&stringForStoring, "DIVS\n");
+            appendString(&stringForStoring, "IDIVS\n");
         } else {
-            printf("DIVS\n");
+            printf("IDIVS\n");
         }
 
     }
-    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE))
+    else if ((op1_dtype == DOUBLE) && (op2_dtype == INT_CONVERTABLE)) //todo delete
     {
         result_dtype =  DOUBLE;
         if(whileLayer){                

@@ -183,16 +183,14 @@ void rule_param()
     //  generate function param
     //-------
     currentFunctionParameter.type = type;
-    // todo gen param function check for retype
-    //  for unique labels use current_def_function_name and param number
-    //  if (type == DOUBLE || type == DOUBLE_NIL)
-    //  {
-    //      // gen_function_param_with_type_check()
-    //  }
-    //  else
-    //  {
-    gen_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
-    // }
+    if (type == DOUBLE || type == DOUBLE_NIL)
+    {
+        gen_function_param_with_type_check(&paramId, &currentDefFunctionName, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+    }
+    else
+    {
+        gen_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+    }
     if (!paramVectorPush(&paramVector, currentFunctionParameter))
         error(INTERNAL_COMPILER_ERROR);
 }
@@ -1516,12 +1514,11 @@ void generateFunctionCallParam(Token token, int paramCount)
     { // call write
         Name name = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
         size_t scope;
-        symData *data;
         switch (token.type)
         {
         case TOKEN_IDENTIFIER:
-            data = getVariableDataAndScopeFromSymstack(name, &scope);
-            gen_write_var(&name, scope, data->type);
+            getVariableDataAndScopeFromSymstack(name, &scope);
+            gen_write_var(&name, scope);
             break;
         case TOKEN_INTEGER:
             gen_write_int(&name);

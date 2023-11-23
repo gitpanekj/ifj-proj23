@@ -199,6 +199,42 @@ void gen_declare_global_variable(Name *name, int scope)
     }
 }
 
+void gen_function_param_with_type_check(Name *name, Name *funcName, int scope, int param){
+    if (whileLayer)
+    {
+        sprintf(helpStr, "TYPE GF@tempIfVar LF@_%d\n", param);
+        appendString(&stringForStoring, helpStr);
+        sprintf(helpStr, "JUMPIFEQ !!jumpToConver_%.*s_%d GF@tempIfVar string@int\n", (int)funcName->literal_len, funcName->nameStart, param);
+        appendString(&stringForStoring, helpStr);
+        sprintf(helpStr, "JUMP !!skipConver_%.*s_%d\n", (int)funcName->literal_len, funcName->nameStart, param);
+        appendString(&stringForStoring, helpStr);
+        sprintf(helpStr, "LABEL !!jumpToConver_%.*s_%d\n", (int)funcName->literal_len, funcName->nameStart, param);
+        appendString(&stringForStoring, helpStr);
+        sprintf(helpStr, "INT2FLOAT LF@_%d LF@_%d\n", param, param);
+        appendString(&stringForStoring, helpStr);
+        sprintf(helpStr, "LABEL !!skipConver_%.*s_%d\n", (int)funcName->literal_len, funcName->nameStart, param);
+        appendString(&stringForStoring, helpStr);
+
+        sprintf(helpStr, "DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+        appendStringToBuffStart(&stringForStoring, helpStr);
+        sprintf(helpStr, "MOVE LF@%.*s_%d LF@_%d\n", (int)name->literal_len, name->nameStart, scope, param);
+        appendString(&stringForStoring, helpStr);
+    }
+    else
+    {
+        printf("TYPE GF@tempIfVar LF@_%d\n", param);
+        printf("JUMPIFEQ !!jumpToConver_%.*s_%d GF@tempIfVar string@int\n", (int)funcName->literal_len, funcName->nameStart, param);
+        printf("JUMP !!skipConver_%.*s_%d\n", (int)funcName->literal_len, funcName->nameStart, param);
+        printf("LABEL !!jumpToConver_%.*s_%d\n", (int)funcName->literal_len, funcName->nameStart, param);
+        printf("INT2FLOAT LF@_%d LF@_%d\n", param, param);
+        printf("LABEL !!skipConver_%.*s_%d\n", (int)funcName->literal_len, funcName->nameStart, param);
+
+        printf("DEFVAR LF@%.*s_%d\n", (int)name->literal_len, name->nameStart, scope);
+        printf("MOVE LF@%.*s_%d LF@_%d\n", (int)name->literal_len, name->nameStart, scope, param);
+    }
+}
+
+
 void gen_function_param(Name *name, int scope, int param)
 {
     if (whileLayer)
@@ -720,33 +756,17 @@ void gen_nil_conseal_insturcts()
     nil_con_cnt++;
 }
 
-void gen_write_var(Name *value, int scope, DataType type)
+void gen_write_var(Name *value, int scope)
 {
     if (whileLayer)
     {
         if (inFunc && scope > 0)
         {
-            if (type == DOUBLE)
-            {
-                sprintf(helpStr, "PUSHS LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
-                appendString(&stringForStoring, helpStr);
-                appendString(&stringForStoring, "CALL !!converSolo\n");
-                sprintf(helpStr, "POPS LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
-                appendString(&stringForStoring, helpStr);
-            }
             sprintf(helpStr, "WRITE LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
             appendString(&stringForStoring, helpStr);
         }
         else
         {
-            if (type == DOUBLE)
-            {
-                sprintf(helpStr, "PUSHS GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
-                appendString(&stringForStoring, helpStr);
-                appendString(&stringForStoring, "CALL !!converSolo\n");
-                sprintf(helpStr, "POPS GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
-                appendString(&stringForStoring, helpStr);
-            }
             sprintf(helpStr, "WRITE GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
             appendString(&stringForStoring, helpStr);
         }
@@ -755,22 +775,10 @@ void gen_write_var(Name *value, int scope, DataType type)
     {
         if (inFunc && scope > 0)
         {
-            if (type == DOUBLE)
-            {
-                printf("PUSHS LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
-                printf("CALL !!converSolo\n");
-                printf("POPS LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
-            }
             printf("WRITE LF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
         }
         else
         {
-            if (type == DOUBLE)
-            {
-                printf("PUSHS GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
-                printf("CALL !!converSolo\n");
-                printf("POPS GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
-            }
             printf("WRITE GF@%.*s_%d\n", (int)value->literal_len, value->nameStart, scope);
         }
     }
@@ -838,9 +846,11 @@ void gen_write_nil()
 bool gen_initStringForStoring()
 {
     stringForStoring = (char *)malloc(1); // Initial memory allocation for an empty string
-    if (stringForStoring == NULL)
+    if(stringForStoring == NULL) {
+        fprintf(stderr, "Memory reallocation failed\n");
         return false;
-    stringForStoring[0] = '\0'; // Ensure the string is null-terminated
+    }
+    stringForStoring[0] = '\0';           // Ensure the string is null-terminated
 
     return true;
 }
