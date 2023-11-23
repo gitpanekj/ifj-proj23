@@ -2,7 +2,7 @@
  * Implementace překladače imperativního jazyka IFJ23.
  * 
  * @file precedence_analysis.c
- * @author Jan Pánek (xpanek11)
+ * @author Jan Pánek (xpanek11), Petr Novák (xnovak3l), Tibor Šimlaštík (xsimla00)
  * 
  * @copyright Copyright (c) 2023
  * 

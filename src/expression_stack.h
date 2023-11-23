@@ -13,7 +13,6 @@
 #define EXPRESSION_STACK
 
 #include "tokens.h"
-#include "token_vector.h"
 #include "syntactic_analysis.h"
 #include <stdbool.h>
 
