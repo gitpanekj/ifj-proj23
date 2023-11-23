@@ -39,7 +39,11 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
 
     // Token vector
     TokenVector token_buffer;
-    TV_init(&token_buffer);
+    if (TV_init(&token_buffer) == NULL){
+        expression_stack_dispose(&stack);
+        *err = INTERNAL_COMPILER_ERROR;
+        return false;
+    };
 
     // vars to extract data from symtable
     symData* sym_data;
@@ -98,7 +102,11 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
     // check whether token is of type double
     contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE_NIL;
 
-    TV_add(&token_buffer, tokenHistory[0]);
+    if (TV_add(&token_buffer, tokenHistory[0]) == NULL){
+        expression_stack_dispose(&stack);
+        *err = INTERNAL_COMPILER_ERROR;
+        return false;
+    };
     
     // init. top of the stack
     top_idx = expression_stack_top(&stack);
@@ -118,7 +126,12 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
 
             case OPEN: // new subexpression starts after topmost non-terminal
                 mark_start_of_expr(&stack, top_idx);
-                expression_stack_push(&stack, next);
+                if (expression_stack_push(&stack, next) == NULL) {
+                    expression_stack_dispose(&stack);
+                    TV_free(&token_buffer);
+                    *err = INTERNAL_COMPILER_ERROR;
+                    return false;
+                };
                 
                 // refresh top of stack
                 top_idx = expression_stack_top(&stack);
@@ -170,7 +183,11 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
                     break;
                 }
 
-                TV_add(&token_buffer, tokenHistory[1]);
+                if (TV_add(&token_buffer, tokenHistory[1]) == NULL){
+                    expression_stack_dispose(&stack);
+                    *err = INTERNAL_COMPILER_ERROR;
+                    return false;
+                };
                 getNextToken(); // consume token which is a part of forming epxression
                 
                 break;
@@ -194,7 +211,12 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
                 // transform topmost subepxression on stack into single expression item
                 reduce_rule(&stack);
                 init_expression(&expr_placeholder, UNDEFINED);
-                expression_stack_push(&stack, expr_placeholder);
+                if (expression_stack_push(&stack, expr_placeholder) == NULL) {
+                    expression_stack_dispose(&stack);
+                    TV_free(&token_buffer);
+                    *err = INTERNAL_COMPILER_ERROR;
+                    return false;
+                };
 
 
 
@@ -206,7 +228,12 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
                 break;
 
             case EQ: // push item
-                expression_stack_push(&stack, next);
+                if (expression_stack_push(&stack, next) == NULL) {
+                    expression_stack_dispose(&stack);
+                    TV_free(&token_buffer);
+                    *err = INTERNAL_COMPILER_ERROR;
+                    return false;
+                };
                 // refresh top of stack
                 top_idx = expression_stack_top(&stack);
                 top = &(stack.items[top_idx]);
@@ -301,7 +328,12 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
 
             case OPEN:
                 mark_start_of_expr(&stack, top_idx);
-                expression_stack_push(&stack, next);
+                if (expression_stack_push(&stack, next) == NULL) {
+                    expression_stack_dispose(&stack);
+                    TV_free(&token_buffer);
+                    *err = INTERNAL_COMPILER_ERROR;
+                    return false;
+                };
                 
                 // refresh top of stack
                 top_idx = expression_stack_top(&stack);
@@ -351,7 +383,12 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
                 break;
 
             case EQ:
-                expression_stack_push(&stack, next);
+                if (expression_stack_push(&stack, next) == NULL) {
+                    expression_stack_dispose(&stack);
+                    TV_free(&token_buffer);
+                    *err = INTERNAL_COMPILER_ERROR;
+                    return false;
+                };
                 // refresh top of stack
                 top_idx = expression_stack_top(&stack);
                 top = &(stack.items[top_idx]);
