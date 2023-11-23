@@ -14,7 +14,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "tokens.h"
-#include "token_vector.h"
 #include "expression_stack.h"
 #include "syntactic_analysis.h"
 
@@ -111,7 +110,7 @@ bool rule_15(ExpressionStack*);
 typedef bool (*rule)(ExpressionStack*);
 
 //< LUT mapping rule number to corresponding function implementing that rule
-static rule RULES[16] = {
+static const rule RULES[16] = {
   rule_0,
   rule_1,
   rule_2,
