@@ -47,11 +47,11 @@ let result_9 = "Hello, "+  "Wolrd!s"
 write(result_9)
 // string variable + string literal
 let var_10 = "Hello, "
-let reuslt_10 = var_10 + "World!"
+let result_10 = var_10 + "World!"
 write(result_10)
 // string literal + string variable
 let var_11 = "World!"
-let reuslt_11 = "Hello, " + var_11
+let result_11 = "Hello, " + var_11
 write(result_11)
 
 // string variable + string variable

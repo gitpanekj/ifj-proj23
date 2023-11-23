@@ -9,10 +9,13 @@ let f : Double = 6
 // int literal >= int literal
 if (5 >= 4){
     write("x")
+}else {
 }
 
 if (5 >= 5){
-    write("x")
+    write("x")}
+    else {
+
 }
 
 if (4 >= 5){
@@ -25,10 +28,12 @@ if (4 >= 5){
 // int literal >= int var
 if (5 >= a){
     write("x")
+}else {
 }
 
 if (5 >= b){
     write("x")
+}else {
 }
 
 if (4 >= c){
@@ -43,9 +48,12 @@ if (4 >= c){
 if (a >= 5){
     write("x")
 }
+else {
+}
 
 if (b >= 5){
     write("x")
+}else {
 }
 
 if (c >= 4){
@@ -59,10 +67,12 @@ if (c >= 4){
 // double literal >= doubel literal
 if (5.0 >= 4.0){
     write("x")
+}else {
 }
 
 if (5.0 >= 5.0){
     write("x")
+}else {
 }
 
 if (4.0 >= 5.0){
@@ -74,10 +84,12 @@ if (4.0 >= 5.0){
 // double var >= doubel literal
 if (f >= 4.0){
     write("x")
+}else {
 }
 
 if (e >= 5.0){
     write("x")
+}else {
 }
 
 if (d >= 5.0){
@@ -89,10 +101,12 @@ if (d >= 5.0){
 // double literal >= doubel var
 if (5.0 >= d){
     write("x")
+}else {
 }
 
 if (5.0 >= e){
     write("x")
+}else {
 }
 
 if (4.0 >= f){

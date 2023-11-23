@@ -7,7 +7,8 @@ let f : Double = 6
 if (4.0 < 5){
     write("x")
 }
-
+else {
+}
 if (5.0 < 5){
     write("y")
 }  else {
@@ -23,6 +24,7 @@ if (5.0 < 3){
 // int literal < double literal
 if (4.0 < 5){
     write("x")
+}else {
 }
 
 if (5 < 5.0){
@@ -42,6 +44,7 @@ if (5 < 3.0){
 // double var < int literal
 if (4 < f){
     write("x")
+}else {
 }
 
 if (5 < e){
@@ -59,6 +62,7 @@ if (5 < f){
 //  int literal < double var
 if (d < 5){
     write("x")
+}else {
 }
 
 if (e < 5){

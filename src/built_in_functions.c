@@ -1,7 +1,17 @@
+/**
+ * Implementace překladače imperativního jazyka IFJ23.
+ * 
+ * @file built_in_functions.c
+ * @author  Petr Novák (xnovak3l), Tibor Šimlaštík (xsimla00)
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #include "codegen.h"
 #include <stdio.h>
 #include <stdbool.h>
-#include "built-in_functions.h"
+#include "built_in_functions.h"
 
 void add_built_in_functions(){
     //the other lines cant be indetated because the spaces would count for the string literal

@@ -12,7 +12,7 @@
 #include "symtable.h"
 #include "literal_vector.h"
 #include "codegen.h"
-#include "built-in_functions.h"
+#include "built_in_functions.h"
 // global variables define
 Scanner scanner;
 LiteralVector literalVector;

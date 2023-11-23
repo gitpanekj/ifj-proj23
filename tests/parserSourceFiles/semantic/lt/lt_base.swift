@@ -9,6 +9,7 @@ let f : Double = 6
 // int literal < int literal
 if (4 < 5){
     write("x")
+}else {
 }
 
 if (5 < 5){
@@ -27,6 +28,7 @@ if (5 < 4){
 // int literal < int var
 if (a < 5){
     write("x")
+}else {
 }
 
 if (b < 5){
@@ -46,6 +48,7 @@ if (c < 4){
 
 if (5 < a){
     write("x")
+}else {
 }
 
 if (5 < b){
@@ -65,6 +68,7 @@ if (4 < c){
 // double literal < doubel literal
 if (4.0 < 5.0){
     write("x")
+}else {
 }
 
 if (5.0 < 5.0){
@@ -82,6 +86,7 @@ if (5.0 < 4.0){
 // double var < doubel literal
 if (4.0 < f){
     write("x")
+}else {
 }
 
 if (5.0 < e){
@@ -99,6 +104,7 @@ if (5.0 < d){
 // double literal < doubel var
 if (d < 5.0){
     write("x")
+}else {
 }
 
 if (e < 5.0){

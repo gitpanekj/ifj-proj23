@@ -5,6 +5,8 @@ var double_nil : Double? = 5.0
 // double var == int literal
 if (double == 5){
     write("x")
+} else {
+    write("x")
 }
 
 if (double == 4){
@@ -16,6 +18,8 @@ if (double == 4){
 
 // int literal == double var
 if (5 == double){
+    write("x")
+} else {
     write("x")
 }
 
@@ -29,7 +33,9 @@ if (4 == double){
 // double literal == int literal
 if (5.0 == 5){
     write("x")
+}else {
 }
+
 
 if (4.0 == 5){
     write("y")
@@ -40,6 +46,8 @@ if (4.0 == 5){
 
 // int literal == double literal
 if (5 == 5.0){
+    write("x")
+} else {
     write("x")
 }
 
@@ -53,6 +61,8 @@ if (4 == 5.0){
 
 if (double == 5){
     write("x")
+} else {
+    write("x")
 }
 
 
@@ -64,6 +74,8 @@ if (double == 4){
 
 
 if (5 == double){
+    write("x")
+} else {
     write("x")
 }
 
@@ -78,6 +90,8 @@ if (4 == double){
 
 
 if (double_nil == 5){
+    write("x")
+} else {
     write("x")
 }
 

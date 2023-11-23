@@ -1,12 +1,12 @@
-var int = 5;
-var int_nil : Int? = 5;
-var int_nil_n : Int? = nil;
-var double = 5.0;
-var double_nil : Double? = 5.0;
-var double_nil_n : Double? = nil;
-var string = "Hello World!"
-var string_nil : String? = "Hello World!"
-var string_nil_n : String? = nil
+var int = 5
+var int_nil : Int? = 5
+var int_nil_n : Int? = nil
+var double = 5.0
+var double_nil : Double? = 5.0
+var double_nil_n : Double? = nil
+var str = "Hello World!"
+var str_nil : String? = "Hello World!"
+var str_nil_n : String? = nil
 
 
 // nil != nil
@@ -72,8 +72,8 @@ if (int_nil != int){
 } else {
     write("x")
 }
-
-var int_nil = nil;
+ 
+int_nil = nil
 // int != int_nill
 if (int != int_nil){
     write("y")
@@ -142,7 +142,7 @@ if (double_nil != double){
 
 
 
-var double_nil = nil;
+double_nil = nil
 if (double != double_nil){
     write("x")
 } else {
@@ -214,7 +214,7 @@ if (str_nil != str){
     write("x")
 }
 
-var str_nil = nil;
+str_nil = nil
 // int != int_nill
 if (str != str_nil){
     write("x")

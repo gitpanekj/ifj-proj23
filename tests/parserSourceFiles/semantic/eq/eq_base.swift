@@ -1,24 +1,28 @@
-var int = 5;
-var int_nil : Int? = 5;
-var int_nil_n : Int? = nil;
-var double = 5.0;
-var double_nil : Double? = 5.0;
-var double_nil_n : Double? = nil;
-var string = "Hello World!"
-var string_nil : String? = "Hello World!"
-var string_nil_n : String? = nil
+var int = 5
+var int_nil : Int? = 5
+var int_nil_n : Int? = nil
+var double = 5.0
+var double_nil : Double? = 5.0
+var double_nil_n : Double? = nil
+var str = "Hello World!"
+var str_nil : String? = "Hello World!"
+var str_nil_n : String? = nil
 
 
 // nil == nil
 if (nil == nil){
     write("nil == nil")
+}else {
+    
 }
 
 
 // int == int
 if (5 == 5){
     write("5 == 5")
+}else {
 }
+
 
 if (5 == 4){
     write("Fail: 5 == 4")
@@ -30,6 +34,8 @@ if (5 == 4){
 // int literal == int var
 if (5 == int){
     write("5 == int")
+}else {
+    
 }
 
 if (4 == int){
@@ -42,7 +48,9 @@ if (4 == int){
 // int var == int literal
 if (int == 5){
     write("int == 5")
+}else {
 }
+
 
 if (int == 4){
     write("Fail: int == 4")
@@ -54,14 +62,18 @@ if (int == 4){
 // int == int_nill
 if (int == int_nil){
     write("int == int_nil")
+}else {
+    
 }
 
 // int_nill == int
 if (int_nil == int){
     write("int_nil == int")
+}else {
+    
 }
 
-var int_nil = nil;
+int_nil = nil
 // int == int_nill
 if (int == int_nil){
     write("Fail: int == int_nil")
@@ -80,6 +92,8 @@ if (int_nil == int){
 
 if (5.0 == 5.0){
     write("5.0 == 5.0")
+}else {
+    
 }
 
 if (5.0 == 4.0){
@@ -91,6 +105,8 @@ if (5.0 == 4.0){
 
 if (5.0 == double){
     write("5.0 == double")
+}else {
+    
 }
 
 if (4.0 == double){
@@ -101,7 +117,9 @@ if (4.0 == double){
 
 if (double == 5.0){
     write("double == 5.0")
+}else {
 }
+
 
 if (double == 4.0){
     write("Fail: double == 4.0")
@@ -111,16 +129,20 @@ if (double == 4.0){
 
 if (double == double_nil){
     write("double == double_nil")
+}else {
+    
 }
 
 
 if (double_nil == double){
     write("double_nil == double")
+}else {
 }
 
 
 
-var double_nil = nil;
+
+ double_nil = nil
 if (double == double_nil){
     write("Fail: double == double_nil")
 } else {
@@ -138,6 +160,8 @@ if (double_nil == double){
 
 if ("Hello World!" == "Hello World!"){
     write("str == str")
+}else {
+    
 }
 
 
@@ -151,6 +175,8 @@ if ("Hello World!" == "Hello World"){
 
 if ("Hello World!" == str){
     write("'' == str")
+}else {
+    
 }
 
 if ("Hello World" == str){
@@ -163,6 +189,8 @@ if ("Hello World" == str){
 
 if (str == "Hello World!"){
     write("str == ''")
+}else {
+    
 }
 
 if (str == "Hello World"){
@@ -175,14 +203,18 @@ if (str == "Hello World"){
 // int == int_nill
 if (str == str_nil){
     write("str == str_nil")
+}else {
+    
 }
 
 // int_nill == int
 if (str_nil == str){
     write("str_nil == str")
+}else {
 }
 
-var str_nil = nil;
+
+str_nil = nil
 // int == int_nill
 if (str == str_nil){
     write("Fail: str == str_nil")
