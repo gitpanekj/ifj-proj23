@@ -96,7 +96,7 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
     }
 
     // check whether token is of type double
-    contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE;
+    contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE_NIL;
 
     TV_add(&token_buffer, tokenHistory[0]);
     
@@ -163,7 +163,7 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
                 }
 
                 // check whether token is of type double
-                contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE;
+                contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE_NIL;
 
                 // if current token indicates end of expression, leave it
                 if (next.type == END_OF_EXPR){
@@ -248,7 +248,7 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
                 }
 
                 // check whether token is of type double
-                contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE;
+                contains_double = contains_double || next.data.term.data_type == DOUBLE || next.data.term.data_type == DOUBLE_NIL;
 
                 if (next.type == END_OF_EXPR){
                     break;
@@ -328,8 +328,9 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
 
                 rule_number = get_rule_number(&stack);
 
-                /*
                 valid = RULES[rule_number](&stack, expected_dtype);
+
+
                 // Semantic error
                 if (!valid){
                     fprintf(stderr, "Error occured during expression parsing: Semantic error.\n");
@@ -338,12 +339,6 @@ bool parse_expression(Token tokenHistory[2], DataType *result_dtype, DataType ex
                     *err = TYPE_COMPATIBILITY_ERROR;
                     return false;
                 }
-                */
-
-               // transform topmost subepxression on stack into single expression item
-                reduce_rule(&stack);
-                init_expression(&expr_placeholder, UNDEFINED);
-                expression_stack_push(&stack, expr_placeholder);
 
 
                 // refresh top of stack
