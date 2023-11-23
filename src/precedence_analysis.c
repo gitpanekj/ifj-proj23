@@ -914,8 +914,8 @@ bool rule_8(ExpressionStack *stack, DataType expected_dtype){
     }else if ((op2_dtype == INT_UNCONVERTABLE_NIL && ((op1_dtype == INT_CONVERTABLE)||(op1_dtype == INT_UNCONVERTABLE))) || 
             (op1_dtype == INT_UNCONVERTABLE_NIL && ((op2_dtype == INT_CONVERTABLE)||(op2_dtype == INT_UNCONVERTABLE))) || 
             (op2_dtype == STRING_NIL && op1_dtype == STRING) || (op1_dtype == STRING_NIL && op2_dtype == STRING) ||
-            (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE_NIL) || 
-            (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE_NIL)) {
+            (((op2_dtype == INT_CONVERTABLE) || (op2_dtype == DOUBLE)) && op1_dtype == DOUBLE_NIL) || 
+            (((op1_dtype == INT_CONVERTABLE) || (op1_dtype == DOUBLE)) && op2_dtype == DOUBLE_NIL)) {
         if(whileLayer){
             appendString(&stringForStoring, "EQS\n");
         }else{
@@ -983,8 +983,8 @@ bool rule_9(ExpressionStack *stack, DataType expected_dtype){
     } else if ((op2_dtype == INT_UNCONVERTABLE_NIL && ((op1_dtype == INT_CONVERTABLE)||(op1_dtype == INT_UNCONVERTABLE))) || 
             (op1_dtype == INT_UNCONVERTABLE_NIL && ((op2_dtype == INT_CONVERTABLE)||(op2_dtype == INT_UNCONVERTABLE))) || 
             (op2_dtype == STRING_NIL && op1_dtype == STRING) || (op1_dtype == STRING_NIL && op2_dtype == STRING) ||
-            (op2_dtype == INT_CONVERTABLE && op1_dtype == DOUBLE_NIL) || 
-            (op1_dtype == INT_CONVERTABLE && op2_dtype == DOUBLE_NIL)) {
+            (((op2_dtype == INT_CONVERTABLE) || (op2_dtype == DOUBLE)) && op1_dtype == DOUBLE_NIL) || 
+            (((op1_dtype == INT_CONVERTABLE) || (op1_dtype == DOUBLE)) && op2_dtype == DOUBLE_NIL)) {
         if(whileLayer){
             appendString(&stringForStoring, "EQS\n");
             appendString(&stringForStoring, "NOTS\n");
