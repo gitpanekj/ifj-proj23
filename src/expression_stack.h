@@ -143,5 +143,8 @@ bool is_term(ExpressionStackItem*);
 
 void print_stack_item(ExpressionStackItem*);
 
+void expression_member_print(ExpressionStackItem *item);
+
+
 
 #endif

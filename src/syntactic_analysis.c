@@ -316,7 +316,7 @@ bool rule_statement_func()
 
         DataType exprType;
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &exprType, BOOLEAN, &exprErrCode))
+        if (!parse_expression(tokenHistory, &exprType, UNDEFINED, &exprErrCode))
             error(exprErrCode);
         else if (exprType != BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -475,7 +475,7 @@ void rule_statement()
 
         DataType exprType;
         ErrorCodes exprErrCode;
-        if (!parse_expression(tokenHistory, &exprType, BOOLEAN, &exprErrCode))
+        if (!parse_expression(tokenHistory, &exprType, UNDEFINED, &exprErrCode))
             error(exprErrCode);
         else if (exprType != BOOLEAN)
             error(TYPE_COMPATIBILITY_ERROR);
@@ -564,7 +564,7 @@ void rule_if_cond()
     DataType exprType;
     ErrorCodes exprErrCode;
 
-    if (!parse_expression(tokenHistory, &exprType, BOOLEAN, &exprErrCode))
+    if (!parse_expression(tokenHistory, &exprType, UNDEFINED, &exprErrCode))
         error(exprErrCode);
     else if (exprType != BOOLEAN)
         error(TYPE_COMPATIBILITY_ERROR);
