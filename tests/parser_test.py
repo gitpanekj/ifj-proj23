@@ -72,7 +72,8 @@ def main():
             exit(1)
 
         return_code = result.returncode
-        
+        error_message = result.stderr
+
         if (file.endswith("-e.swift")):
              if(return_code in numbers):
                 test_pass_cnt +=1

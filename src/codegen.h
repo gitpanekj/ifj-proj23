@@ -26,8 +26,8 @@ void gen_dispose();
 
 //string for while
 bool appendStringToBuffStart(char **original, char *append);
-bool appendString(char **original, char *append, bool vypsat);
-bool appendStringFromPointer(char **original, size_t length, char *append, bool vypsat);
+bool appendString(char **original, char *append);
+bool appendStringFromPointer(char **original, size_t length, char *append);
 
 //insert literal
 void gen_Insert_string_literal(char* string_literal, size_t lenght);
