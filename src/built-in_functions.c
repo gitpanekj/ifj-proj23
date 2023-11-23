@@ -1,14 +1,3 @@
-/**
- * Implementace překladače imperativního jazyka IFJ23.
- * 
- * @author Tibor Šimlaštík (xsimla00)
- * @file built-in_functions.c
- * @brief Imlementation of built-in functions
- * 
- * @copyright Copyright (c) 2023
- * 
- */
-
 #include "codegen.h"
 #include <stdio.h>
 #include <stdbool.h>
