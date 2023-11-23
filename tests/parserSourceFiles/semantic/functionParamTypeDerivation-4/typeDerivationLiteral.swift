@@ -10,7 +10,8 @@ foo(2, a)
 
 foo2(2, 2)
 foo2(2, 1)
-func foo2(_ x : Double, _ y : Int )-> Double {
+func foo2(_ x : Double, _ y : Int ) -> Double {
+    
     return 5
 }
 foo2(2,2)

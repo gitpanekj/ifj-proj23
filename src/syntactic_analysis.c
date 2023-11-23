@@ -44,7 +44,7 @@ void analysisStart()
     LV_init(&literalVector);
     scaner_init(&scanner, &literalVector);
     symStackInit(&symtableStack);
-    if(!gen_init())
+    if (!gen_init())
         error(INTERNAL_COMPILER_ERROR);
     if (!symtableInit(&globalSymtable))
         error(INTERNAL_COMPILER_ERROR);
@@ -181,9 +181,18 @@ void rule_param()
     defineVariable(paramId, type, true, true);
 
     //  generate function param
-    gen_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
     //-------
     currentFunctionParameter.type = type;
+    // todo gen param function check for retype
+    //  for unique labels use current_def_function_name and param number
+    //  if (type == DOUBLE || type == DOUBLE_NIL)
+    //  {
+    //      // gen_function_param_with_type_check()
+    //  }
+    //  else
+    //  {
+    gen_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+    // }
     if (!paramVectorPush(&paramVector, currentFunctionParameter))
         error(INTERNAL_COMPILER_ERROR);
 }
@@ -309,6 +318,7 @@ bool rule_statement_func()
 
         DataType exprType;
         ErrorCodes exprErrCode;
+        // todo add expected boollean type
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
             error(exprErrCode);
         else if (exprType != BOOLEAN)
@@ -392,6 +402,7 @@ void rule_return_value()
         DataType returnType = UNDEFINED;
 
         getNextToken();
+        // todo add expected currentFunctionReturnType
         if (!parse_expression(tokenHistory, &returnType, &exprErrCode))
             error(exprErrCode);
         else if (returnType == BOOLEAN)
@@ -467,6 +478,7 @@ void rule_statement()
 
         DataType exprType;
         ErrorCodes exprErrCode;
+        // todo add expected boollean
         if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
             error(exprErrCode);
         else if (exprType != BOOLEAN)
@@ -555,7 +567,7 @@ void rule_if_cond()
     getNextToken();
     DataType exprType;
     ErrorCodes exprErrCode;
-
+    // todo add expected boollean
     if (!parse_expression(tokenHistory, &exprType, &exprErrCode))
         error(exprErrCode);
     else if (exprType != BOOLEAN)
@@ -608,6 +620,7 @@ void rule_statement_action()
     // function call - without assigment
     if (tokenIs(TOKEN_L_PAR))
     {
+        assertNotEndOfLine();
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
         if (symtTreeNameCmp(callingFuncName, (Name){.literal_len = 5, .nameStart = "write"}) == 0)
@@ -740,6 +753,7 @@ void rule_statement_value()
     {
         getNextToken();
         ErrorCodes exprErrCode;
+        // todo add leftsideindetifier type
         if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
             error(exprErrCode);
         if (statementValueType == BOOLEAN)
@@ -751,6 +765,7 @@ void rule_arg_expr()
 {
     if (tokenIs(TOKEN_L_PAR)) // call function with assigment
     {
+        assertNotEndOfLine();
         // function name is one token back
         Name callingFuncName = {.literal_len = tokenHistory[0].literal_len, .nameStart = tokenHistory[0].start_ptr};
         callingWriteFunc = false;
@@ -771,6 +786,7 @@ void rule_arg_expr()
     else
     {
         ErrorCodes exprErrCode;
+        // todo add leftsideidentifer type
         if (!parse_expression(tokenHistory, &statementValueType, &exprErrCode))
             error(exprErrCode);
         if (statementValueType == BOOLEAN)
@@ -1616,13 +1632,24 @@ void errorHandle(ErrorCodes ErrorType, const char *functionName)
 /**
  * @brief Function to check if before current token was end of line
  * If end of line wasn't before token cause SYNTACTIC_ERROR
+ * @param notEndOfLine flag to determin if should check if eol must be or must not be
  * @param functionName Name of function that call this function
  */
-void wasEndOfLine(const char *functionName)
+void wasEndOfLine(bool notEndOfLine, const char *functionName)
 {
-    if (!token.follows_separator)
+    if (notEndOfLine)
     {
-        errorHandle(SYNTACTIC_ERROR, functionName);
+        if (token.follows_separator)
+        {
+            errorHandle(SYNTACTIC_ERROR, functionName);
+        }
+    }
+    else
+    {
+        if (!token.follows_separator)
+        {
+            errorHandle(SYNTACTIC_ERROR, functionName);
+        }
     }
 }
 

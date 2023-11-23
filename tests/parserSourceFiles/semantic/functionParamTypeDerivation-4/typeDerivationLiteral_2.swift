@@ -15,7 +15,9 @@ foo2(2, b)
 
 foo2(2,2)
 foo2(2.3,3)
-}else{}
+}else{
+    
+}
 func foo2(_ x : Double, _ y : Double )-> Double {
     return 5
 }
