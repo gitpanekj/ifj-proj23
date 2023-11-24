@@ -25,7 +25,6 @@ bool gen_init();
 void gen_dispose();
 
 //string for while
-bool appendStringToBuffStart(char **original, char *append);
 bool appendString(char **original, char *append);
 bool appendStringFromPointer(char **original, size_t length, char *append);
 
