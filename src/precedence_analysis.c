@@ -1093,7 +1093,7 @@ bool rule_11(ExpressionStack *stack, DataType expected_dtype){
         }else{
             printf("#Relation operator <=\n");
             printf("GTS\n");
-            printf("NOTS!");
+            printf("NOTS\n");
         }
     }
     else {
@@ -1200,7 +1200,7 @@ bool rule_13(ExpressionStack *stack, DataType expected_dtype){
         }else{
             printf("#Relation operator >=\n");
             printf("LTS\n");
-            printf("NOTS!");
+            printf("NOTS\n");
         }
     }
     else {
