@@ -10,4 +10,5 @@ while(i<=5){
     var n : Double
     write(r, "\n")
     write(l, "\n")
+    i = i + 1 
 }
