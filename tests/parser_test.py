@@ -2,6 +2,7 @@ from subprocess import Popen, PIPE
 import subprocess
 import os
 import re
+import sys
 
 SYNTAX_FILES = ['']
 
@@ -13,9 +14,13 @@ def main():
     test_pass_cnt=0
     test_failed_cnt=0
     files = []
-    for root, _, filenames in os.walk("./parserSourceFiles/syntax"):
-        for filename in filenames:
-            files.append(os.path.join(root, filename))
+    if(len(sys.argv) == 2):
+        argument = sys.argv[1]
+
+    if(len(sys.argv) != 2):
+        for root, _, filenames in os.walk("./parserSourceFiles/syntax"):
+            for filename in filenames:
+                files.append(os.path.join(root, filename))
 
     status = 0
     #syntax 
@@ -49,10 +54,14 @@ def main():
     #semantic
     print("---------------- Semantic tests ------------------")
     files = []
-
-    for root, _, filenames in os.walk("./parserSourceFiles/semantic"):
-        for filename in filenames:
-            files.append(os.path.join(root, filename)) 
+    if(len(sys.argv) == 2):
+        for root, _, filenames in os.walk(argument):
+            for filename in filenames:
+                files.append(os.path.join(root, filename))
+    else:
+        for root, _, filenames in os.walk("./parserSourceFiles/semantic"):
+            for filename in filenames:
+                files.append(os.path.join(root, filename)) 
     for file in files:
         test_cnt +=1
         result = subprocess.run(["../src/compiler.out"], stdin=open(file, 'r'),stdout=subprocess.PIPE,stderr=subprocess.PIPE, text=True)
@@ -99,7 +108,6 @@ def main():
     print(f"Summary: {percentage}% \t")
     exit(status)
     
-    
-    
+
 if __name__ == "__main__":
     main()
