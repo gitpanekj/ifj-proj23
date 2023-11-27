@@ -212,6 +212,7 @@ Token scan_token(Scanner *s){
                 init_token(&t, TOKEN_LA_ERROR, NULL, 0, false);
                 return t;
             }
+            follows_separator=true;
         }
     }
 
