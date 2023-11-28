@@ -170,7 +170,7 @@ void rule_param()
     // paramName and paramID cant be same
     if (symtTreeNameCmp(paramId, currentFunctionParameter.name) == 0)
     {
-        error(FUNCTION_CALL_ERROR);
+        error(OTHER_SEMANTIC_ERROR);
     }
 
     getNextToken();
@@ -551,7 +551,7 @@ void rule_if_cond()
         symData *data = getVariableDataAndScopeFromSymstack(varName, &scope);
         if (data == NULL)
             error(UNDEFINED_VARIABLE);
-        else if (!data->isConstant || !isOptionalType(data->type))
+        else if (!isOptionalType(data->type)) //? !data->isConstant || 
             error(OTHER_SEMANTIC_ERROR);
 
         gen_start_if_let_condition(&varName, scope, (int)symStackTopScopeID(&symtableStack));
@@ -1374,7 +1374,7 @@ symData *getVariableDataFromSymstack(Name name)
         return NULL;
     }
     else if (data->isFunction)
-        error(OTHER_SEMANTIC_ERROR);
+        error(UNDEFINED_VARIABLE);
     return data;
 }
 
@@ -1393,7 +1393,7 @@ symData *getVariableDataAndScopeFromSymstack(Name name, size_t *scope)
         return NULL;
     }
     else if (data->isFunction)
-        error(OTHER_SEMANTIC_ERROR);
+        error(UNDEFINED_VARIABLE);
     return data;
 }
 
