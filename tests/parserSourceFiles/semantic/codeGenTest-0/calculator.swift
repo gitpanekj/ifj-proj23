@@ -1,7 +1,6 @@
 
 
 func calc(op1 a:Int, op2 b:Int, operator oper : String) -> Int?{
-
     if(oper == "+"){
         return a + b
     }else{}
@@ -22,16 +21,9 @@ func calc(op1 a:Int, op2 b:Int, operator oper : String) -> Int?{
     write("invalid operand\n")
     return nil 
 }
-
-
-
-
-
 write("vitej v kalkulacce\n")
 startCalc()
 write("\nkonec\n")
-
-
 func startCalc(){
     var condition = 1
     write("pro ukonceni zadej prazdny input\n")
