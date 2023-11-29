@@ -125,7 +125,7 @@ void rule_func_decl()
     bool haveReturn = rule_func_body();
     if (currentFunctionReturnType != UNDEFINED && !haveReturn)
     {
-        error(FUNCTION_RETURN_ERROR);
+        error(FUNCTION_CALL_ERROR);
     }
     gen_end_function();
     currentDefFunctionName.literal_len = 0;
