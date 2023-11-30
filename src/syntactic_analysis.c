@@ -19,10 +19,8 @@ LiteralVector literalVector;
 Token tokenHistory[2];
 Token token;
 
-//? name like this or pointer node of function with all data (symtTreeElementPtr) or symtData
-// symtable *currentFunctionSymtable; // pointer to data of current function - if processing function
+
 Name currentDefFunctionName = {.literal_len = 0, .nameStart = NULL};
-// bool insideFunction = false;
 DataType currentFunctionReturnType = UNDEFINED; // type for return type check
 DataType statementValueType;                    // type returned from statement value rule
 
@@ -1591,11 +1589,9 @@ void generateFunctionCallParam(Token token, int paramCount)
  */
 void errorHandle(ErrorCodes ErrorType, const char *functionName)
 {
-    // todo free memory
     symStackDispose(&symtableStack);
     LV_free(&literalVector);
     gen_dispose();
-    // paramVectorDispose(&paramVector);
     switch (ErrorType)
     {
     case LEXICAL_ERROR:
