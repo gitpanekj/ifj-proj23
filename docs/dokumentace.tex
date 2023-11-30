@@ -1,23 +1,43 @@
-\documentclass[a4pater]{article}
+\documentclass[a4paper]{article}
 \usepackage[left=2cm,top=3cm,text={17cm,24cm}]{geometry}
 \usepackage[czech]{babel}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 
 
+\usepackage{picture}
+\usepackage{graphics}
+\usepackage{subfig}
+\usepackage{pdflscape}
+\usepackage{color}
+\usepackage{enumerate}
+\usepackage{array}
+
+
+\newcommand{\red}[1]{{\color{red} #1}}
+
+\renewcommand{\labelenumii}{\theenumii}
+\renewcommand{\theenumii}{\theenumi.\arabic{enumii}.}
+\renewcommand{\theenumii}{\theenumi.\arabic{enumii}.}
+
 \begin{document}
 
 \begin{titlepage}
     \begin{center}
-        {\Huge Dokumentace překladače} \\[0.4em]
+        \textsc{
+        {\Huge Vysoké učení technické v~Brně}\\[0.5em]
+        {\huge Fakulta Informačních technologií}} \\
+        \vspace{\stretch{0.1}}
+        {\Huge \textbf{Dokumentace překladače}} \\[0.4em]
+        {\Large Projekt do předmětů: IFJ, IAL} \\[2em]
         {\Large Tým \textbf{xkotou08, Varianta - vv-BVS}}
     \end{center}
-    \vspace{\stretch{0.7}}
+    \vspace{\stretch{0.6}}
     {\Large \textbf{Řešitelé}} \\[0.4em]
         {\Large
         \hspace*{0.5cm} (25\%) Lukáš Kotoun (xkotou08) - \textbf{vedoucí týmu}\\
         \hspace*{0.5cm} (25\%) Petr Novák (xnovak3l) \\
-        \hspace*{0.5cm} (25\%) Jan Pánek (xpanek) \\
+        \hspace*{0.5cm} (25\%) Jan Pánek (xpanek11) \\
         \hspace*{0.5cm} (25\%) Tibor Šimlaštík (xsimla00) \\
         }
     \vspace{\stretch{0.1}} \\
@@ -33,10 +53,176 @@
 \newpage
 
 
-\section{Section I.}
-\subsection{Subsection I.I.}
-\subsection{Subsection I.II.}
-\section{Section II.}
+\section{Úvod}
+\section{Lexikální analýza}
+\section{Tabulka symbolů}
+\section{Syntaktická a sémantická analýza}
+\subsection{Zpracování příkazů}
+\subsection{Zpracování výrazů}
+
+\section{Generování kódu}
+\section{Ostatní}
+
+\section{Přílohy}
+
+\subsection{Diagram konečného automatu}
+\begin{landscape}
+    \begin{figure}[p]
+        \begin{center}
+            \scalebox{0.4}{\includegraphics{fsm_check.eps}}
+        \end{center}
+        \caption{Konečný automat}
+    \end{figure}
+\end{landscape}
+
+
+\subsection{Gramatika}
+\begin{enumerate}
+    \item $\langle$prog$\rangle$ $\rightarrow$ $\langle$prog-body$\rangle$ \red{EOF}
+    \item $\langle$prog-body$\rangle$ $\rightarrow$ $\langle$func-list$\rangle$ $\langle$statement-list$\rangle$ $\langle$prog-body$\rangle$
+    \item $\langle$prog-body$\rangle$ $\rightarrow$ \red{\red{$\varepsilon$}}
+    \item $\langle$statement-list$\rangle$ $\rightarrow$ $\langle$statement$\rangle$ $\langle$statment-list$\rangle$
+    \item $\langle$statement-list$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \item $\langle$statement-func-list$\rangle$ $\rightarrow$ $\langle$statement-func$\rangle$ $\langle$statment-func-list$\rangle$
+    \item $\langle$statement-func-list$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \item $\langle$func-list$\rangle$ $\rightarrow$ $\langle$func-decl$\rangle$ $\langle$func-list$\rangle$
+    \item $\langle$func-list$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \item  $\langle$func-decl$\rangle$ $\rightarrow$ \red{FUNC ID (} $\langle$param-first$\rangle$ \red{)} $\langle$return-type$\rangle$ $\langle$func-body$\rangle$
+    \begin{enumerate}
+        \item $\langle$param-first$\rangle$ $\rightarrow$ $\langle$param$\rangle$ $\langle$param-n$\rangle$
+        \item $\langle$param-first$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+        \item $\langle$param-n$\rangle$ $\rightarrow$ \red{,} $\langle$param$\rangle$ $\langle$param-n$\rangle$
+        \item $\langle$param-n$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+        \item $\langle$param$\rangle$ $\rightarrow$ $\langle$param-name$\rangle$ $\langle$param-res$\rangle$ 
+        \begin{enumerate}
+            \item $\langle$param-name$\rangle$ $\rightarrow$ \red{\_}
+            \item $\langle$param-name$\rangle$ $\rightarrow$ \red{ID}
+            \item $\langle$param-res$\rangle$ $\rightarrow$ \red{\_ :} $\langle$type$\rangle$
+            \item $\langle$param-res$\rangle$ $\rightarrow$ \red{ID :} $\langle$type$\rangle$
+        \end{enumerate}
+        \item $\langle$return-type$\rangle$ $\rightarrow$ \red{->} $\langle$type$\rangle$
+        \item $\langle$return-type$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \end{enumerate}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{INT}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{INT-NIL}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{DOUBLE}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{DOUBLE-NIL}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{STRING}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{STRING-NIL}
+    \item $\langle$func-body$\rangle$ $\rightarrow$ \red{$\{$} $\langle$statement-func-list$\rangle$ \red{$\}$}
+    \item $\langle$body$\rangle$ $\rightarrow$ \red{$\{$} $\langle$statement-list$\rangle$ \red{$\}$}
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ \red{RETURN} $\langle$return-value$\rangle$
+    \begin{enumerate}
+        \item $\langle$return-value$\rangle$ $\rightarrow$ $\langle$expr$\rangle$
+        \item $\langle$return-value$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \end{enumerate}
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ \red{IF} $\langle$if-cond$\rangle$ $\langle$func-body$\rangle$ \red{ELSE} $\langle$func-body$\rangle$
+    \begin{enumerate}
+        \item $\langle$if-cond$\rangle$ $\rightarrow$ \red{LET ID}
+        \item $\langle$if-cond$\rangle$ $\rightarrow$ $\langle$expr$\rangle$
+    \end{enumerate}
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ \red{WHILE} $\langle$expr$\rangle$ $\langle$func-body$\rangle$
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ $\langle$id-decl$\rangle$ $\langle$decl-opt$\rangle$
+    \begin{enumerate}
+        \item $\langle$id-decl$\rangle$ $\rightarrow$ \red{VAR ID}
+        \item $\langle$id-decl$\rangle$ $\rightarrow$ \red{LET ID}
+        \item $\langle$decl-opt$\rangle$ $\rightarrow$ \red{:} $\langle$type$\rangle$ $\langle$assign$\rangle$
+        \begin{enumerate}
+            \item $\langle$assign$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+            \item $\langle$assign$\rangle$ $\rightarrow$ \red{=} $\langle$statement-value$\rangle$
+        \end{enumerate}
+        \item $\langle$decl-opt$\rangle$ $\rightarrow$ \red{=} $\langle$statement-value$\rangle$
+    \end{enumerate}
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ \red{ID} $\langle$statement-action$\rangle$
+    \item $\langle$statement$\rangle$ $\rightarrow$ \red{IF} $\langle$if-cond$\rangle$ $\langle$body$\rangle$ \red{ELSE} $\langle$body$\rangle$
+    \item $\langle$statement$\rangle$ $\rightarrow$ \red{WHILE} $\langle$expr$\rangle$ $\langle$body$\rangle$
+    \item $\langle$statement$\rangle$ $\rightarrow$ $\langle$id-decl$\rangle$ $\langle$decl-opt$\rangle$
+    \item $\langle$statement$\rangle$ $\rightarrow$ \red{ID} $\langle$statement-action$\rangle$
+    \item $\langle$statement-action$\rangle$ $\rightarrow$ = $\langle$statement-value$\rangle$
+    \item $\langle$statement-action$\rangle$ $\rightarrow$ ( $\langle$first-arg$\rangle$ )
+    \begin{enumerate}
+        \item $\langle$first-arg$\rangle$ $\rightarrow$ $\langle$arg$\rangle$ $\langle$arg-n$\rangle$
+          \begin{enumerate}
+                \item $\langle$arg$\rangle$ $\rightarrow$ $\langle$literal$\rangle$
+                \item $\langle$arg$\rangle$ $\rightarrow$ \red{ID} $\langle$arg-opt$\rangle$
+                \begin{enumerate}
+                    \item $\langle$arg-opt$\rangle$ $\rightarrow$ \red{:} $\langle$term$\rangle$
+                    \item $\langle$arg-opt$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+                \end{enumerate}
+          \end{enumerate}
+    \item $\langle$first-arg$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \item $\langle$arg-n$\rangle$ $\rightarrow$ \red{,} $\langle$arg$\rangle$ $\langle$arg-n$\rangle$
+    \item $\langle$arg-n$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+\end{enumerate}
+\item $\langle$statement-value$\rangle$ $\rightarrow$ \red{ID} $\langle$arg-expr$\rangle$
+\begin{enumerate}
+    \item $\langle$arg-expr$\rangle$ $\rightarrow$ \red{(} $\langle$first-arg$\rangle$ \red{)}
+    \item $\langle$arg-expr$\rangle$ $\rightarrow$ $\langle$expr$\rangle$
+\end{enumerate}
+\item $\langle$statement-value$\rangle$ $\rightarrow$ $\langle$expr$\rangle$
+\item $\langle$term$\rangle$ $\rightarrow$ \red{ID}
+\item $\langle$term$\rangle$ $\rightarrow$ $\langle$literal$\rangle$
+\begin{enumerate}
+    \item $\langle$literal$\rangle$ $\rightarrow$ \red{INT-LITERAL}
+    \item $\langle$literal$\rangle$ $\rightarrow$ \red{DOUBLE-LITERAL}
+    \item $\langle$literal$\rangle$ $\rightarrow$ \red{STRING-LITERAL}
+    \item $\langle$literal$\rangle$ $\rightarrow$ \red{NIL-LITERAL}
+\end{enumerate}
+\end{enumerate}
+
+\subsection{LL-tabulka}
+\begin{landscape}
+    \begin{figure}[p]
+        \begin{center}
+           \scalebox{0.43}{\includegraphics{ll1.eps}}
+        \end{center}
+        \caption{Konečný automat}
+    \end{figure}
+\end{landscape}
+
+\begin{landscape}
+    \begin{figure}[p]
+        \begin{center}
+            \scalebox{0.43}{\includegraphics{ll2.eps}}
+        \end{center}
+        \caption{Konečný automat}
+    \end{figure}
+\end{landscape}
+
+
+\subsection{Precedenční tabulka}
+
+\begin{table}[ht]
+    \catcode`\-=12
+    \begin{center}
+    \begin{tabular}{| c!{\vrule width 3pt} c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c |} \hline
+              & SEP  & TERM &   (  &   )  &   +  &   -  &   *  &   /  &  ==  &  !=  &  <=  &  >=  &   >  &   <  &   !  &   ?? \\ \noalign{\hrule height 3pt}
+         SEP  & x & < & < & > & < & < & < & < & < & < & < & < & < & < & < & <  \\ \hline
+         TERM & > & x & x & > & > & > & > & > & > & > & > & > & > & > & > & > \\ \hline
+         (    & > & < & < & = & < & < & < & < & < & < & < & < & < & < & < & <  \\ \hline
+         )    & > & x & x & > & > & > & > & > & > & > & > & > & > & > & > & > \\ \hline
+         +    & > & < & < & > & > & > & < & < & > & > & > & > & > & > & < & > \\ \hline
+         -    & > & < & < & > & > & > & < & < & > & > & > & > & > & > & < & > \\ \hline
+         *    & > & < & < & > & > & > & > & > & > & > & > & > & > & > & < & > \\ \hline
+         /    & > & < & < & > & > & > & > & > & > & > & > & > & > & > & < & > \\ \hline
+         ==   & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         !=   & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         <=   & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         >=   & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         >    & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         <    & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         !    & > & x & x & > & > & > & > & > & > & > & > & > & > & > & x & > \\ \hline
+         ??   & > & < & < & > & < & < & < & < & < & < & < & < & < & < & < & <  \\ \hline
+    \end{tabular}
+    \end{center}
+    \caption{Precedence table}
+\end{table}
+
+
+
+
+
+
 
 
 \end{document}
