@@ -1,24 +1,46 @@
-\documentclass[a4pater]{article}
-\usepackage[left=2cm,top=3cm,text={17cm,24cm}]{geometry}
+\documentclass[11pt]{article}
+\usepackage[left=2cm,top=2cm,text={17cm,24cm}]{geometry}
 \usepackage[czech]{babel}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
+\usepackage{microtype}
+
+
+\usepackage{picture}
+\usepackage{graphics}
+\usepackage{subfig}
+\usepackage{pdflscape}
+\usepackage{color}
+\usepackage{enumerate}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+
+
+
+
+\newcommand{\red}[1]{{\color{red} #1}}
 
 
 \begin{document}
 
 \begin{titlepage}
     \begin{center}
-        {\Huge Dokumentace překladače} \\[0.4em]
-        {\Large Tým \textbf{xkotou08, varianta zadání}}
+        \textsc{
+        {\Huge Vysoké učení technické v~Brně}\\[0.5em]
+        {\huge Fakulta Informačních technologií}} \\
+        \vspace{\stretch{0.1}}
+        {\Huge \textbf{Dokumentace překladače}} \\[0.4em]
+        {\Large Projekt do předmětů: IFJ, IAL} \\[2em]
+        {\Large Tým \textbf{xkotou08, Varianta\,--\,vv-BVS}}
     \end{center}
-    \vspace{\stretch{0.7}}
+    \vspace{\stretch{0.6}}
     {\Large \textbf{Řešitelé}} \\[0.4em]
         {\Large
-        \hspace*{0.5cm} (25\%) Lukáš Kotoun (xkoto) - \textbf{vedoucí týmu}\\
-        \hspace*{0.5cm} (25\%) Petr Novák (xnovak) \\
-        \hspace*{0.5cm} (25\%) Jan Pánek (xpanek) \\
-        \hspace*{0.5cm} (25\%) Tibor ....(x) \\
+        \hspace*{0.5cm} (25\%) Lukáš Kotoun (xkotou08)\,--\,\textbf{vedoucí týmu}\\
+        \hspace*{0.5cm} (25\%) Petr Novák (xnovak3l) \\
+        \hspace*{0.5cm} (25\%) Jan Pánek (xpanek11) \\
+        \hspace*{0.5cm} (25\%) Tibor Šimlaštík (xsimla00) \\
         }
     \vspace{\stretch{0.1}} \\
     {\Large \textbf{Rozšíření}} \\[0.4em]
@@ -33,10 +55,374 @@
 \newpage
 
 
-\section{Section I.}
-\subsection{Subsection I.I.}
-\subsection{Subsection I.II.}
-\section{Section II.}
+\section{Úvod}
+Dokumentace obsahuje popis jednotlivých částí překladače imperativního jazyka IFJ2023, který tvoří
+podmnožinu jazyka Swift. V jednotlivých kapitolách jsou podrobněji popsány jednotlivé podčásti
+překladače a formální modely, na kterých jsou založeny.
+
+
+
+\section{Lexikální analýza}
+Logika lexikálního analyzátoru je implementována v~souboru \texttt{lexilcal\_analyzer.c}. 
+Strukturu pro reprezentaci lexikálního analyzátoru \texttt{Scanner} obsahuje soubor \texttt{lexilcal\_analyzer.h}.
+Strukturu pro reprzetanci tokenů společně s~definovanými typy tokenů a~operace nad tokeny obsahují soubory \\ \texttt{tokens.h}, \texttt{tokens.c}.
+
+Lexikální analyzátor je implementován na základě navrženého deterministického konečného automa-tu~\href{fig:fsm}{\ref{fig:fsm}}, kdy jednotlivé podčásti automatu
+jsou implementovány pomocí samostatných funkcí. Funkce realizující části automatu jsou volány z~hlavní funkce \texttt{scan\_token},
+která sekvenci znaků načtenou ze standardního vstupu reprezentuje pomoci sturktury \texttt{Token}, kterou vrací. Pro propagaci chyby byly vyhrazeny
+typy tokenů \texttt{TOKEN\_LA\_ERROR} a~\texttt{TOKEN\_MEMMORY\_ERROR}.
+
+Pro umoznění nahlednutí vpřed \texttt{Scanner} obsahuje buffer tří následujících nezpracovaných znaků.
+Náhlédnutí vpřed realizují funkce \texttt{peek}, \texttt{peek\_next} a \texttt{forward\_lookup}, která navíc umožňuje
+porovnat obsah bufferu se specifikovaným formátem. Velikost bufferu je dostatečná pro určení části automatu,
+do které má být přechod uskutečněn bez nutnosti vracení znaků. Na základě obsahu bufferu je z~funkce \texttt{scan\_token} volána 
+funkce implementující patřičnou část automatu.
+
+
+Bíle znaky jsou zpracovány přimo ve funkci \texttt{scan\_token}. Zpracování jednořádkových komentářů implementuje funkce
+\texttt{consume\_single\_line\_comment} a víceřádkových komentářů funkce \\ \texttt{consume\_multi\_line\_comment}. Jelikož vnořené
+víceřádkové komentáře nelze modelovat pomocí\\ samotného konečného automatu, bylo použito počítadlo vnoření.
+
+Operátory, závorky a \texttt{\_}, \texttt{:}, \texttt{,}, \texttt{->} jsou zpracovány funkcí \texttt{scan\_operator}.
+Číslicové literály jsou zpracovány ve funkci \texttt{scan\_number\_literal}.
+
+Čás automatu pro identifikátory a~klíčová slova je implementována funkcí \texttt{scan\_identifier}.
+Funkce \texttt{is\_kw} následně určí, zda se jméno načteného identifikátoru shoduje se jménem klíčového slova a~případně
+vrací token pro dané klíčové slovo. Jinak vrací token pro daný identifkátor. U klíčových slov \texttt{Double}, \texttt{String}, \texttt{Int}
+je ještě provedena kontrola, zda není následováno znakem \texttt{?}.
+
+Částem automatu pro jednořádkové a~víceřádkové řetězce korespondují funkce \\ \texttt{scan\_single\_line\_string}, \texttt{scan\_multi\_line\_string}.
+Řetězce jsou zpracovány dvěma průchody. Při prvním průchodu jsou načteny do bufferu a~je určeno, zda jsou korektně zakončeny. V druhém průchodu
+jsou zpracovány obsažené escape sekvence a~u víceřídkových řetězcců ještě odsazení.
+
+Pro účely syntaktické analýzy je u každého lexému, který nasleduje \texttt{$\backslash$n} nebo \texttt{$\{$}, nastaven příznak\\ \texttt{follows\_separator}.
+
+
+
+
+
+
+
+\section{Tabulka symbolů}
+Podle vybrané verze řešení projektu je námi implementována tabulka založena na výškové balancovaném stromu,
+konkrétně samo-vyvažovací strom typu AVL. Každý element stromu ukládá informaci o svojí výšce, ukazatel na své dva potomky a~informace
+o~symbolu které jsou o něm uložené v typu \texttt{symData}. Typ \texttt{symData} ukládá jméno symbolu, typ symbolu (proměnná nebo funkce),
+datový typ proměnný nebo návratový typ funkce, zda je daný symbol konstanta, deklarovaný a~jestli byl inicializován.
+Jestli symbol reprezentuje funkci, jsou v \texttt{symData} uložený též informace o~jeho parametrech (jejich počet a~datové typy).
+
+Ze vnějšku se pracuje s~typem symtable a~wrapper funkcemi začínající s~prefixem \texttt{symtable-}.
+Typ symtable obsahuje kořen stromu typu \texttt{symtTreeElementPtr}. S tímhle typem a~se 
+stromem samotným pracují rekurzivní funkce s~prefixem \texttt{symtTree-}.
+Propagace změny struktury, tj. přidání/odstranění elementu ze stromu se vykonává pomocí návratové
+hodnoty rekurzivních funkcí, kterou je ukazatel na pozměněný podstrom.
+Před návratem ukazatele je na něj volaná funkce \texttt{symtTreeRebalance}, která aktualizuje výšku a~v~případě
+potřeby vykoná rotaci podstromu a~vrací finální kořen daného podstromu.
+
+\section{Syntaktická a sémantická analýza}
+Syntaktická analýza řídí celý překlad, proto pracuje skoro ze všemi moduly celého překladače.
+Využívá lexikální analýzu pro postupné získávání tokenů, volá precedenční analýzu pro zpracování
+výrazů, používá hierarchickou tabulku symbolů pro ukládání informací o proměnných a~funkcích a~zajišťuje generování výsledného kódu.
+
+
+\subsection{Zpracování příkazů}
+Syntaktická analýza je implementována jednoprůchodově pomocí metody rekurzivního sestupu
+a~řídí se pomocí LL gramatiky a LL tabulky. Každé pravidlo z LL gramatiky je implementováno
+jako samostatná funkce s~prefixem \texttt{rule\_}. 
+Mezi jednotlivými funkcemi nejsou předávány parametry veškerá sdílená data jsou uložena v globálních proměnných.
+
+Sémantická analýza je poté vepsána přímo do jednotlivých syntaktických funkcí a~využívá
+další pomocné funkce pro kontrolu mnoha pravidel jako například: kontrola redefinice u definice proměnné nebo funkce,
+kontrola kompatibility datových typů, nebo kontrola parametrů u~volání funkce. 
+
+Pro jednoduší kontrolu parametrů u volání a~definice funkce byla využita datová struktura \\ \texttt{param\_vector}
+pro ukládání typů parametrů a~jejich názvů. Vzhledem k implementaci jednoprůchodové analýzy, byla pro kontrolu volání
+funkce před její definicí implementována pomocná funkce na odvození datových typů parametrů.
+Odvození probíhá na základě datových typů použitích u jednotlivých volání.
+Při definici funkce je poté zkontrolována kompatibilita definovaných datových typů s~odvozenými datovými typy použitými při volání. 
+
+V~případě, kdy je odhalena~syntaktická nebo sémantická chyba je volána funkce \texttt{errorHandle},
+která ukončí provádění programu s chybovým kódem pomocí instrukce exit.
+Instrukce byla použita z~důvodu příliš komplikovaného propagování chybového kódu.
+
+Implementace těchto částí syntaktické analýzy se nachází v souborech \texttt{syntactic\_analysis.c}, \texttt{syntactic\_analysis.h}.
+
+\subsection{Zpracování výrazů}
+Precedenční analýza je implementována na základě \href{tab:prec}{tabulky \ref{tab:prec}}.
+Její programová podoba se nachází v~souboru \texttt{precedence\_analysis.h}.
+Logika pro zpracování výrazů je implementována v~souboru \\
+\texttt{precedence\_analysis.c}.
+Při zpracování výrazů se využívá datové struktury \texttt{ExpressionStack},\\ \texttt{ExpressionStackItem} definované v souboru
+\texttt{expression\_stack.h}. Zásobníková struktura je\\ implementována jako nafukovací pole.
+Operace nad \texttt{ExpressionStack} a \texttt{ExpressionStackItem} jsou implementovány v souboru \texttt{expression\_stack.c}.
+
+Klíčovou funkcí pro zpracování výrazů je \texttt{parse\_expression}, která na základě precedenční tabulky a~aktuálního tokenu určí, jaká operace
+má být provedena nad \texttt{ExpressionStack} (přidání prvku, započetí podvýrazu s vyšší prioritou, pokus o redukci pravida), nebo zda má být generován error.
+
+
+V rámci precedenční analýzy rozlišujeme několik typů prvku zásobníku. Typy \texttt{LITERAL}, \texttt{IDENTIFIER}, \texttt{TERMINAL} reprezentují terminály.
+Prvek s typem \texttt{EXPRESSION} potom vzniká při aplikaci redukčních pravidel.
+Zásobník udržuje přehled o nejvrchnější přidaném terminálu pomocí indexu do pole realizujícího zásobník \texttt{top\_most\_expr\_start}
+a zároveň každý terminál obsahuje příznak \texttt{start\_of\_expr}, který indukuje, že terminál nad ním je již součástí podvýrazu s~vyšší prioritou.
+Sekvence prvků na indexech vyšších než \texttt{top\_most\_expr\_start} potom tvoří vrchol zásobníku.
+
+Při aplikaci redukčního pravidla je na základě vrcholu zásobníku odvozeno číslo pravidla, které by se mělo aplikovat, pomocí funkce \texttt{get\_rule\_number}.
+
+
+Zpracování výrazů je realizováno pomocí 2 průchodů. Při prvním průchodu jsou tokeny načítání do vektoru a~je řešena syntaxe výrazu.
+Zároveň je při prvním průchodu kontrolováno, zda se ve výrazu nevyskytuje operand s~typem \texttt{Double}, \texttt{Double?}. Pokud
+ano, je odvozen typ výsledného výrazu \texttt{Double}.
+
+V druhém průchodu jsou následně prováděny sémantické akce a~generování kódu.
+Ukazatele na funkce realizující redukční pravidla jsou udržované v poli na indexu korespondujícím
+číslu pravidla. Jednotlivé funkce implementují sémantické akce a generování kódu.
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Generování kódu}
+Generování kódu je řešeno funkcemi v~souboru \texttt{codegen.c},  \texttt{codegen.h},
+které jsou volány v~syntaktické analýze.
+Příkazy pro interpret jsou psány rovnou na standartní výstup.
+Pouze když se generuje kód, který je součástí cyklu while, tak se příkazy ukládají
+do dynamického stringu, který je vypsaný po ukončení cyklu.
+Definování proměnných se vypíše před tento string, protože se nemůže definovat proměnná se stejným názvem vícekrát.
+
+Na začátku vykonávání SA se vypíše na výstup string, obsahující vestavěné funkce a~globální proměnné potřebné pro správný chod programu.
+
+Na začátku volání funkce se nejdříve vytvoří nový dočasný rámec, do kterého se uloží hodnoty parametrů pojmenovaných číslem,
+o~kolikátý parametr se jedná, ve formátu „\_číslo“. Na začátku definování funkce se dočasný rámec uloží do zásobníku
+lokálních rámců, funkce potom pracuje s~lokálními či globálními proměnnými.
+Poté se přeuloží hodnoty parametrů do proměnných se správným názvem parametru, aby se s~nimi lépe pracovalo.
+Na konci funkce se návratová hodnota uloží na datový rámec a aktuální lokální rámec se vyjme ze zásobníků rámců.
+
+Každá proměnná vytvořená uživatelem má k~sobě připojené číslo scopu, aby se docílilo jedinečnosti názvu proměnných.
+Swift umožňuje překrývání proměnných v~různých scopech.
+
+Podobně se přidává číslo při vytváření labelů pro if a~while, kde while i~if mají své unikátní počítadlo.
+Při jejich ukončování se využívá zásobníku, který umožňuje jejich nekonečné zanořování.
+
+
+Dále se generování kódu využívá v~precedenční analýze, kde se veškeré výrazy počítají na datovém zásobníku pomocí zásobníkových operací.
+V~některých případech, kdy neexistují zásobníkové operace, se využívá globálních proměnných, které jsou definovány na začátku programu.
+
+
+\section{Pomocné datové struktury}
+
+Kromě již zmíněných datový struktur, jejichž popis byl pro větší přehlednost zařazen do
+konkrétních kapitol, byly dále použity následující pomocné datové struktury.
+
+Pro účely ukládání řetězců literálů a~identifikátorů slouží pomocná datová struktura \texttt{LiteralVector}.
+Tato struktura umožňuje bufferování znaků tvořícího se literálu pomocí
+\texttt{LV\_add} a jeho následné uložení pomocí \texttt{LV\_submit}.
+Implementaci obsahují soubory \texttt{literal\_vector.c}, \texttt{literal\_vector.h}.
+
+Pro ukládaní tabulek symbolu pro jednotlivé scopy byl vytvořen zásobníkový typ \texttt{symStack},
+který je naimplementovány na základě jednosměrného lineárního seznamu. Kromě základních funkcí
+zásobníku umožňuje symstack i přechod pomocí ukazatele activeTable a~funkcí \texttt{ActiveToTop} a~\texttt{Next}.
+Element symstacku ukládá ukazatel na dynamicky alokovaný symtable a~jedinečný identifikátor daného scopu.
+Tabulka se Scope ID 0 je tabulka Globálního scopu.
+Implementaci obsahují soubory \texttt{symstack.c}, \texttt{symstack.h}.
+
+Pro kontrolu parametrů funkcí byla v~sémantické analýze použita datová struktura \texttt{ParamVector}.
+Pro bufferování tokenů při prvním průchodu v precedenční analýze byla použita struktura \texttt{TokenVector}.\\
+Implementace jsou popořadě obsaženy v souborech
+\texttt{token\_vector.c}, \texttt{token\_vector.h}, \texttt{param\_vector.c}, \\ \texttt{param\_vector.h}.
+
+
+
+
+\section{Rozdělení práce a plnění projektu}
+Po rozdělení práce si všichni nastudovali potřebnou teorii a ve spolupráci s ostatními včas
+dokončili požadovanou část. Komunikace probíhala prostřednictvím discordu a osobních setkání,
+která se konala jednou týdně. Pro verzování jsme použili git hostovaný na GitHubu. 
+
+Rozdělení práce: \\[1em]
+\textbf{Lukáš Kotoun} (xkotou08): Syntaktická a sémantická analýza, gramatika, testování, dokumentace, LL-gramatika \\
+\textbf{Petr Novák} (xnovak3l): Generování kódu, testování, dokumentace, LL-gramatika \\
+\textbf{Jan Pánek} (xpanek11): Lexikální analýza, precedenční a sémantická analýza, dokumentace \\
+\textbf{Tibor Šimlaštík} (xsimla00): Tabulka symbolů, generování kódu, dokumentace    \\
+
+
+
+
+
+\newgeometry{left=1cm,top=3.5cm,text={17cm,24cm}}
+\begin{landscape}
+    \thispagestyle{empty}
+    \begin{figure}[!h]
+        \section{Přílohy}
+        \subsection{Diagram konečného automatu}
+        \begin{center}
+        \scalebox{0.4}{\includegraphics{fsm_final.eps}}
+        \caption{Diagram deterministického konečného automatu}
+        \label{fig:fsm}
+        \end{center}
+    \end{figure}
+\end{landscape}
+\restoregeometry
+
+\subsection{Gramatika}
+\begin{enumerate}[label=\arabic*., ref=\arabic*]
+    \item $\langle$prog$\rangle$ $\rightarrow$ $\langle$prog-body$\rangle$ \red{EOF}
+    \item $\langle$prog-body$\rangle$ $\rightarrow$ $\langle$func-list$\rangle$ $\langle$statement-list$\rangle$ $\langle$prog-body$\rangle$
+    \item $\langle$prog-body$\rangle$ $\rightarrow$ \red{\red{$\varepsilon$}}
+    \item $\langle$statement-list$\rangle$ $\rightarrow$ $\langle$statement$\rangle$ $\langle$statment-list$\rangle$
+    \item $\langle$statement-list$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \item $\langle$statement-func-list$\rangle$ $\rightarrow$ $\langle$statement-func$\rangle$ $\langle$statment-func-list$\rangle$
+    \item $\langle$statement-func-list$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \item $\langle$func-list$\rangle$ $\rightarrow$ $\langle$func-decl$\rangle$ $\langle$func-list$\rangle$
+    \item $\langle$func-list$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \item  $\langle$func-decl$\rangle$ $\rightarrow$ \red{FUNC ID (} $\langle$param-first$\rangle$ \red{)} $\langle$return-type$\rangle$ $\langle$func-body$\rangle$
+    \begin{enumerate}[label=\arabic{enumi}.\arabic*., ref=\arabic{enumi}\arabic*]
+        \item $\langle$param-first$\rangle$ $\rightarrow$ $\langle$param$\rangle$ $\langle$param-n$\rangle$
+        \item $\langle$param-first$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+        \item $\langle$param-n$\rangle$ $\rightarrow$ \red{,} $\langle$param$\rangle$ $\langle$param-n$\rangle$
+        \item $\langle$param-n$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+        \item $\langle$param$\rangle$ $\rightarrow$ $\langle$param-name$\rangle$ $\langle$param-res$\rangle$ 
+        \begin{enumerate}[label=\arabic{enumi}.\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic{enumi}.\arabic*]
+            \item $\langle$param-name$\rangle$ $\rightarrow$ \red{\_}
+            \item $\langle$param-name$\rangle$ $\rightarrow$ \red{ID}
+            \item $\langle$param-res$\rangle$ $\rightarrow$ \red{\_ :} $\langle$type$\rangle$
+            \item $\langle$param-res$\rangle$ $\rightarrow$ \red{ID :} $\langle$type$\rangle$
+        \end{enumerate}
+        \item $\langle$return-type$\rangle$ $\rightarrow$ \red{->} $\langle$type$\rangle$
+        \item $\langle$return-type$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \end{enumerate}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{INT}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{INT-NIL}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{DOUBLE}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{DOUBLE-NIL}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{STRING}
+    \item $\langle$type$\rangle$ $\rightarrow$ \red{STRING-NIL}
+    \item $\langle$func-body$\rangle$ $\rightarrow$ \red{$\{$} $\langle$statement-func-list$\rangle$ \red{$\}$}
+    \item $\langle$body$\rangle$ $\rightarrow$ \red{$\{$} $\langle$statement-list$\rangle$ \red{$\}$}
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ \red{RETURN} $\langle$return-value$\rangle$
+    \begin{enumerate}[label=\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic*]
+        \item $\langle$return-value$\rangle$ $\rightarrow$ $\langle$expr$\rangle$
+        \item $\langle$return-value$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \end{enumerate}
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ \red{IF} $\langle$if-cond$\rangle$ $\langle$func-body$\rangle$ \red{ELSE} $\langle$func-body$\rangle$
+    \begin{enumerate}[label=\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic*]
+        \item $\langle$if-cond$\rangle$ $\rightarrow$ \red{LET ID}
+        \item $\langle$if-cond$\rangle$ $\rightarrow$ $\langle$expr$\rangle$
+    \end{enumerate}
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ \red{WHILE} $\langle$expr$\rangle$ $\langle$func-body$\rangle$
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ $\langle$id-decl$\rangle$ $\langle$decl-opt$\rangle$
+    \begin{enumerate}[label=\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic*]
+        \item $\langle$id-decl$\rangle$ $\rightarrow$ \red{VAR ID}
+        \item $\langle$id-decl$\rangle$ $\rightarrow$ \red{LET ID}
+        \item $\langle$decl-opt$\rangle$ $\rightarrow$ \red{:} $\langle$type$\rangle$ $\langle$assign$\rangle$
+        \begin{enumerate}[label=\arabic{enumi}.\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic{enumi}.\arabic*]
+            \item $\langle$assign$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+            \item $\langle$assign$\rangle$ $\rightarrow$ \red{=} $\langle$statement-value$\rangle$
+        \end{enumerate}
+        \item $\langle$decl-opt$\rangle$ $\rightarrow$ \red{=} $\langle$statement-value$\rangle$
+    \end{enumerate}
+    \item $\langle$statement-func$\rangle$ $\rightarrow$ \red{ID} $\langle$statement-action$\rangle$
+    \item $\langle$statement$\rangle$ $\rightarrow$ \red{IF} $\langle$if-cond$\rangle$ $\langle$body$\rangle$ \red{ELSE} $\langle$body$\rangle$
+    \item $\langle$statement$\rangle$ $\rightarrow$ \red{WHILE} $\langle$expr$\rangle$ $\langle$body$\rangle$
+    \item $\langle$statement$\rangle$ $\rightarrow$ $\langle$id-decl$\rangle$ $\langle$decl-opt$\rangle$
+    \item $\langle$statement$\rangle$ $\rightarrow$ \red{ID} $\langle$statement-action$\rangle$
+    \item $\langle$statement-action$\rangle$ $\rightarrow$ \red{=} $\langle$statement-value$\rangle$
+    \item $\langle$statement-action$\rangle$ $\rightarrow$ \red{(} $\langle$first-arg$\rangle$ \red{)}
+    \begin{enumerate}[label=\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic*]
+        \item $\langle$first-arg$\rangle$ $\rightarrow$ $\langle$arg$\rangle$ $\langle$arg-n$\rangle$
+          \begin{enumerate}[label=\arabic{enumi}.\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic{enumi}.\arabic*]
+                \item $\langle$arg$\rangle$ $\rightarrow$ $\langle$literal$\rangle$
+                \item $\langle$arg$\rangle$ $\rightarrow$ \red{ID} $\langle$arg-opt$\rangle$
+                \begin{enumerate}[label=\arabic{enumi}.\arabic{enumi}.\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic{enumi}.\arabic{enumi}.\arabic*]
+                    \item $\langle$arg-opt$\rangle$ $\rightarrow$ \red{:} $\langle$term$\rangle$
+                    \item $\langle$arg-opt$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+                \end{enumerate}
+          \end{enumerate}
+    \item $\langle$first-arg$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+    \item $\langle$arg-n$\rangle$ $\rightarrow$ \red{,} $\langle$arg$\rangle$ $\langle$arg-n$\rangle$
+    \item $\langle$arg-n$\rangle$ $\rightarrow$ \red{$\varepsilon$}
+\end{enumerate}
+\item $\langle$statement-value$\rangle$ $\rightarrow$ \red{ID} $\langle$arg-expr$\rangle$
+\begin{enumerate}[label=\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic*]
+    \item $\langle$arg-expr$\rangle$ $\rightarrow$ \red{(} $\langle$first-arg$\rangle$ \red{)}
+    \item $\langle$arg-expr$\rangle$ $\rightarrow$ $\langle$expr$\rangle$
+\end{enumerate}
+\item $\langle$statement-value$\rangle$ $\rightarrow$ $\langle$expr$\rangle$
+\item $\langle$term$\rangle$ $\rightarrow$ \red{ID}
+\item $\langle$term$\rangle$ $\rightarrow$ $\langle$literal$\rangle$
+\begin{enumerate}[label=\arabic{enumi}.\arabic*., ref=\arabic{enumi}.\arabic*]
+    \item $\langle$literal$\rangle$ $\rightarrow$ \red{INT-LITERAL}
+    \item $\langle$literal$\rangle$ $\rightarrow$ \red{DOUBLE-LITERAL}
+    \item $\langle$literal$\rangle$ $\rightarrow$ \red{STRING-LITERAL}
+    \item $\langle$literal$\rangle$ $\rightarrow$ \red{NIL-LITERAL}
+\end{enumerate}
+\end{enumerate}
+
+
+
+\begin{landscape}
+    \subsection{LL-tabulka}
+    \thispagestyle{empty}
+    \begin{figure}[ht]
+        \begin{center}
+           \scalebox{0.40}{\includegraphics{ll1.eps}}
+        \end{center}
+        \caption{LL tabulka}
+    \end{figure}
+\end{landscape}
+
+\begin{landscape}
+    \thispagestyle{empty}
+    \begin{figure}[ht]
+        \begin{center}
+            \scalebox{0.43}{\includegraphics{ll2.eps}}
+        \end{center}
+        \caption{LL tabulka\,--\,pokračování}
+    \end{figure}
+\end{landscape}
+
+
+\subsection{Precedenční tabulka}
+
+
+
+\begin{table}[ht]
+    \catcode`\-=12
+    \begin{center}
+    \begin{tabular}{| c!{\vrule width 3pt} c | c | c | c | c | c | c | c | c | c | c | c | c | c | c | c |} \hline
+              & SEP  & TERM &   (  &   )  &   +  &   -  &   *  &   /  &  ==  &  !=  &  <=  &  >=  &   >  &   <  &   !  &   ?? \\ \noalign{\hrule height 3pt}
+         SEP  & x & < & < & > & < & < & < & < & < & < & < & < & < & < & < & <  \\ \hline
+         TERM & > & x & x & > & > & > & > & > & > & > & > & > & > & > & > & > \\ \hline
+         (    & > & < & < & = & < & < & < & < & < & < & < & < & < & < & < & <  \\ \hline
+         )    & > & x & x & > & > & > & > & > & > & > & > & > & > & > & > & > \\ \hline
+         +    & > & < & < & > & > & > & < & < & > & > & > & > & > & > & < & > \\ \hline
+         -    & > & < & < & > & > & > & < & < & > & > & > & > & > & > & < & > \\ \hline
+         *    & > & < & < & > & > & > & > & > & > & > & > & > & > & > & < & > \\ \hline
+         /    & > & < & < & > & > & > & > & > & > & > & > & > & > & > & < & > \\ \hline
+         ==   & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         !=   & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         <=   & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         >=   & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         >    & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         <    & > & < & < & > & < & < & < & < & x & x & x & x & x & x & < & <  \\ \hline
+         !    & > & x & x & > & > & > & > & > & > & > & > & > & > & > & x & > \\ \hline
+         ??   & > & < & < & > & < & < & < & < & < & < & < & < & < & < & < & <  \\ \hline
+    \end{tabular}
+    \end{center}
+    \caption{Precedenční tabulka}
+    \label{tab:prec}
+\end{table}
+
+
+
+
+
+
 
 
 \end{document}
