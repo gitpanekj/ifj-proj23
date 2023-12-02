@@ -1,5 +1,8 @@
-func foo()
-{
-}
+
 
 let a = foo()
+
+func foo()
+{
+
+}

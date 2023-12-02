@@ -139,6 +139,8 @@ void rule_param_n();
 
 void rule_param();
 
+void rule_param_rest();
+
 void rule_param_name();
 
 void rule_return_type();

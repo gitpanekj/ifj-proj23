@@ -4,7 +4,7 @@ Welcome to the Swift Multiline String Challenge 🚀
 In this challenge, we explore complex multiline strings.
 You can include special characters, such as emojis 😊, and even placeholders:
 
-\(1 + 2) is equal to \(1 + 2).
+(1 + 2) is equal to (1 + 2).
 
 Here's a list:
 - Item 1

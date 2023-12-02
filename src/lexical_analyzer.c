@@ -212,6 +212,7 @@ Token scan_token(Scanner *s){
                 init_token(&t, TOKEN_LA_ERROR, NULL, 0, false);
                 return t;
             }
+            follows_separator=true;
         }
     }
 
@@ -817,7 +818,7 @@ TokenType scan_multi_line_string(Scanner *s){
     s->line++;
 
 
-    bool new_line;
+    bool new_line=true;
     bool end_of_string=false;
     int indentation=0;
     int string_len=0;
@@ -989,7 +990,7 @@ TokenType scan_operator(Scanner* s, TokenType expected_token_type){
     switch (expected_token_type){
 
         // single character tokens
-        case TOKEN_PLUS...TOKEN_SEMICOLON:
+        case TOKEN_PLUS...TOKEN_UNDERSCORE:
             advance(s); // consume character
             if (expected_token_type == TOKEN_L_BRACE){
                 s->separator_flag = true;

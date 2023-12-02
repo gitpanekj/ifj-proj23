@@ -36,3 +36,7 @@ Just few empty lines and string test.
         Line4: "\u{48}\u{65}\u{6c}\u{6c}\u{6f}\u{20}\u{57}\u{6f}\u{72}\u{6c}\u{64}"
     Line5: "\u{23}\u{54}\u{65}\u{73}\u{74}\u{23}\u{20}\u{a}\u{27}\u{22}\u{5c}"
 """
+
+// Test 5
+"""
+"""

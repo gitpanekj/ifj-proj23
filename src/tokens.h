@@ -30,7 +30,6 @@ typedef enum {
     TOKEN_COLON,                   // :
     TOKEN_COMMA,                   // ,
     TOKEN_UNDERSCORE,              // _
-    TOKEN_SEMICOLON,               // ;
 
     // Single or two character lexemes
     TOKEN_MINUS,                   // -
@@ -108,7 +107,7 @@ void print_token(Token);
  * 
  * Enable effective determination of forming token type.
  * Additionaly, number of expected lexeme characters given the first one is defined as range
- *  - <TOKEN_PLUS, TOKEN_SEMICOLON> for single character lexemes
+ *  - <TOKEN_PLUS, TOKEN_UNDERSCORE> for single character lexemes
  *  - <TOKEN_EXCLAMATION_MARK, TOKEN_EQUAL> for single or two character lexemes
  *  - {TOKEN_AND, TOKEN_OR} for two character lexemes
  * 
@@ -127,7 +126,6 @@ static const TokenType CharacterEncodingTable[256] = {
     [(unsigned char) ':'] = TOKEN_COLON,                  
     [(unsigned char) ','] = TOKEN_COMMA,                 
     [(unsigned char) '_'] = TOKEN_UNDERSCORE,
-    [(unsigned char) ';'] = TOKEN_SEMICOLON,
 
     // Single or two character lexemes
     [(unsigned char) '!'] = TOKEN_EXCLAMATION_MARK,     
@@ -157,7 +155,6 @@ static const char TokenTypeToString[][28] = {
     [TOKEN_COLON]="TOKEN_COLON",                               // ':'
     [TOKEN_COMMA]="TOKEN_COMMA",                               // ','
     [TOKEN_UNDERSCORE]="TOKEN_UNDERSCORE",                     // '_'
-    [TOKEN_SEMICOLON]="TOKEN_SEMICOLON",                       // ';'
 
     // Single or two character lexemes
     [TOKEN_DOUBLE_QUESTION_MARK]="TOKEN_DOUBLE_QUESTION_MARK", // '??'

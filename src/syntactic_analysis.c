@@ -19,10 +19,8 @@ LiteralVector literalVector;
 Token tokenHistory[2];
 Token token;
 
-//? name like this or pointer node of function with all data (symtTreeElementPtr) or symtData
-// symtable *currentFunctionSymtable; // pointer to data of current function - if processing function
+
 Name currentDefFunctionName = {.literal_len = 0, .nameStart = NULL};
-// bool insideFunction = false;
 DataType currentFunctionReturnType = UNDEFINED; // type for return type check
 DataType statementValueType;                    // type returned from statement value rule
 
@@ -125,7 +123,7 @@ void rule_func_decl()
     bool haveReturn = rule_func_body();
     if (currentFunctionReturnType != UNDEFINED && !haveReturn)
     {
-        error(FUNCTION_RETURN_ERROR);
+        error(FUNCTION_CALL_ERROR);
     }
     gen_end_function();
     currentDefFunctionName.literal_len = 0;
@@ -162,37 +160,56 @@ void rule_param_n()
 void rule_param()
 {
     rule_param_name();
-
     getNextToken();
-    assertToken(TOKEN_IDENTIFIER);
-    // sore name for adding to symtable after getting data type, isDefined = true, isConstant = true
-    Name paramId = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
-    // paramName and paramID cant be same
-    if (symtTreeNameCmp(paramId, currentFunctionParameter.name) == 0)
+    rule_param_rest();
+}
+
+void rule_param_rest()
+{
+    if (tokenIs(TOKEN_IDENTIFIER))
     {
-        error(FUNCTION_CALL_ERROR);
+        // sore name for adding to symtable after getting data type, isDefined = true, isConstant = true
+        Name paramId = {.literal_len = token.literal_len, .nameStart = token.start_ptr};
+        // paramName and paramID cant be same
+        if (symtTreeNameCmp(paramId, currentFunctionParameter.name) == 0)
+        {
+            error(OTHER_SEMANTIC_ERROR);
+        }
+
+        getNextToken();
+        assertToken(TOKEN_COLON);
+        getNextToken();
+        DataType type = rule_type();
+        // parameter is always constant and defined
+        defineVariable(paramId, type, true, true);
+
+        //  generate function param
+        //-------
+        currentFunctionParameter.type = type;
+        if (type == DOUBLE || type == DOUBLE_NIL)
+        {
+            gen_function_param_with_type_check(&paramId, &currentDefFunctionName, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+        }
+        else
+        {
+            gen_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+        }
+        if (!paramVectorPush(&paramVector, currentFunctionParameter))
+            error(INTERNAL_COMPILER_ERROR);
     }
-
-    getNextToken();
-    assertToken(TOKEN_COLON);
-    getNextToken();
-    DataType type = rule_type();
-    // parameter is always constant and defined
-    defineVariable(paramId, type, true, true);
-
-    //  generate function param
-    //-------
-    currentFunctionParameter.type = type;
-    if (type == DOUBLE || type == DOUBLE_NIL)
+    else if (tokenIs(TOKEN_UNDERSCORE)) // if param is underscore param will never be used
     {
-        gen_function_param_with_type_check(&paramId, &currentDefFunctionName, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+        getNextToken();
+        assertToken(TOKEN_COLON);
+        getNextToken();
+        currentFunctionParameter.type = rule_type();
+        if (!paramVectorPush(&paramVector, currentFunctionParameter))
+            error(INTERNAL_COMPILER_ERROR);
     }
     else
     {
-        gen_function_param(&paramId, (int)symStackTopScopeID(&symtableStack), paramVector.paramCount);
+        error(SYNTACTIC_ERROR);
     }
-    if (!paramVectorPush(&paramVector, currentFunctionParameter))
-        error(INTERNAL_COMPILER_ERROR);
 }
 
 void rule_param_name()
@@ -551,7 +568,7 @@ void rule_if_cond()
         symData *data = getVariableDataAndScopeFromSymstack(varName, &scope);
         if (data == NULL)
             error(UNDEFINED_VARIABLE);
-        else if (!data->isConstant || !isOptionalType(data->type))
+        else if (!isOptionalType(data->type)) //? !data->isConstant ||
             error(OTHER_SEMANTIC_ERROR);
 
         gen_start_if_let_condition(&varName, scope, (int)symStackTopScopeID(&symtableStack));
@@ -1374,7 +1391,7 @@ symData *getVariableDataFromSymstack(Name name)
         return NULL;
     }
     else if (data->isFunction)
-        error(OTHER_SEMANTIC_ERROR);
+        error(UNDEFINED_VARIABLE);
     return data;
 }
 
@@ -1393,7 +1410,7 @@ symData *getVariableDataAndScopeFromSymstack(Name name, size_t *scope)
         return NULL;
     }
     else if (data->isFunction)
-        error(OTHER_SEMANTIC_ERROR);
+        error(UNDEFINED_VARIABLE);
     return data;
 }
 
@@ -1572,11 +1589,9 @@ void generateFunctionCallParam(Token token, int paramCount)
  */
 void errorHandle(ErrorCodes ErrorType, const char *functionName)
 {
-    // todo free memory
     symStackDispose(&symtableStack);
     LV_free(&literalVector);
     gen_dispose();
-    // paramVectorDispose(&paramVector);
     switch (ErrorType)
     {
     case LEXICAL_ERROR:
