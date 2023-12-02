@@ -1,5 +1,5 @@
-let a : Int? = 4
-let b : Int? = nil
+var a : Int? = 4
+var b : Int? = nil
 
 if let a {
     write(a)
