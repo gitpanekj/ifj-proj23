@@ -1,5 +1,5 @@
-\documentclass[a4paper]{article}
-\usepackage[left=2cm,top=3cm,text={17cm,24cm}]{geometry}
+\documentclass[11spt]{article}
+\usepackage[left=2cm,top=2cm,text={17cm,24cm}]{geometry}
 \usepackage[czech]{babel}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -12,6 +12,9 @@
 \usepackage{color}
 \usepackage{enumerate}
 \usepackage{array}
+\usepackage[hidelinks]{hyperref}
+
+
 
 
 \newcommand{\red}[1]{{\color{red} #1}}
@@ -30,12 +33,12 @@
         \vspace{\stretch{0.1}}
         {\Huge \textbf{Dokumentace překladače}} \\[0.4em]
         {\Large Projekt do předmětů: IFJ, IAL} \\[2em]
-        {\Large Tým \textbf{xkotou08, Varianta - vv-BVS}}
+        {\Large Tým \textbf{xkotou08, Varianta\,--\,vv-BVS}}
     \end{center}
     \vspace{\stretch{0.6}}
     {\Large \textbf{Řešitelé}} \\[0.4em]
         {\Large
-        \hspace*{0.5cm} (25\%) Lukáš Kotoun (xkotou08) - \textbf{vedoucí týmu}\\
+        \hspace*{0.5cm} (25\%) Lukáš Kotoun (xkotou08)\,--\,\textbf{vedoucí týmu}\\
         \hspace*{0.5cm} (25\%) Petr Novák (xnovak3l) \\
         \hspace*{0.5cm} (25\%) Jan Pánek (xpanek11) \\
         \hspace*{0.5cm} (25\%) Tibor Šimlaštík (xsimla00) \\
@@ -54,27 +57,216 @@
 
 
 \section{Úvod}
+Dokumentace obsahuje popis jednotlivých částí překladače imperativního jazyka IFJ2023, který tvoří
+podmnožinu jazyka Swift. V jednotlivých kapitolách jsou podrobněji popsány jednotlivé podčásti
+překladače a formálná modely, na kterých jsou založeny.
+
+
+
 \section{Lexikální analýza}
+Logika lexikálního analyzátoru je implementována v~souboru \texttt{lexilcal\_analyzer.c}. 
+Strukturu pro reprezentaci lexikálního analyzátoru \texttt{Scanner} obsahuje soubor \texttt{lexilcal\_analyzer.h}. \\
+Strukturu pro reprzetanci tokenů společně s~definovanými typy tokenů a~operace nad tokeny obsahují soubory \texttt{tokens.h}, \texttt{tokens.c}.
+
+Lexikální analyzátor je implementován na základě navrženého deterministického konečného automatu \href{fig:fsm}{\ref{fig:fsm}}, kdy jednotlivé podčásti automatu
+jsou implementovány pomocí samostatných funkcí. Funkce realizující části automatu jsou volány z~hlavní funkce \texttt{scan\_token},
+která sekvenci znaků načtenou ze standardního vstupu reprezentuje pomoci sturktury \texttt{Token}, kterou vrací. Pro propagaci chyby byly vyhrazeny
+typy tokenů\\ \texttt{TOKEN\_LA\_ERROR} a~\texttt{TOKEN\_MEMMORY\_ERROR}.
+
+Pro umoznění nahlednutí vpřed \texttt{Scanner} obsahuje buffer 3 následujích nezpracovaných znaků.
+Náhlédnutí vpřed realizují funkce \texttt{peek}, \texttt{peek\_next} a \texttt{forward\_lookup}, která navíc umožňuje
+porovnat obsah bufferu se specifikovaným formátem. Velikost bufferu 3 je dostatečná pro určení části automatu,
+do které má být přechod uskutečněn bez nutnosti vracení znaků. Na základě obsahu bufferu je z~funkce \texttt{scan\_token} volána 
+funkce implementující patřičnou část automatu.
+
+
+Bíle znaky jsou zpracovány přimo ve funkci \texttt{scan\_token}. Zpracování jednořádkových komentářů implementuje funkce
+\texttt{consume\_single\_line\_comment} a víceřádkových komentářů funkce \\ \texttt{consume\_multi\_line\_comment}. Jelikož vnořené
+víceřádkové komentáře nelze modelovat pomocí samotného konečného automatu, bylo použito počítadlo vnoření.
+
+Operátory, závorky a \texttt{\_}, \texttt{:}, \texttt{,}, \texttt{->} jsou zpracovány funkcí \texttt{scan\_operator}.
+Číslicové literály jsou zpracovány ve funkci \texttt{scan\_number\_literal}.
+
+Čás automatu pro identifikátory a~klíčová slova je implementována funkcí \texttt{scan\_identifier}.
+Funkce \texttt{is\_kw} následně určí, zda se jméno načteného identifikátoru shoduje se jménem klíčového slova a~případně
+vrací token pro dané klíčové slovo. Jinak vrací token pro daný identifkátor. U klíčových slov \texttt{Double}, \texttt{String}, \texttt{Int}
+je ještě provedena kontrola, zda není následováno znakem \texttt{?}.
+
+Částem automatu pro jednořádkové a~víceřádkové řetězce korespondují funkce \\ \texttt{scan\_single\_line\_string}, \texttt{scan\_multi\_line\_string}.
+Řetězce jsou zpracovány dvěma průchody. Při prvním průchodu jsou načteny do bufferu a~je určeno, zda jsou korektně zakončeny. V druhém průchodu
+jsou zpracovány obsažené escape sekvence a~u víceřídkových řetězcců ještě odsazení.
+
+Pro účely syntaktické analýzy je u každého lexému, který nasleduje \texttt{$\backslash$n} nebo \texttt{$\{$}, nastaven příznak\\ \texttt{follows\_separator}.
+
+
+
+
+
+
+
 \section{Tabulka symbolů}
+Podle vybrané verze řešení projektu je námi implementována tabulka založena na výškové balancovaném stromu,
+konkrétně samo-vyvažovací strom typu AVL. Každý element stromu ukládá informaci o svojí výšce, ukazatel na své dva potomky a~informace
+o~symbolu které jsou o něm uložené v typu \texttt{symData}. Typ \texttt{symData} ukládá jméno symbolu, typ symbolu (proměnná nebo funkce),
+datový typ proměnný nebo návratový typ funkce, zda je daný symbol konstanta, deklarovaný a~jestli byl inicializován.
+Jestli symbol reprezentuje funkci, jsou v \texttt{symData} uložený též informace o~jeho parametrech (jejich počet a datové typy).
+
+Ze vnějšku se pracuje s~typem symtable a~wrapper funkcemi začínající s~prefixem \texttt{symtable-}.
+Typ symtable obsahuje kořen stromu typu \texttt{symtTreeElementPtr}. S tímhle typem a~se 
+stromem samotným pracují rekurzivní funkce s~prefixem \texttt{symtTree-}.
+Propagace změny struktury, tj. přidání/odstranění elementu ze stromu se vykonává pomocí návratové
+hodnoty rekurzivních funkcí kterou je ukazatel na pozměnění podstrom.
+Před návratem ukazatele je naň volaná funkce \texttt{symtTreeRebalance}, která aktualizuje výšku a~v~případě
+potřeby vykoná rotaci podstromu a~vrací finální kořeň daného podstromu.
+
 \section{Syntaktická a sémantická analýza}
+Syntaktická analýza řídí celý překlad, proto pracuje skoro ze všemi moduly celého překladače.
+Využívá lexikální analýzu pro postupné získávání tokenů, volá precedenční analýzu pro zpracování
+výrazů, používá hierarchickou tabulku symbolů pro ukládání informací o proměnných a~funkcích a~zajišťuje generování výsledného kódu.
+
+
 \subsection{Zpracování příkazů}
+Syntaktická analýza je implementována jednoprůchodově pomocí metody rekurzivního sestupu
+a~řídí se pomocí LL gramatiky a LL tabulky. Každé pravidlo z LL gramatiky je implementováno
+jako samostatná funkce s~prefixem \texttt{rule\_}. 
+Mezi jednotlivými funkcemi nejsou předávány parametry veškerá sdílená data jsou uložena v globálních proměnných.
+
+Sémantická analýza je poté vepsána přímo do jednotlivých syntaktických funkcí a~využívá
+další pomocné funkce pro kontrolu mnoha pravidel jako například: kontrola redefinice u definice proměnné nebo funkce,
+kontrola kompatibility datových typů, nebo kontrola parametrů u~volání funkce. 
+
+Pro jednoduší kontrolu parametrů u volání a~definice funkce byla využita datová struktura \\ \texttt{param\_vector}
+pro ukládání typů parametrů a~jejich názvů. Vzhledem k implementaci jednoprůchodové analýzy, byla pro kontrolu volání
+funkce před její definicí implementována pomocná funkce na odvození datových typů parametrů.
+Odvození probíhá na základě datových typů použitích u jednotlivých volání.
+Při definici funkce je poté zkontrolována kompatibilita definovaných datových typů s~odvozenými datovými typy použitými při volání. 
+
+V~případě, kdy je odhalena~syntaktická nebo sémantická chyba je volána funkce \texttt{errorHandle},
+která ukončí provádění programu s chybovým kódem pomocí instrukce exit.
+Instrukce byla použita z~důvodu příliš\\ komplikovaného propagování chybového kódu.
+
 \subsection{Zpracování výrazů}
+Precedenční analýza je implementována na základě \href{tab:prec}{tabulky \ref{tab:prec}}.
+Její programová podoba se nachází v~souboru \texttt{precedence\_analysis.h}.
+Logika pro zpracování výrazů je implementována v~souboru \\
+\texttt{precedence\_analysis.c}.
+Při zpracování výrazů se využívá datové struktury \texttt{ExpressionStack},\\ \texttt{ExpressionStackItem} definované v souboru
+\texttt{expression\_stack.h}. Zásobníková struktura je implementována jako nafukovací pole.
+Operace nad \texttt{ExpressionStack} a \texttt{ExpressionStackItem} jsou implementovány v souboru \\ \texttt{expression\_stack.c}.
+
+Klíčovou funkcí pro zpracování výrazů je \texttt{parse\_expression}, která na základě precedenční tabulky a aktuálního tokenu určí, jaká operace
+má být provedena nad \texttt{ExpressionStack} (přidání prvku, započetí podvýrazu s vyšší prioritou, pokus o redukci pravida), nebo zda má být generován error.
+
+
+V rámci precedenční analýzy rozlišujeme několik typů prvku zásobníku. Typy \texttt{LITERAL}, \texttt{IDENTIFIER}, \texttt{TERMINAL} reprezentují terminály.
+Prvek s typem \texttt{EXPRESSION} potom vzniká při aplikaci redukčních pravidel.
+Zásobník udržuje přehled o nejvrchnější přidaném terminálu pomocí indexu do pole realizujícího zásobník\\ \texttt{top\_most\_expr\_start}
+a zároveň každý terminál obsahuje příznak \texttt{start\_of\_expr}, který indukuje, že terminál nad ním je již součástí podvýrazu s vyšší prioritou.
+Sekvence prvků na indexech vyšších než \texttt{top\_most\_expr\_start} potom tvoří vrchol zásobníku.
+
+Při aplikaci redukčního pravidla je na základě vrcholu zásobníku odvozeno číslo pravidla, které by se mělo aplikovat, pomocí funkce \texttt{get\_rule\_number}.
+
+
+Zpracování výrazů je realizováno pomocí 2 průchodů. Při prvním průchodu jsou tokeny načítání do vektoru a je řešena syntaxe výrazu.
+Zároveň je při prvním průchodu kontrolováno, zda se ve výrazu nevyskytuje operand s typem \texttt{Double}, \texttt{Double?}. Pokud
+ano, je odvozen typ výsledného výrazu \texttt{Double}.
+
+V druhém průchodu jsou následně prováděny sémantické akce a generování kódu.
+Ukazatele na funcke realizující redukční pravidla jsou udržované v poli na indexu korespondujícím
+číslu pravidla. Jednotlivé funcke implementují sémantické akce a generování kódu.
+
+
+
+
+
+
+
+
+
+
+
 
 \section{Generování kódu}
-\section{Ostatní}
+Generování kódu je řešeno funkcemi v~souboru \texttt{codegen.c},  \texttt{codegen.h},
+které jsou volány v~syntaktické analýze při volání určitých pravidel.
+Příkazy pro interpret jsou psány rovnou na standartní výstup.
+Pouze když se generuje kód, který je součástí cyklu while, tak se příkazy ukládají
+do dynamického stringu, který je vypsaný po ukončení cyklu.
+Definování proměnných se vypíše před tento string, protože se nemůže definovat proměnná se stejným názvem vícekrát.
 
-\section{Přílohy}
+Na začátku vykonávání SA se vypíše na výstup string, obsahující vestavěné funkce a~globální proměnné potřebné pro správný chod programu.
 
-\subsection{Diagram konečného automatu}
+Na začátku volání funkce se nejdříve vytvoří nový dočasný rámec, do kterého se uloží hodnoty parametrů pojmenovaných číslem,
+o~kolikátý parametr se jedná, ve formátu „\_číslo“. Na začátku definování funkce se dočasný rámec uloží do zásobníku
+lokálních rámců, funkce potom pracuje s~lokálními či globálními proměnnými.
+Poté se přeuloží hodnoty parametrů do proměnných se správným názvem parametru, aby se s~nimi lépe pracovalo.
+Na konci funkce se návratová hodnota uloží na datový rámec a aktuální lokální rámec se vyjme ze zásobníků rámců.
+
+Každá proměnná vytvořená uživatelem má k~sobě připojené číslo scopu, aby se docílilo jedinečnosti názvu proměnných.
+Swift umožňuje překrývání proměnných v~různých scopech.
+
+Podobně se přidává číslo při vytváření labelů pro if a~while, kde while i~if mají své unikátní počítadlo.
+Při jejich ukončování se využívá zásobníku, který umožňuje jejich nekonečné zanořování.
+
+
+Dále se generování kódu využívá v~precedenční analýze, kde se veškeré výrazy počítají na datovém zásobníku pomocí zásobníkových operací.
+V~některých případech, kdy neexistují zásobníkové operace, se využívá globálních proměnných, které jsou definovány na začátku programu.
+\section{Pomocné datové struktury}
+
+Kromě již zmíněných datový struktur, jejichž popis byl pro větší přehledlenost zařazen do
+konkrétních kapitol byly dále použity následující pomocné datové struktury.
+
+Pro účely ukládání řetězců literálů a~identifikátorů slouží pomocná datová struktura \texttt{LiteralVector}.
+Tato struktura umožňuje bufferování znaků tvořícího se literálu pomocí
+\texttt{LV\_add} a jeho následné uložení pomocí \texttt{LV\_submit}.
+Implementaci obsahují soubory \texttt{literal\_vector.c}, \texttt{literal\_vector.h}.
+
+Pro ukládaní tabulek symbolu pro jednotlivé scopy byl vytvořen zásobníkový typ \texttt{symStack},
+který je \\ naimplementovány na základě jednosměrného lineárního seznamu. Kromě základních funkcí
+zásobníku umožňuje symstack i přechod pomocí ukazatele activeTable a funkcí \texttt{ActiveToTop} a~\texttt{Next}.
+Element symstacku ukládá ukazatel na dynamicky alokovaný symtable a jedinečný identifikátor daného scopu.
+Tabulka se Scope ID 0 je tabulka Globálního scopu.
+Implementaci obsahují soubory \texttt{symstack.c}, \texttt{symstack.h}.
+
+Pro kontrolu parametrů funkcí byla v~sémantické analýze použita datová struktura \texttt{ParamVector}.
+Pro bufferování tokenů při prvním průchodu v precedenční analýze byla použita struktura \texttt{TokenVector}.\\
+Implementace jsou popořadě obsaženy v souborech
+\texttt{token\_vector.c}, \texttt{token\_vector.h}, \texttt{param\_vector.c}, \\ \texttt{param\_vector.h}.
+
+
+
+
+\section{Rozdělení práce a plnění projektu}
+Všichni členové týmy projevili značné usilí při plnění tohoto projektu a
+nevyvstaly žádné problémy. Po rozdělení práce si všichni nastudovali potřebnou teorii
+a ve spolupráci s ostatními včas dokončili požadovanou část. Komunikace probíhala 
+prostřednictvím discordu a osobních setkání, která se konala jednou týdně. Pro verzování
+jsme použili git hostovaný na GitHubu. 
+
+Rozdělení práce: \\[1em]
+\textbf{Lukáš Kotoun} (xkotou08): Syntaktická a sémantická analýza, gramatika, testování, dokumentace \\
+\textbf{Petr Novák} (xnovak3l): Generování kódu, sémantická analýza, testování, dokumentace \\
+\textbf{Jan Pánek} (xpanek11): Lexikální analýza, precedenční analýza, sémantická analýza, dokumentace \\
+\textbf{Tibor Šimlaštík} (xsimla00): Tabulka symbolů, generování kódu, sémantická analýza, dokumentace\\
+
+
+
+
+
+\newgeometry{left=1cm,top=3.5cm,text={17cm,24cm}}
 \begin{landscape}
-    \begin{figure}[p]
+    \thispagestyle{empty}
+    \begin{figure}[!h]
+        \section{Přílohy}
+        \subsection{Diagram konečného automatu}
         \begin{center}
-            \scalebox{0.4}{\includegraphics{fsm_check.eps}}
+        \scalebox{0.4}{\includegraphics{fsm_final.eps}}
+        \caption{Diagram deterministického konečného automatu}
+        \label{fig:fsm}
         \end{center}
-        \caption{Konečný automat}
     \end{figure}
 \end{landscape}
-
+\restoregeometry
 
 \subsection{Gramatika}
 \begin{enumerate}
@@ -170,27 +362,33 @@
 \end{enumerate}
 \end{enumerate}
 
-\subsection{LL-tabulka}
+
+
 \begin{landscape}
-    \begin{figure}[p]
+    \subsection{LL-tabulka}
+    \thispagestyle{empty}
+    \begin{figure}[ht]
         \begin{center}
-           \scalebox{0.43}{\includegraphics{ll1.eps}}
+           \scalebox{0.40}{\includegraphics{ll1.eps}}
         \end{center}
-        \caption{Konečný automat}
+        \caption{LL tabulka}
     \end{figure}
 \end{landscape}
 
 \begin{landscape}
-    \begin{figure}[p]
+    \thispagestyle{empty}
+    \begin{figure}[ht]
         \begin{center}
             \scalebox{0.43}{\includegraphics{ll2.eps}}
         \end{center}
-        \caption{Konečný automat}
+        \caption{LL tabulka\,--\,pokračování}
     \end{figure}
 \end{landscape}
 
 
 \subsection{Precedenční tabulka}
+
+
 
 \begin{table}[ht]
     \catcode`\-=12
@@ -215,7 +413,8 @@
          ??   & > & < & < & > & < & < & < & < & < & < & < & < & < & < & < & <  \\ \hline
     \end{tabular}
     \end{center}
-    \caption{Precedence table}
+    \caption{Precedenční tabulka}
+    \label{tab:prec}
 \end{table}
 
 
