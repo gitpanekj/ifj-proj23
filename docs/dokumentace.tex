@@ -142,7 +142,9 @@ Při definici funkce je poté zkontrolována kompatibilita definovaných datový
 
 V~případě, kdy je odhalena~syntaktická nebo sémantická chyba je volána funkce \texttt{errorHandle},
 která ukončí provádění programu s chybovým kódem pomocí instrukce exit.
-Instrukce byla použita z~důvodu příliš\\ komplikovaného propagování chybového kódu.
+Instrukce byla použita z~důvodu příliš komplikovaného propagování chybového kódu.
+
+Implementace těchto částí syntaktické analýzy se nachází v souborech \texttt{syntactic\_analysis.c}, \texttt{syntactic\_analysis.h}.
 
 \subsection{Zpracování výrazů}
 Precedenční analýza je implementována na základě \href{tab:prec}{tabulky \ref{tab:prec}}.
@@ -159,7 +161,7 @@ má být provedena nad \texttt{ExpressionStack} (přidání prvku, započetí po
 
 V rámci precedenční analýzy rozlišujeme několik typů prvku zásobníku. Typy \texttt{LITERAL}, \texttt{IDENTIFIER}, \texttt{TERMINAL} reprezentují terminály.
 Prvek s typem \texttt{EXPRESSION} potom vzniká při aplikaci redukčních pravidel.
-Zásobník udržuje přehled o nejvrchnější přidaném terminálu pomocí indexu do pole realizujícího zásobník\\ \texttt{top\_most\_expr\_start}
+Zásobník udržuje přehled o nejvrchnější přidaném terminálu pomocí indexu do pole realizujícího zásobník \texttt{top\_most\_expr\_start}
 a zároveň každý terminál obsahuje příznak \texttt{start\_of\_expr}, který indukuje, že terminál nad ním je již součástí podvýrazu s~vyšší prioritou.
 Sekvence prvků na indexech vyšších než \texttt{top\_most\_expr\_start} potom tvoří vrchol zásobníku.
 
@@ -243,7 +245,7 @@ dokončili požadovanou část. Komunikace probíhala prostřednictvím discordu
 která se konala jednou týdně. Pro verzování jsme použili git hostovaný na GitHubu. 
 
 Rozdělení práce: \\[1em]
-\textbf{Lukáš Kotoun} (xkotou08): Syntaktická a sémantická analýza, gramatika, testování, dokumentace,LL-gramatika \\
+\textbf{Lukáš Kotoun} (xkotou08): Syntaktická a sémantická analýza, gramatika, testování, dokumentace, LL-gramatika \\
 \textbf{Petr Novák} (xnovak3l): Generování kódu, testování, dokumentace, LL-gramatika \\
 \textbf{Jan Pánek} (xpanek11): Lexikální analýza, precedenční a sémantická analýza, dokumentace \\
 \textbf{Tibor Šimlaštík} (xsimla00): Tabulka symbolů, generování kódu, dokumentace    \\
