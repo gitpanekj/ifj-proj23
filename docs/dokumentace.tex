@@ -72,7 +72,7 @@ jsou implementovány pomocí samostatných funkcí. Funkce realizující části
 která sekvenci znaků načtenou ze standardního vstupu reprezentuje pomoci sturktury \texttt{Token}, kterou vrací. Pro propagaci chyby byly vyhrazeny
 typy tokenů \texttt{TOKEN\_LA\_ERROR} a~\texttt{TOKEN\_MEMMORY\_ERROR}.
 
-Pro umoznění nahlednutí vpřed \texttt{Scanner} obsahuje buffer tří následujících nezpracovaných znaků.
+Pro umožnění nahlednutí vpřed \texttt{Scanner} obsahuje buffer tří následujících nezpracovaných znaků.
 Náhlédnutí vpřed realizují funkce \texttt{peek}, \texttt{peek\_next} a \texttt{forward\_lookup}, která navíc umožňuje
 porovnat obsah bufferu se specifikovaným formátem. Velikost bufferu je dostatečná pro určení části automatu,
 do které má být přechod uskutečněn bez nutnosti vracení znaků. Na základě obsahu bufferu je z~funkce \texttt{scan\_token} volána 
@@ -86,14 +86,14 @@ víceřádkové komentáře nelze modelovat pomocí\\ samotného konečného aut
 Operátory, závorky a \texttt{\_}, \texttt{:}, \texttt{,}, \texttt{->} jsou zpracovány funkcí \texttt{scan\_operator}.
 Číslicové literály jsou zpracovány ve funkci \texttt{scan\_number\_literal}.
 
-Čás automatu pro identifikátory a~klíčová slova je implementována funkcí \texttt{scan\_identifier}.
+Část automatu pro identifikátory a~klíčová slova je implementována funkcí \texttt{scan\_identifier}.
 Funkce \texttt{is\_kw} následně určí, zda se jméno načteného identifikátoru shoduje se jménem klíčového slova a~případně
 vrací token pro dané klíčové slovo. Jinak vrací token pro daný identifkátor. U klíčových slov \texttt{Double}, \texttt{String}, \texttt{Int}
 je ještě provedena kontrola, zda není následováno znakem \texttt{?}.
 
 Částem automatu pro jednořádkové a~víceřádkové řetězce korespondují funkce \\ \texttt{scan\_single\_line\_string}, \texttt{scan\_multi\_line\_string}.
 Řetězce jsou zpracovány dvěma průchody. Při prvním průchodu jsou načteny do bufferu a~je určeno, zda jsou korektně zakončeny. V druhém průchodu
-jsou zpracovány obsažené escape sekvence a~u víceřídkových řetězcců ještě odsazení.
+jsou zpracovány obsažené escape sekvence a~u víceřádkových řetězcců ještě odsazení.
 
 Pro účely syntaktické analýzy je u každého lexému, který nasleduje \texttt{$\backslash$n} nebo \texttt{$\{$}, nastaven příznak\\ \texttt{follows\_separator}.
 
@@ -104,18 +104,18 @@ Pro účely syntaktické analýzy je u každého lexému, který nasleduje \text
 
 
 \section{Tabulka symbolů}
-Podle vybrané verze řešení projektu je námi implementována tabulka založena na výškové balancovaném stromu,
+Podle vybrané verze řešení projektu je námi implementována tabulka založena na výškově balancovaném stromu,
 konkrétně samo-vyvažovací strom typu AVL. Každý element stromu ukládá informaci o svojí výšce, ukazatel na své dva potomky a~informace
-o~symbolu které jsou o něm uložené v typu \texttt{symData}. Typ \texttt{symData} ukládá jméno symbolu, typ symbolu (proměnná nebo funkce),
+o~symbolu, které jsou o něm uložené v typu \texttt{symData}. Typ \texttt{symData} ukládá jméno symbolu, typ symbolu (proměnná nebo funkce),
 datový typ proměnný nebo návratový typ funkce, zda je daný symbol konstanta, deklarovaný a~jestli byl inicializován.
-Jestli symbol reprezentuje funkci, jsou v \texttt{symData} uložený též informace o~jeho parametrech (jejich počet a~datové typy).
+Jestli symbol reprezentuje funkci, jsou v \texttt{symData} uloženy též informace o~jeho parametrech (jejich počet a~datové typy).
 
 Ze vnějšku se pracuje s~typem symtable a~wrapper funkcemi začínající s~prefixem \texttt{symtable-}.
-Typ symtable obsahuje kořen stromu typu \texttt{symtTreeElementPtr}. S tímhle typem a~se 
+Typ symtable obsahuje kořen stromu typu \texttt{symtTreeElementPtr}. S tímto typem a~se 
 stromem samotným pracují rekurzivní funkce s~prefixem \texttt{symtTree-}.
-Propagace změny struktury, tj. přidání/odstranění elementu ze stromu se vykonává pomocí návratové
+Propagace změny struktury, tj. přidání/odstranění elementu ze stromu, se vykonává pomocí návratové
 hodnoty rekurzivních funkcí, kterou je ukazatel na pozměněný podstrom.
-Před návratem ukazatele je na něj volaná funkce \texttt{symtTreeRebalance}, která aktualizuje výšku a~v~případě
+Před návratem ukazatele je na něj volána funkce \texttt{symtTreeRebalance}, která aktualizuje výšku a~v~případě
 potřeby vykoná rotaci podstromu a~vrací finální kořen daného podstromu.
 
 \section{Syntaktická a sémantická analýza}
@@ -128,7 +128,7 @@ výrazů, používá hierarchickou tabulku symbolů pro ukládání informací o
 Syntaktická analýza je implementována jednoprůchodově pomocí metody rekurzivního sestupu
 a~řídí se pomocí LL gramatiky a LL tabulky. Každé pravidlo z LL gramatiky je implementováno
 jako samostatná funkce s~prefixem \texttt{rule\_}. 
-Mezi jednotlivými funkcemi nejsou předávány parametry veškerá sdílená data jsou uložena v globálních proměnných.
+Mezi jednotlivými funkcemi nejsou předávány parametry, veškerá sdílená data jsou uložena v globálních proměnných.
 
 Sémantická analýza je poté vepsána přímo do jednotlivých syntaktických funkcí a~využívá
 další pomocné funkce pro kontrolu mnoha pravidel jako například: kontrola redefinice u definice proměnné nebo funkce,
@@ -168,7 +168,7 @@ Sekvence prvků na indexech vyšších než \texttt{top\_most\_expr\_start} poto
 Při aplikaci redukčního pravidla je na základě vrcholu zásobníku odvozeno číslo pravidla, které by se mělo aplikovat, pomocí funkce \texttt{get\_rule\_number}.
 
 
-Zpracování výrazů je realizováno pomocí 2 průchodů. Při prvním průchodu jsou tokeny načítání do vektoru a~je řešena syntaxe výrazu.
+Zpracování výrazů je realizováno pomocí 2 průchodů. Při prvním průchodu jsou tokeny načítány do vektoru a~je řešena syntaxe výrazu.
 Zároveň je při prvním průchodu kontrolováno, zda se ve výrazu nevyskytuje operand s~typem \texttt{Double}, \texttt{Double?}. Pokud
 ano, je odvozen typ výsledného výrazu \texttt{Double}.
 
@@ -224,8 +224,8 @@ Tato struktura umožňuje bufferování znaků tvořícího se literálu pomocí
 \texttt{LV\_add} a jeho následné uložení pomocí \texttt{LV\_submit}.
 Implementaci obsahují soubory \texttt{literal\_vector.c}, \texttt{literal\_vector.h}.
 
-Pro ukládaní tabulek symbolu pro jednotlivé scopy byl vytvořen zásobníkový typ \texttt{symStack},
-který je naimplementovány na základě jednosměrného lineárního seznamu. Kromě základních funkcí
+Pro ukládaní tabulek symbolů pro jednotlivé scopy byl vytvořen zásobníkový typ \texttt{symStack},
+který je naimplementovaný na základě jednosměrného lineárního seznamu. Kromě základních funkcí
 zásobníku umožňuje symstack i přechod pomocí ukazatele activeTable a~funkcí \texttt{ActiveToTop} a~\texttt{Next}.
 Element symstacku ukládá ukazatel na dynamicky alokovaný symtable a~jedinečný identifikátor daného scopu.
 Tabulka se Scope ID 0 je tabulka Globálního scopu.
